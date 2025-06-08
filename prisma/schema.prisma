@@ -1,0 +1,603 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// USER MANAGEMENT & AUTHENTICATION
+// ==========================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String?  @unique
+  password      String   // Hashed password
+  emailVerified Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Profile Information
+  profile UserProfile?
+
+  // Role-Based Access Control
+  userRoles UserRole[]
+
+  // Authentication & Security
+  refreshTokens RefreshToken[]
+  passwordResets PasswordReset[]
+  loginAttempts LoginAttempt[]
+
+  // OpenLearn Specific Features
+  blogPosts    BlogPost[]
+  projects     Project[]
+  submissions  ProjectSubmission[]
+  donations    Donation[]
+  
+  // Problem Solving & Learning
+  problemSolutions ProblemSolution[]
+  courseProgress   CourseProgress[]
+  achievements     UserAchievement[]
+
+  // Social & Community
+  comments    Comment[]
+  likes       Like[]
+  followers   Follow[] @relation("UserFollowers")
+  following   Follow[] @relation("UserFollowing")
+
+  // Audit Trail
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  firstName   String?
+  lastName    String?
+  avatar      String?   // URL to profile picture
+  bio         String?   @db.Text
+  phone       String?
+  dateOfBirth DateTime?
+  gender      Gender?
+  
+  // Academic Information
+  studentId      String?   @unique
+  graduationYear Int?
+  degree         String?
+  major          String?
+  gpa            Float?
+  
+  // Alumni Information
+  isAlumni         Boolean @default(false)
+  alumniYear       Int?
+  currentPosition  String?
+  currentCompany   String?
+  linkedinProfile  String?
+  githubProfile    String?
+  
+  // Address Information
+  address String?
+  city    String?
+  state   String?
+  country String? @default("India")
+  zipCode String?
+  
+  // Settings & Preferences
+  isPublic         Boolean @default(true)
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+// ==========================================
+// ROLE-BASED ACCESS CONTROL (RBAC)
+// ==========================================
+
+model Role {
+  id          String @id @default(cuid())
+  name        String @unique // PIONEER, PATHFINDER, GRAND_PATHFINDER, etc.
+  displayName String
+  description String?
+  level       Int    @default(1) // Hierarchy level (1 = lowest, higher = more authority)
+  isActive    Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  name        String  @unique // blog:create, project:review, user:manage, etc.
+  displayName String
+  description String?
+  resource    String  // blog, project, user, etc.
+  action      String  // create, read, update, delete, manage, etc.
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  roleId String
+  
+  // Metadata
+  assignedBy String? // User ID who assigned this role
+  assignedAt DateTime @default(now())
+  expiresAt  DateTime? // Optional expiration
+  isActive   Boolean   @default(true)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+  
+  createdAt DateTime @default(now())
+
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ==========================================
+// AUTHENTICATION & SECURITY
+// ==========================================
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [email], references: [email], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  userId     String?
+  email      String
+  ipAddress  String
+  userAgent  String?
+  successful Boolean
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("login_attempts")
+}
+
+// ==========================================
+// CONTENT MANAGEMENT
+// ==========================================
+
+model BlogPost {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  content     String        @db.Text
+  excerpt     String?
+  featuredImage String?
+  status      PostStatus    @default(DRAFT)
+  publishedAt DateTime?
+  authorId    String
+  
+  // SEO & Metadata
+  metaTitle       String?
+  metaDescription String?
+  tags            Tag[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author   User      @relation(fields: [authorId], references: [id])
+  comments Comment[]
+  likes    Like[]
+
+  @@map("blog_posts")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Tag {
+  id          String @id @default(cuid())
+  name        String @unique
+  slug        String @unique
+  description String?
+  color       String? // Hex color code
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  blogPosts BlogPost[]
+
+  @@map("tags")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  authorId  String
+  postId    String
+  parentId  String?  // For nested comments
+  isApproved Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author  User      @relation(fields: [authorId], references: [id])
+  post    BlogPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
+  likes   Like[]
+
+  @@map("comments")
+}
+
+model Like {
+  id         String    @id @default(cuid())
+  userId     String
+  targetType LikeType
+  targetId   String    // Can be blogPostId, commentId, etc.
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blogPost BlogPost? @relation(fields: [targetId], references: [id], onDelete: Cascade, map: "like_blog_post_fkey")
+  comment  Comment?  @relation(fields: [targetId], references: [id], onDelete: Cascade, map: "like_comment_fkey")
+
+  @@unique([userId, targetType, targetId])
+  @@map("likes")
+}
+
+enum LikeType {
+  BLOG_POST
+  COMMENT
+  PROJECT
+}
+
+// ==========================================
+// PROJECT MANAGEMENT
+// ==========================================
+
+model Project {
+  id          String        @id @default(cuid())
+  title       String
+  description String        @db.Text
+  requirements String?      @db.Text
+  difficulty  Difficulty
+  category    String
+  tags        String[]      // Array of tags
+  maxPoints   Int          @default(100)
+  dueDate     DateTime?
+  isActive    Boolean      @default(true)
+  createdById String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdBy   User                @relation(fields: [createdById], references: [id])
+  submissions ProjectSubmission[]
+
+  @@map("projects")
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+model ProjectSubmission {
+  id          String           @id @default(cuid())
+  projectId   String
+  studentId   String
+  title       String
+  description String?          @db.Text
+  repositoryUrl String?
+  liveUrl     String?
+  files       String[]         // Array of file URLs
+  status      SubmissionStatus @default(PENDING)
+  score       Int?
+  feedback    String?          @db.Text
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  submittedAt DateTime         @default(now())
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id])
+  student User    @relation(fields: [studentId], references: [id])
+
+  @@unique([projectId, studentId])
+  @@map("project_submissions")
+}
+
+enum SubmissionStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+// ==========================================
+// PROBLEM SOLVING & LEARNING
+// ==========================================
+
+model Problem {
+  id          String     @id @default(cuid())
+  title       String
+  description String     @db.Text
+  difficulty  Difficulty
+  category    String
+  tags        String[]
+  constraints String?    @db.Text
+  examples    Json[]     // Array of example inputs/outputs
+  testCases   Json[]     // Hidden test cases
+  maxPoints   Int        @default(100)
+  timeLimit   Int        @default(1000) // milliseconds
+  memoryLimit Int        @default(256)  // MB
+  isActive    Boolean    @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  solutions ProblemSolution[]
+
+  @@map("problems")
+}
+
+model ProblemSolution {
+  id           String         @id @default(cuid())
+  problemId    String
+  userId       String
+  code         String         @db.Text
+  language     String
+  status       SolutionStatus
+  executionTime Int?          // milliseconds
+  memoryUsed   Int?          // KB
+  score        Int?
+  testsPassed  Int           @default(0)
+  totalTests   Int           @default(0)
+  submittedAt  DateTime      @default(now())
+
+  // Relations
+  problem Problem @relation(fields: [problemId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("problem_solutions")
+}
+
+enum SolutionStatus {
+  PENDING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILE_ERROR
+}
+
+// ==========================================
+// DONATIONS & FINANCIAL
+// ==========================================
+
+model Donation {
+  id          String        @id @default(cuid())
+  donorId     String
+  amount      Float
+  currency    String        @default("INR")
+  message     String?       @db.Text
+  isAnonymous Boolean       @default(false)
+  status      DonationStatus @default(PENDING)
+  
+  // Payment Information
+  paymentId     String?     @unique // From payment gateway
+  paymentMethod String?
+  transactionId String?     @unique
+  
+  // Campaign Information (optional)
+  campaignId    String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  donor User @relation(fields: [donorId], references: [id])
+
+  @@map("donations")
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ==========================================
+// LEARNING PROGRESS & ACHIEVEMENTS
+// ==========================================
+
+model Course {
+  id          String @id @default(cuid())
+  title       String
+  description String @db.Text
+  thumbnail   String?
+  difficulty  Difficulty
+  category    String
+  tags        String[]
+  isActive    Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  progress CourseProgress[]
+
+  @@map("courses")
+}
+
+model CourseProgress {
+  id         String @id @default(cuid())
+  userId     String
+  courseId   String
+  progress   Float  @default(0) // Percentage 0-100
+  completedAt DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("course_progress")
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  name        String @unique
+  displayName String
+  description String @db.Text
+  icon        String?
+  category    String
+  points      Int    @default(0)
+  isActive    Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userAchievements UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String    @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime  @default(now())
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ==========================================
+// SOCIAL FEATURES
+// ==========================================
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id])
+  following User @relation("UserFollowing", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+// ==========================================
+// AUDIT & LOGGING
+// ==========================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String   // login, logout, create_post, etc.
+  resource  String?  // user, post, project, etc.
+  resourceId String?
+  details   Json?    // Additional context
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
