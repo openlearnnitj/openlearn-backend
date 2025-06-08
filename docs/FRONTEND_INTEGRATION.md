@@ -779,8 +779,3 @@ curl -X GET http://localhost:3000/api/auth/profile \
 4. **Install dependencies**: `npm install`
 5. **Start your frontend**: `npm start`
 
-The backend is fully functional and ready for frontend integration! All authentication endpoints are tested and working.
-
----
-
-**Need Help?** Check the full API documentation in `/docs/API_DOCUMENTATION.md` for complete details and advanced features.

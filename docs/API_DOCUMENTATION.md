@@ -1160,8 +1160,3 @@ In development mode, additional debug endpoints are available:
 - Enhanced error messages with stack traces
 - Relaxed rate limiting for testing
 
----
-
-**Last Updated:** January 2024
-**API Version:** 1.0.0
-**Contact:** Development Team
