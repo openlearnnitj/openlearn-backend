@@ -13,26 +13,25 @@ async function startServer(): Promise<void> {
     
     // Start server
     const server = app.listen(config.app.port, () => {
-      Logger.info(`🚀 OpenLearn API server started successfully!`);
-      Logger.info(`📡 Server running on port ${config.app.port}`);
-      Logger.info(`🌍 Environment: ${config.app.env}`);
-      Logger.info(`📊 Database URL: ${config.database.url ? 'Connected' : 'Not configured'}`);
-      Logger.info(`🔐 JWT Secret: ${config.jwt.accessSecret ? 'Configured' : 'Missing'}`);
+      Logger.info(`OpenLearn API server started successfully!`);
+      Logger.info(`Server running on port ${config.app.port}`);
+      Logger.info(`Environment: ${config.app.env}`);
+      Logger.info(`Database URL: ${config.database.url ? 'Connected' : 'Not configured'}`);
+      Logger.info(`JWT Secret: ${config.jwt.accessSecret ? 'Configured' : 'Missing'}`);
       
       if (config.app.env === 'development') {
-        Logger.info(`🔧 Development mode enabled`);
-        Logger.info(`📖 API Documentation: http://localhost:${config.app.port}/api/docs`);
-        Logger.info(`💊 Health Check: http://localhost:${config.app.port}/health`);
-        Logger.info(`🔑 Auth Endpoints: http://localhost:${config.app.port}/api/auth`);
+        Logger.info(`Development mode enabled`);
+        Logger.info(`Health Check: http://localhost:${config.app.port}/health`);
+        Logger.info(`Auth Endpoints: http://localhost:${config.app.port}/api/auth`);
       }
     });
 
     // Graceful shutdown handling
     const gracefulShutdown = (signal: string) => {
-      Logger.info(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+      Logger.info(`\n Received ${signal}. Starting graceful shutdown...`);
       
       server.close(() => {
-        Logger.info('✅ HTTP server closed');
+        Logger.info('HTTP server closed');
         
         // Close database connections if needed
         // prisma.$disconnect() would go here
@@ -43,7 +42,7 @@ async function startServer(): Promise<void> {
       
       // Force shutdown after 30 seconds
       setTimeout(() => {
-        Logger.error('⚠️  Forceful shutdown due to timeout');
+        Logger.error('Forceful shutdown due to timeout');
         process.exit(1);
       }, 30000);
     };
@@ -54,13 +53,13 @@ async function startServer(): Promise<void> {
     
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
-      Logger.error('💥 Uncaught Exception:', error);
+      Logger.error('Uncaught Exception:', error);
       process.exit(1);
     });
     
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
-      Logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+      Logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
       process.exit(1);
     });
 

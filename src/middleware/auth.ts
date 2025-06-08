@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { AuthenticatedRequest } from '../types';
 import { ErrorCodes, createApiError } from '../utils/common';
-import { authUtils } from '../utils/auth';
 import { prisma } from '../config/database';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 
@@ -109,14 +108,14 @@ export const authenticate = async (
       ));
     }
 
-    // Check if user's email verification status (if required)
-    if (!user.emailVerified && config.auth.requireEmailVerification) {
-      return next(createApiError(
-        'Email verification required',
-        403,
-        ErrorCodes.EMAIL_NOT_VERIFIED
-      ));
-    }
+    // // Check if user's email verification status (if required)
+    // if (!user.emailVerified && config.auth.requireEmailVerification) {
+    //   return next(createApiError(
+    //     'Email verification required',
+    //     403,
+    //     ErrorCodes.EMAIL_NOT_VERIFIED
+    //   ));
+    // }
 
     // Extract roles and permissions with full structure
     const roles = user.userRoles.map(ur => ({
@@ -230,13 +229,13 @@ export const requireEmailVerification = (
     ));
   }
 
-  if (!req.user.emailVerified) {
-    return next(createApiError(
-      'Email verification required',
-      403,
-      ErrorCodes.EMAIL_NOT_VERIFIED
-    ));
-  }
+//   if (!req.user.emailVerified) {
+//     return next(createApiError(
+//       'Email verification required',
+//       403,
+//       ErrorCodes.EMAIL_NOT_VERIFIED
+//     ));
+//   }
 
   next();
 };

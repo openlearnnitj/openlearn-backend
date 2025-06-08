@@ -1,8 +1,6 @@
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { config } from './config';
 import apiRouter from './routes';
 import {
   requestLogger,

@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # PostgreSQL Database
   postgres:
@@ -5,18 +7,23 @@ services:
     container_name: openlearn_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: openlearn_db
-      POSTGRES_USER: openlearn_user
-      POSTGRES_PASSWORD: openlearn_password
+      POSTGRES_DB: openlearn_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init:/docker-entrypoint-initdb.d
     networks:
       - openlearn_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis for Caching and Sessions
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: openlearn_redis
@@ -27,29 +34,40 @@ services:
       - redis_data:/data
     networks:
       - openlearn_network
-    command: redis-server --appendonly yes --requirepass redis_password
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # pgAdmin for Database Management (Optional)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: openlearn_pgadmin
+  # OpenLearn Express Application (Optional - for production)
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: openlearn_app
     restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@openlearn.com
-      PGADMIN_DEFAULT_PASSWORD: admin_password
     ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/openlearn_dev
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - openlearn_network
-    depends_on:
-      - postgres
+    # Mount source code in development (comment out for production)
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
 
 volumes:
   postgres_data:
   redis_data:
-  pgadmin_data:
 
 networks:
   openlearn_network:

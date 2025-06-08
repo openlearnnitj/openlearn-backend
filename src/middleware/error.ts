@@ -56,21 +56,6 @@ interface ErrorLogEntry {
 }
 
 /**
- * Error categorization for better handling
- */
-enum ErrorCategory {
-  AUTHENTICATION = 'AUTHENTICATION',
-  AUTHORIZATION = 'AUTHORIZATION', 
-  VALIDATION = 'VALIDATION',
-  DATABASE = 'DATABASE',
-  FILE_UPLOAD = 'FILE_UPLOAD',
-  RATE_LIMIT = 'RATE_LIMIT',
-  NETWORK = 'NETWORK',
-  BUSINESS_LOGIC = 'BUSINESS_LOGIC',
-  SYSTEM = 'SYSTEM'
-}
-
-/**
  * Main error handling middleware
  * This should be the last middleware in the Express app
  */

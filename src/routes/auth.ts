@@ -11,7 +11,6 @@ import {
   
   // Auth middleware
   authenticate,
-  requireEmailVerification,
   requireActiveAccount,
   
   // Validation middleware

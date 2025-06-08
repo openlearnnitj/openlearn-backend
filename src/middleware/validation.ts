@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { validationResult, ValidationChain, body, param, query } from 'express-validator';
+import { validationResult, body, param, query } from 'express-validator';
 import { ErrorCodes, createApiError } from '../utils/common';
 
 /**
@@ -96,6 +96,8 @@ export const commonValidations = {
     .isISO8601()
     .withMessage('Valid date of birth is required (YYYY-MM-DD)')
     .custom((value) => {
+      if (!value) return true; // Skip validation if not provided
+      
       const date = new Date(value);
       const now = new Date();
       const minAge = new Date(now.getFullYear() - 13, now.getMonth(), now.getDate());
@@ -248,10 +250,85 @@ export const commonValidations = {
 };
 
 /**
- * Validation chains for specific endpoints
+ * ✅ MOVE THIS BEFORE userValidations
+ * Optional validation rules for partial updates
  */
+export const optionalValidations = {
+  firstName: body('firstName')
+    .optional()  // ✅ Make it optional
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters')
+    .matches(/^[a-zA-Z\s'-]+$/)
+    .withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
 
-// Authentication validations
+  lastName: body('lastName')
+    .optional()  // ✅ Make it optional
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters')
+    .matches(/^[a-zA-Z\s'-]+$/)
+    .withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+
+  username: body('username')
+    .optional()  // ✅ Make it optional
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('Username can only contain letters, numbers, underscores, and hyphens')
+    .toLowerCase(),
+
+  phone: body('phone')
+    .optional()
+    .isMobilePhone('any')
+    .withMessage('Valid phone number is required'),
+
+  bio: body('bio')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Bio must be less than 500 characters'),
+
+  githubProfile: body('githubProfile')
+    .optional()
+    .isURL({ protocols: ['http', 'https'] })
+    .withMessage('Valid GitHub profile URL is required'),
+
+  linkedinProfile: body('linkedinProfile')
+    .optional()
+    .isURL({ protocols: ['http', 'https'] })
+    .withMessage('Valid LinkedIn profile URL is required'),
+
+  website: body('website')
+    .optional()
+    .isURL({ protocols: ['http', 'https'] })
+    .withMessage('Valid website URL is required'),
+
+  dateOfBirth: body('dateOfBirth')
+    .optional()
+    .isISO8601()
+    .withMessage('Valid date of birth is required (YYYY-MM-DD)')
+    .custom((value) => {
+      if (!value) return true; // Skip validation if not provided
+      
+      const date = new Date(value);
+      const now = new Date();
+      const minAge = new Date(now.getFullYear() - 13, now.getMonth(), now.getDate());
+      const maxAge = new Date(now.getFullYear() - 100, now.getMonth(), now.getDate());
+      
+      if (date > minAge) {
+        throw new Error('Must be at least 13 years old');
+      }
+      if (date < maxAge) {
+        throw new Error('Invalid date of birth');
+      }
+      return true;
+    })
+};
+
+/**
+ * Authentication validations
+ */
 export const authValidations = {
   register: [
     commonValidations.email,
@@ -304,21 +381,21 @@ export const authValidations = {
   ]
 };
 
-// User profile validations
+/**
+ * ✅ NOW this can use optionalValidations since it's declared above
+ * User profile validations
+ */
 export const userValidations = {
   updateProfile: [
-    commonValidations.firstName,
-    commonValidations.lastName,
-    commonValidations.phone,
-    commonValidations.dateOfBirth,
-    body('bio')
-      .optional()
-      .trim()
-      .isLength({ max: 500 })
-      .withMessage('Bio must be less than 500 characters'),
-    commonValidations.url('website'),
-    commonValidations.url('linkedinUrl'),
-    commonValidations.url('githubUrl'),
+    optionalValidations.firstName,     // ✅ Optional - now works!
+    optionalValidations.lastName,      // ✅ Optional - now works!
+    optionalValidations.username,      // ✅ Optional
+    optionalValidations.phone,         // ✅ Optional
+    optionalValidations.bio,           // ✅ Optional
+    optionalValidations.githubProfile, // ✅ Optional
+    optionalValidations.linkedinProfile, // ✅ Optional
+    optionalValidations.website,       // ✅ Optional
+    optionalValidations.dateOfBirth,   // ✅ Optional
     handleValidationErrors
   ],
 
@@ -335,7 +412,9 @@ export const userValidations = {
   ]
 };
 
-// Blog post validations
+/**
+ * Blog post validations
+ */
 export const blogValidations = {
   createPost: [
     commonValidations.title(200),
@@ -405,7 +484,9 @@ export const blogValidations = {
   ]
 };
 
-// Project validations
+/**
+ * Project validations
+ */
 export const projectValidations = {
   createProject: [
     commonValidations.title(100),
@@ -455,7 +536,9 @@ export const projectValidations = {
   ]
 };
 
-// Comment validations
+/**
+ * Comment validations
+ */
 export const commentValidations = {
   createComment: [
     body('content')
@@ -479,7 +562,9 @@ export const commentValidations = {
   ]
 };
 
-// Admin validations
+/**
+ * Admin validations
+ */
 export const adminValidations = {
   assignRole: [
     commonValidations.uuid('userId'),

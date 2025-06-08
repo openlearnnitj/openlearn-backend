@@ -123,7 +123,7 @@ function validateConfig(): Config {
 
     // Authentication
     auth: {
-      requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === 'true',
+      requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === 'false',
       passwordResetExpiresIn: process.env.PASSWORD_RESET_EXPIRES_IN || '1h',
       maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || '5', 10),
       lockoutDuration: parseInt(process.env.LOCKOUT_DURATION || '15', 10) * 60 * 1000, // 15 minutes
