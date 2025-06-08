@@ -6,13 +6,13 @@ This directory contains complete documentation for the OpenLearn TypeScript back
 
 ### Available Documents
 
-1. **[API_DOCUMENTATION.md](./API_DOCUMENTATION.md)** - Complete API reference
+1. **[API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Complete API reference
    - All authentication endpoints with detailed examples
    - Request/response formats and error codes
    - Security considerations and best practices
    - Rate limiting and CORS information
 
-2. **[FRONTEND_INTEGRATION.md](./FRONTEND_INTEGRATION.md)** - Frontend developer guide
+2. **[FRONTEND_INTEGRATION.md](./docs/FRONTEND_INTEGRATION.md)** - Frontend developer guide
    - Ready-to-use React components and hooks
    - Complete TypeScript API client implementation
    - Authentication flow examples
