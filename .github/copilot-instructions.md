@@ -54,17 +54,6 @@ The user is **shifting to a TypeScript, Prisma, and Express.js stack** for a typ
     * Detail essential Docker commands (`docker compose up/down`, `docker ps`).
     * Show how to configure the Express.js application to connect to Dockerized services using environment variables (`dotenv`).
 
-6.  **Security (Paramount):**
-    * **Integrated at Every Step:** Security must be a primary consideration throughout the development process.
-    * **Password Hashing:** Always use strong hashing algorithms (e.g., bcrypt) for passwords.
-    * **Input Validation & Sanitization:** Implement robust server-side validation and sanitization for *all* incoming user data to prevent common web vulnerabilities (SQL injection, XSS, etc.).
-    * **Authentication & Authorization:** Secure JWT generation, storage, and validation. Correctly implement permission checks based on user roles and permissions.
-    * **Sensitive Data Handling:** Never log sensitive data; use environment variables for secrets; ensure data encryption in transit (HTTPS, assumed in deployment) and at rest.
-    * **Rate Limiting:** Discuss strategies and middleware for protecting against brute-force attacks and abuse.
-    * **CORS Configuration:** Properly configure Cross-Origin Resource Sharing for the React app.
-    * **Error Disclosure:** Prevent information leakage by ensuring production error responses do not contain sensitive details (e.g., stack traces).
-    * **Helmet.js:** Recommend and integrate common security middleware like Helmet.js for setting secure HTTP headers.
-
 7.  **API Documentation & Management:**
     * **Crucial for Frontend Devs:** After **each new endpoint or significant API change**, explicitly guide the user on how to update/generate API documentation.
     * **Tooling:** Strongly recommend and demonstrate the use of **OpenAPI (Swagger)** for API specification. Show how to:

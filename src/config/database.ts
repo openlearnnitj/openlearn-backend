@@ -1,18 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+// Create a singleton Prisma client instance
+class DatabaseConnection {
+  private static instance: PrismaClient;
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
+  private constructor() {}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+  public static getInstance(): PrismaClient {
+    if (!DatabaseConnection.instance) {
+      DatabaseConnection.instance = new PrismaClient({
+        log: ['query', 'info', 'warn', 'error'],
+      });
+    }
+    return DatabaseConnection.instance;
+  }
 
-// Graceful shutdown
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-});
+  public static async disconnect(): Promise<void> {
+    if (DatabaseConnection.instance) {
+      await DatabaseConnection.instance.$disconnect();
+    }
+  }
+}
 
-export default prisma;
+export const prisma = DatabaseConnection.getInstance();
+export default DatabaseConnection;

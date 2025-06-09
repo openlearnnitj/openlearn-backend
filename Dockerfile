@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -18,6 +18,9 @@ RUN npx prisma generate
 
 # Build TypeScript
 RUN npm run build
+
+# Clean up dev dependencies after build
+RUN npm ci --only=production && npm cache clean --force
 
 # Production stage
 FROM node:18-alpine AS production

@@ -1,77 +1,60 @@
-import createApp from './app';
-import { config } from './config';
-import { Logger } from './utils/common';
+import app from './app';
+import config from './config/environment';
+import DatabaseConnection from './config/database';
 
-/**
- * Start the OpenLearn API server
- * This function initializes the Express app and starts listening for requests
- */
-async function startServer(): Promise<void> {
+const startServer = async () => {
   try {
-    // Create Express application
-    const app = createApp();
-    
-    // Start server
-    const server = app.listen(config.app.port, () => {
-      Logger.info(`OpenLearn API server started successfully!`);
-      Logger.info(`Server running on port ${config.app.port}`);
-      Logger.info(`Environment: ${config.app.env}`);
-      Logger.info(`Database URL: ${config.database.url ? 'Connected' : 'Not configured'}`);
-      Logger.info(`JWT Secret: ${config.jwt.accessSecret ? 'Configured' : 'Missing'}`);
-      
-      if (config.app.env === 'development') {
-        Logger.info(`Development mode enabled`);
-        Logger.info(`Health Check: http://localhost:${config.app.port}/health`);
-        Logger.info(`Auth Endpoints: http://localhost:${config.app.port}/api/auth`);
-      }
+    // Test database connection
+    console.log('🔄 Testing database connection...');
+    await DatabaseConnection.getInstance().$connect();
+    console.log('✅ Database connected successfully');
+
+    // Start the server
+    const server = app.listen(config.port, () => {
+      console.log(`🚀 OpenLearn API server running on port ${config.port}`);
+      console.log(`📱 Environment: ${config.nodeEnv}`);
+      console.log(`🔗 Health check: http://localhost:${config.port}/health`);
     });
 
-    // Graceful shutdown handling
-    const gracefulShutdown = (signal: string) => {
-      Logger.info(`\n Received ${signal}. Starting graceful shutdown...`);
+    // Graceful shutdown
+    const gracefulShutdown = async (signal: string) => {
+      console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
       
-      server.close(() => {
-        Logger.info('HTTP server closed');
+      server.close(async () => {
+        console.log('🔄 HTTP server closed');
         
-        // Close database connections if needed
-        // prisma.$disconnect() would go here
-        
-        Logger.info('👋 Graceful shutdown completed');
-        process.exit(0);
+        try {
+          await DatabaseConnection.disconnect();
+          console.log('✅ Database connection closed');
+          process.exit(0);
+        } catch (error) {
+          console.error('❌ Error during graceful shutdown:', error);
+          process.exit(1);
+        }
       });
-      
-      // Force shutdown after 30 seconds
-      setTimeout(() => {
-        Logger.error('Forceful shutdown due to timeout');
-        process.exit(1);
-      }, 30000);
     };
 
     // Handle shutdown signals
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    
-    // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
-      Logger.error('Uncaught Exception:', error);
-      process.exit(1);
-    });
-    
-    // Handle unhandled promise rejections
-    process.on('unhandledRejection', (reason, promise) => {
-      Logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-      process.exit(1);
-    });
 
   } catch (error) {
-    Logger.error('❌ Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
-}
+};
 
-// Start the server if this file is run directly
-if (require.main === module) {
-  startServer();
-}
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
-export default startServer;
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Start the server
+startServer();
