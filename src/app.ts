@@ -11,6 +11,7 @@ import leagueRoutes from './routes/leagues';
 import specializationRoutes from './routes/specializations';
 import weekRoutes from './routes/weeks';
 import sectionRoutes from './routes/sections';
+import resourceRoutes from './routes/resources';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/leagues', leagueRoutes);
 app.use('/api/specializations', specializationRoutes);
 app.use('/api/weeks', weekRoutes);
 app.use('/api/sections', sectionRoutes);
+app.use('/api', resourceRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
