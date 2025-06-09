@@ -630,6 +630,40 @@ Delete a specialization.
 
 ---
 
+## 📝 Section Management
+
+### Complete Section API Documentation
+For detailed Section Management API documentation, see: [SECTION_MANAGEMENT_API_DOCUMENTATION.md](./SECTION_MANAGEMENT_API_DOCUMENTATION.md)
+
+**Key Section Endpoints:**
+- `POST /api/sections` - Create new section
+- `GET /api/sections` - Get all sections (admin view)
+- `GET /api/weeks/:id/sections` - Get sections by week
+- `GET /api/sections/:id` - Get specific section with user progress
+- `PUT /api/sections/:id` - Update section
+- `DELETE /api/sections/:id` - Delete section
+- `PUT /api/weeks/:id/sections/reorder` - Reorder sections
+
+**Quick Example:**
+```bash
+# Create a section
+curl -X POST http://localhost:3001/api/sections \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
+  -d '{
+    "name": "Introduction to Machine Learning",
+    "description": "Basic concepts and terminology in ML",
+    "order": 1,
+    "weekId": "week_id"
+  }'
+
+# Get sections for a week
+curl -X GET "http://localhost:3001/api/weeks/week_id/sections" \
+  -H "Authorization: Bearer <access_token>"
+```
+
+---
+
 ## 📊 Common Response Patterns
 
 ### Success Response
