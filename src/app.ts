@@ -5,6 +5,10 @@ import config from './config/environment';
 
 // Import routes
 import authRoutes from './routes/auth';
+import adminRoutes from './routes/admin';
+import cohortRoutes from './routes/cohorts';
+import leagueRoutes from './routes/leagues';
+import specializationRoutes from './routes/specializations';
 
 const app = express();
 
@@ -33,6 +37,10 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/cohorts', cohortRoutes);
+app.use('/api/leagues', leagueRoutes);
+app.use('/api/specializations', specializationRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

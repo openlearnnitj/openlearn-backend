@@ -4,11 +4,18 @@
 
 The OpenLearn API is a TypeScript-based RESTful API built with Express.js, Prisma ORM, and PostgreSQL. It provides comprehensive authentication, authorization, and content management features for the OpenLearn educational platform.
 
-**Base URL:** `http://localhost:3000/api` (Development)
+**Base URL:** `http://localhost:3001/api` (Development)
 
 **Authentication:** Bearer JWT tokens
 
 **Content Type:** `application/json`
+
+---
+
+## Documentation Structure
+
+- **[Authentication API](./AUTH_API_DOCUMENTATION.md)** - Complete authentication endpoints documentation
+- **Main API Documentation** - This file (comprehensive API reference)
 
 ---
 
