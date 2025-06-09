@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { WeekController } from '../controllers/weekController';
+import { SectionController } from '../controllers/sectionController';
 import { AuthMiddleware } from '../middleware/auth';
 import { UserRole } from '@prisma/client';
 
@@ -37,6 +38,13 @@ router.get('/league/:leagueId', WeekController.getWeeksByLeague);
 router.get('/:id', WeekController.getWeekById);
 
 /**
+ * @route   GET /api/weeks/:id/sections
+ * @desc    Get all sections for a specific week
+ * @access  All authenticated users
+ */
+router.get('/:id/sections', SectionController.getSectionsByWeek);
+
+/**
  * @route   PUT /api/weeks/:id
  * @desc    Update a week
  * @access  Chief Pathfinder+
@@ -49,5 +57,15 @@ router.put('/:id', AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRol
  * @access  Grand Pathfinder only
  */
 router.delete('/:id', AuthMiddleware.requireRole(UserRole.GRAND_PATHFINDER), WeekController.deleteWeek);
+
+/**
+ * @route   PUT /api/weeks/:id/sections/reorder
+ * @desc    Reorder sections within a week
+ * @access  Chief Pathfinder+
+ */
+router.put('/:id/sections/reorder', 
+  AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  SectionController.reorderSections
+);
 
 export default router;

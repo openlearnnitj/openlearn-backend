@@ -10,16 +10,19 @@ import cohortRoutes from './routes/cohorts';
 import leagueRoutes from './routes/leagues';
 import specializationRoutes from './routes/specializations';
 import weekRoutes from './routes/weeks';
+import sectionRoutes from './routes/sections';
 
 const app = express();
 
 // Security middleware
 app.use(helmet());
 
-// CORS middleware
+// CORS middleware - Relaxed for testing
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: true, // Allow all origins during testing
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
 // Body parsing middleware
@@ -43,6 +46,7 @@ app.use('/api/cohorts', cohortRoutes);
 app.use('/api/leagues', leagueRoutes);
 app.use('/api/specializations', specializationRoutes);
 app.use('/api/weeks', weekRoutes);
+app.use('/api/sections', sectionRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
