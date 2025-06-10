@@ -13,6 +13,7 @@ import weekRoutes from './routes/weeks';
 import sectionRoutes from './routes/sections';
 import resourceRoutes from './routes/resources';
 import progressRoutes from './routes/progress';
+import analyticsRoutes from './routes/analytics';
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/weeks', weekRoutes);
 app.use('/api/sections', sectionRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api', resourceRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
