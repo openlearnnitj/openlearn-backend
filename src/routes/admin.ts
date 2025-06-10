@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AdminController } from '../controllers/adminController';
+import { AssignmentController } from '../controllers/assignmentController';
 import { AuthMiddleware } from '../middleware/auth';
 import { UserRole } from '@prisma/client';
 
@@ -86,5 +87,26 @@ router.put('/users/:userId/role', AdminController.updateUserRole);
  * @body status - New status (ACTIVE or SUSPENDED)
  */
 router.put('/users/:userId/status', AdminController.updateUserStatus);
+
+/**
+ * @route POST /admin/assignments
+ * @desc Create assignment for a league
+ * @access Grand Pathfinder, Chief Pathfinder
+ */
+router.post('/assignments', AssignmentController.createAssignment);
+
+/**
+ * @route GET /admin/assignments
+ * @desc Get all assignments
+ * @access Grand Pathfinder, Chief Pathfinder
+ */
+router.get('/assignments', AssignmentController.getAllAssignments);
+
+/**
+ * @route GET /admin/assignments/league/:leagueId
+ * @desc Get assignment by league ID
+ * @access Grand Pathfinder, Chief Pathfinder
+ */
+router.get('/assignments/league/:leagueId', AssignmentController.getAssignmentByLeague);
 
 export default router;
