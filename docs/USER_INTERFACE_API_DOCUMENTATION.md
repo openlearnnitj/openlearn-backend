@@ -372,195 +372,145 @@ Authorization: Bearer <access_token>
 
 ---
 
-## 🎯 **TYPICAL USER WORKFLOW**
+## 👤 **USER PROFILE MANAGEMENT**
 
-### **New User Journey:**
-1. **Browse Cohorts** → `GET /api/cohorts`
-2. **Explore Leagues** → `GET /api/leagues`
-3. **Enroll in League** → `POST /api/progress/enroll`
-4. **View Week Structure** → `GET /api/weeks/league/:leagueId`
-5. **Study Section** → `GET /api/sections/:id`
-6. **Complete Section** → `POST /api/progress/sections/:sectionId/complete`
-7. **Share Progress** → `GET /api/social/twitter/section/:sectionId`
-8. **Check Dashboard** → `GET /api/progress/dashboard`
+### 21. Update Profile Information
+**Endpoint:** `PUT /api/auth/profile`  
+**Access:** All authenticated users  
+**Description:** Update user profile information like name and email
 
-### **Daily Learning Flow:**
-1. **Check Dashboard** → `GET /api/progress/dashboard`
-2. **Continue League** → `GET /api/progress/leagues/:leagueId`
-3. **Study Next Section** → `GET /api/sections/:id`
-4. **Mark Complete** → `POST /api/progress/sections/:sectionId/complete`
-5. **Share Achievement** → `GET /api/social/twitter/section/:sectionId`
+**Request Body:**
+```json
+{
+  "firstName": "Updated First Name",
+  "lastName": "Updated Last Name",
+  "email": "newemail@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": {
+    "user": {
+      "id": "user_id",
+      "firstName": "Updated First Name",
+      "lastName": "Updated Last Name",
+      "email": "newemail@example.com",
+      "role": "PIONEER"
+    }
+  }
+}
+```
+
+**Frontend Integration Example:**
+```javascript
+// Update user profile
+const updateProfile = async (profileData) => {
+  try {
+    const response = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+      },
+      body: JSON.stringify(profileData)
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Update local user state
+      setUser(result.data.user);
+      showSuccess('Profile updated successfully!');
+    } else {
+      showError(result.message);
+    }
+  } catch (error) {
+    showError('Failed to update profile');
+  }
+};
+```
+
+### 22. Change Password
+**Endpoint:** `PUT /api/auth/password`  
+**Access:** All authenticated users  
+**Description:** Change user password with current password verification
+
+**Request Body:**
+```json
+{
+  "currentPassword": "oldPassword123!",
+  "newPassword": "newSecurePassword456@"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Password changed successfully"
+}
+```
+
+**Frontend Integration Example:**
+```javascript
+// Change password
+const changePassword = async (passwordData) => {
+  try {
+    const response = await fetch('/api/auth/password', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+      },
+      body: JSON.stringify(passwordData)
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showSuccess('Password changed successfully!');
+      // Clear form
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } else {
+      showError(result.message);
+    }
+  } catch (error) {
+    showError('Failed to change password');
+  }
+};
+```
 
 ---
 
-## 💡 **KEY FEATURES FOR USERS**
+## 📋 **SUMMARY OF USER-FACING ENDPOINTS**
 
-✅ **Course Discovery** - Browse cohorts, leagues, and specializations  
-✅ **Self-Enrollment** - Join leagues independently  
-✅ **Progress Tracking** - Track completion percentage and personal notes  
-✅ **Personal Dashboard** - Complete overview of learning journey  
-✅ **Badge System** - Automatic badge awarding upon league completion  
-✅ **Social Sharing** - Twitter/LinkedIn integration for achievements  
-✅ **Assignment System** - Submit and track assignment progress  
-✅ **Learning Resources** - Access videos, blogs, and external links  
-✅ **Personal Notes** - Add private notes to each section  
-✅ **Revision Marking** - Flag sections for future review  
+The OpenLearn platform provides **22 comprehensive user-facing endpoints** organized into these categories:
 
+### **Course Discovery & Enrollment (6 endpoints)**
+- Browse cohorts, leagues, and specializations
+- Enroll in learning paths
+- View detailed curriculum information
 
-simple example in frontend
-```
-// Example React component for user enrollment flow
+### **Learning Journey & Progress (8 endpoints)**
+- Track progress across leagues and weeks
+- Complete sections and earn badges
+- View personal learning dashboard
 
-import React, { useState, useEffect } from 'react';
+### **Content Interaction (4 endpoints)**
+- Access learning resources
+- Submit assignments (link-based)
+- View assignment feedback
 
-const EnrollmentFlow = () => {
-  const [cohorts, setCohorts] = useState([]);
-  const [leagues, setLeagues] = useState([]);
-  const [selectedCohort, setSelectedCohort] = useState(null);
-  const [selectedLeague, setSelectedLeague] = useState(null);
-  const [loading, setLoading] = useState(false);
+### **Social Features (2 endpoints)**
+- Share achievements on social platforms
+- Generate social media content
 
-  // Load available cohorts when component mounts
-  useEffect(() => {
-    fetchCohorts();
-  }, []);
+### **Profile Management (2 endpoints)**
+- Update personal information
+- Change password securely
 
-  const fetchCohorts = async () => {
-    try {
-      const response = await fetch('/api/cohorts', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
-      });
-      const data = await response.json();
-      setCohorts(data.data.cohorts);
-    } catch (error) {
-      console.error('Failed to fetch cohorts:', error);
-    }
-  };
-
-  const fetchLeagues = async () => {
-    try {
-      const response = await fetch('/api/leagues', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
-      });
-      const data = await response.json();
-      setLeagues(data.data.leagues);
-    } catch (error) {
-      console.error('Failed to fetch leagues:', error);
-    }
-  };
-
-  const handleCohortSelect = (cohort) => {
-    setSelectedCohort(cohort);
-    fetchLeagues(); // Load leagues when cohort is selected
-  };
-
-  const handleEnrollment = async () => {
-    if (!selectedCohort || !selectedLeague) {
-      alert('Please select both cohort and league');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch('/api/progress/enroll', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify({
-          cohortId: selectedCohort.id,
-          leagueId: selectedLeague.id
-        })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        alert('Enrollment successful! Welcome to the learning journey!');
-        // Redirect to league dashboard
-        window.location.href = `/dashboard/leagues/${selectedLeague.id}`;
-      } else {
-        alert(`Enrollment failed: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Enrollment error:', error);
-      alert('Enrollment failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="enrollment-flow">
-      <h1>🎓 Join OpenLearn - Start Your Learning Journey</h1>
-      
-      {/* Step 1: Select Cohort */}
-      <div className="step">
-        <h2>Step 1: Choose Your Cohort</h2>
-        <div className="cohort-grid">
-          {cohorts.map(cohort => (
-            <div 
-              key={cohort.id}
-              className={`cohort-card ${selectedCohort?.id === cohort.id ? 'selected' : ''}`}
-              onClick={() => handleCohortSelect(cohort)}
-            >
-              <h3>{cohort.name}</h3>
-              <p>{cohort.description}</p>
-              <span className={`status ${cohort.isActive ? 'active' : 'inactive'}`}>
-                {cohort.isActive ? '✅ Active' : '❌ Inactive'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Step 2: Select League (only show if cohort selected) */}
-      {selectedCohort && (
-        <div className="step">
-          <h2>Step 2: Choose Your League</h2>
-          <p>Selected Cohort: <strong>{selectedCohort.name}</strong></p>
-          <div className="league-grid">
-            {leagues.map(league => (
-              <div 
-                key={league.id}
-                className={`league-card ${selectedLeague?.id === league.id ? 'selected' : ''}`}
-                onClick={() => setSelectedLeague(league)}
-              >
-                <h3>{league.name}</h3>
-                <p>{league.description}</p>
-                <div className="league-stats">
-                  <span>📅 {league.weeksCount} weeks</span>
-                  <span>📚 {league.sectionsCount} sections</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Confirm Enrollment */}
-      {selectedCohort && selectedLeague && (
-        <div className="step">
-          <h2>Step 3: Confirm Enrollment</h2>
-          <div className="enrollment-summary">
-            <p><strong>Cohort:</strong> {selectedCohort.name}</p>
-            <p><strong>League:</strong> {selectedLeague.name}</p>
-            <p><strong>Description:</strong> {selectedLeague.description}</p>
-          </div>
-          
-          <button 
-            className="enroll-button"
-            onClick={handleEnrollment}
-            disabled={loading}
-          >
-            {loading ? '⏳ Enrolling...' : '🚀 Start Learning Journey'}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default EnrollmentFlow;
-
-```
+**Total User Endpoints: 22**

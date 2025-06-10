@@ -49,4 +49,11 @@ router.post('/:assignmentId/submit', AssignmentController.submitAssignment);
  */
 router.get('/submissions', AssignmentController.getUserSubmissions);
 
+/**
+ * @route GET /api/assignments/my-submissions
+ * @desc Get current user's assignment submissions (user-friendly alias)
+ * @access All authenticated users
+ */
+router.get('/my-submissions', AssignmentController.getUserSubmissions);
+
 export default router;

@@ -33,6 +33,20 @@ router.post('/refresh', AuthController.refreshToken);
 router.get('/profile', AuthMiddleware.authenticate, AuthController.getProfile);
 
 /**
+ * @route PUT /auth/profile
+ * @desc Update current user profile
+ * @access Private
+ */
+router.put('/profile', AuthMiddleware.authenticate, AuthController.updateProfile);
+
+/**
+ * @route PUT /auth/password
+ * @desc Change user password
+ * @access Private
+ */
+router.put('/password', AuthMiddleware.authenticate, AuthController.changePassword);
+
+/**
  * @route POST /auth/logout
  * @desc Logout user (client-side token removal)
  * @access Private
