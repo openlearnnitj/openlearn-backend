@@ -43,6 +43,7 @@ model User {
   // Relations
   enrollments     Enrollment[]
   sectionProgress SectionProgress[]
+  resourceProgress ResourceProgress[]
   badges          UserBadge[]
   specializations UserSpecialization[]
   auditLogs       AuditLog[]
@@ -184,6 +185,9 @@ model SectionResource {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
+  // Relations
+  progress ResourceProgress[]
+  
   @@unique([sectionId, order])
   @@map("section_resources")
 }
@@ -276,6 +280,28 @@ model SectionProgress {
   @@map("section_progress")
 }
 
+model ResourceProgress {
+  id String @id @default(cuid())
+  
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  resourceId String
+  resource   SectionResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  
+  isCompleted       Boolean   @default(false)
+  completedAt       DateTime?
+  personalNote      String?
+  markedForRevision Boolean   @default(false)
+  timeSpent         Int?      // Time spent in seconds (optional)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, resourceId])
+  @@map("resource_progress")
+}
+
 // Badges & Achievements
 model Badge {
   id          String  @id @default(cuid())
@@ -334,6 +360,8 @@ enum AuditAction {
   USER_PASSWORD_CHANGED
   USER_ENROLLED
   SECTION_COMPLETED
+  RESOURCE_COMPLETED
+  RESOURCE_MARKED_FOR_REVISION
   BADGE_EARNED
   BADGE_CREATED
   BADGE_UPDATED

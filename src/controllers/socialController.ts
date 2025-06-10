@@ -52,7 +52,7 @@ export class SocialController {
       }
 
       // Generate share text
-      const shareText = `🚀 Just completed "${section.name}" in ${section.week.league.name} league on @OpenLearnPlatform! 
+      const shareText = `🚀 Just completed "${section.name}" in ${section.week.league.name} league on @openlearn_nitj! 
 
 Making progress in my learning journey 📚
 

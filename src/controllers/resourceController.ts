@@ -176,11 +176,12 @@ export class ResourceController {
   }
 
   /**
-   * Get all resources for a specific section
+   * Get all resources for a specific section with user progress
    */
   static async getResourcesBySection(req: Request, res: Response): Promise<void> {
     try {
       const { sectionId } = req.params;
+      const currentUser = req.user as TokenPayload;
 
       // Verify the section exists
       const section = await prisma.section.findUnique({
@@ -215,6 +216,43 @@ export class ResourceController {
         },
       });
 
+      // Get user progress for these resources if user is authenticated
+      let userProgress: any[] = [];
+      if (currentUser) {
+        userProgress = await prisma.resourceProgress.findMany({
+          where: {
+            userId: currentUser.userId,
+            resourceId: {
+              in: resources.map(r => r.id),
+            },
+          },
+        });
+      }
+
+      // Format response with progress information
+      const resourcesWithProgress = resources.map(resource => {
+        const progressData = currentUser 
+          ? userProgress.find(p => p.resourceId === resource.id)
+          : null;
+
+        return {
+          id: resource.id,
+          title: resource.title,
+          url: resource.url,
+          type: resource.type,
+          order: resource.order,
+          createdAt: resource.createdAt,
+          updatedAt: resource.updatedAt,
+          progress: progressData ? {
+            isCompleted: progressData.isCompleted,
+            completedAt: progressData.completedAt,
+            personalNote: progressData.personalNote,
+            markedForRevision: progressData.markedForRevision,
+            timeSpent: progressData.timeSpent,
+          } : null,
+        };
+      });
+
       res.status(200).json({
         success: true,
         data: {
@@ -229,7 +267,7 @@ export class ResourceController {
               league: section.week.league,
             },
           },
-          resources,
+          resources: resourcesWithProgress,
         },
       });
     } catch (error) {
