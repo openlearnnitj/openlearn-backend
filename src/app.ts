@@ -12,6 +12,7 @@ import specializationRoutes from './routes/specializations';
 import weekRoutes from './routes/weeks';
 import sectionRoutes from './routes/sections';
 import resourceRoutes from './routes/resources';
+import progressRoutes from './routes/progress';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/leagues', leagueRoutes);
 app.use('/api/specializations', specializationRoutes);
 app.use('/api/weeks', weekRoutes);
 app.use('/api/sections', sectionRoutes);
+app.use('/api/progress', progressRoutes);
 app.use('/api', resourceRoutes);
 
 // 404 handler
