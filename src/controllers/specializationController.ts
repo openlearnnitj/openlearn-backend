@@ -250,7 +250,7 @@ export class SpecializationController {
    */
   static async getSpecializationById(req: Request, res: Response): Promise<void> {
     try {
-      const { specializationId } = req.params;
+      const { id: specializationId } = req.params;
 
       const specialization = await prisma.specialization.findUnique({
         where: { id: specializationId },
@@ -346,7 +346,7 @@ export class SpecializationController {
    */
   static async updateSpecialization(req: Request, res: Response): Promise<void> {
     try {
-      const { specializationId } = req.params;
+      const { id: specializationId } = req.params;
       const { name, description, leagueIds } = req.body;
       const currentUser = req.user as TokenPayload;
 
@@ -485,7 +485,7 @@ export class SpecializationController {
    */
   static async deleteSpecialization(req: Request, res: Response): Promise<void> {
     try {
-      const { specializationId } = req.params;
+      const { id: specializationId } = req.params;
       const currentUser = req.user as TokenPayload;
 
       // Check if specialization exists

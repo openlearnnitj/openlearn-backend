@@ -617,10 +617,95 @@ Retrieve a specific specialization with full details.
 **Access:** All authenticated users  
 
 ### 4. Update Specialization
-Update specialization information.
+Update specialization information and league associations.
 
 **Endpoint:** `PUT /api/specializations/:id`  
 **Access:** Chief Pathfinder+  
+**Headers:**
+```json
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <access_token>"
+}
+```
+
+**URL Parameters:**
+- `id` (string, required): Specialization ID
+
+**Request Body (all fields optional):**
+```json
+{
+  "name": "Updated FinTech Specialization",
+  "description": "Updated description for the specialization",
+  "leagueIds": ["ai_ml_league_id", "finance_league_id", "data_science_league_id"]
+}
+```
+
+**Field Descriptions:**
+- `name`: New specialization name (must be unique within cohort)
+- `description`: Updated description (can be null)
+- `leagueIds`: Array of league IDs to associate with this specialization (will replace existing associations)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "specialization_id",
+    "name": "Updated FinTech Specialization",
+    "description": "Updated description for the specialization",
+    "cohortId": "cohort_id",
+    "createdAt": "2025-06-09T22:25:52.140Z",
+    "updatedAt": "2025-06-10T15:30:00.000Z",
+    "leagues": [
+      {
+        "id": 1,
+        "specializationId": "specialization_id",
+        "leagueId": "ai_ml_league_id",
+        "order": 1,
+        "league": {
+          "id": "ai_ml_league_id",
+          "name": "AI/ML League"
+        }
+      },
+      {
+        "id": 2,
+        "specializationId": "specialization_id",
+        "leagueId": "finance_league_id",
+        "order": 2,
+        "league": {
+          "id": "finance_league_id",
+          "name": "Finance League"
+        }
+      },
+      {
+        "id": 3,
+        "specializationId": "specialization_id",
+        "leagueId": "data_science_league_id",
+        "order": 3,
+        "league": {
+          "id": "data_science_league_id",
+          "name": "Data Science League"
+        }
+      }
+    ]
+  },
+  "message": "Specialization updated successfully"
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Invalid input data
+- `404 Not Found`: Specialization not found
+- `409 Conflict`: Specialization name already exists in cohort
+- `500 Internal Server Error`: Server error
+
+**Business Rules:**
+- Specialization name must be unique within the cohort
+- When updating `leagueIds`, all existing league associations are replaced
+- League order is automatically assigned based on array order (1, 2, 3...)
+- All specified leagues must exist
+- Changes are logged in audit trail  
 
 ### 5. Delete Specialization
 Delete a specialization.

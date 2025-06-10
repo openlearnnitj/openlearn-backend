@@ -14,6 +14,7 @@ import sectionRoutes from './routes/sections';
 import resourceRoutes from './routes/resources';
 import progressRoutes from './routes/progress';
 import analyticsRoutes from './routes/analytics';
+import socialRoutes from './routes/social';
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/sections', sectionRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api', resourceRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/social', socialRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
