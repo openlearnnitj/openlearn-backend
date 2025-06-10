@@ -5,15 +5,15 @@ import DatabaseConnection from './config/database';
 const startServer = async () => {
   try {
     // Test database connection
-    console.log('🔄 Testing database connection...');
+    console.log('Testing database connection...');
     await DatabaseConnection.getInstance().$connect();
-    console.log('✅ Database connected successfully');
+    console.log('Database connected successfully');
 
     // Start the server
     const server = app.listen(config.port, () => {
-      console.log(`🚀 OpenLearn API server running on port ${config.port}`);
-      console.log(`📱 Environment: ${config.nodeEnv}`);
-      console.log(`🔗 Health check: http://localhost:${config.port}/health`);
+      console.log(`OpenLearn API server running on port ${config.port}`);
+      console.log(`Environment: ${config.nodeEnv}`);
+      console.log(`Health check: http://localhost:${config.port}/health`);
     });
 
     // Graceful shutdown
@@ -21,7 +21,7 @@ const startServer = async () => {
       console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
       
       server.close(async () => {
-        console.log('🔄 HTTP server closed');
+        console.log('HTTP server closed');
         
         try {
           await DatabaseConnection.disconnect();

@@ -13,7 +13,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { TokenPayload } from '../types';
 import { ValidationUtils } from '../utils/validation';
-import { UserRole, AuditAction } from '@prisma/client';
+import { AuditAction } from '@prisma/client';
 
 export class SectionController {
   /**

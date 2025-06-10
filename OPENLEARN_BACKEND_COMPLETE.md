@@ -55,10 +55,22 @@ OpenLearn Backend Architecture
 
 ### **4. Progress Tracking System ✅**
 - **Individual progress tracking** across all learning paths
-- **Section completion** with timestamp tracking
-- **League progression** monitoring
+- **Section-level completion** with timestamp tracking
+- **🆕 Resource-level progress** - granular tracking for videos, articles, blogs
+- **Personal notes system** for both sections and individual resources
+- **Revision marking** for spaced repetition learning
+- **Time tracking** on individual resources for analytics
+- **League progression** monitoring with detailed statistics
 - **Enrollment management** with automatic progress initialization
 - **Comprehensive progress analytics** and reporting
+
+### **📱 NEW: Resource Progress Features**
+- **Individual resource completion** - Mark videos, articles, blogs as completed
+- **Time tracking per resource** - Track learning time for analytics
+- **Personal notes on resources** - Add thoughts and insights to any resource
+- **Revision flagging** - Mark difficult content for spaced repetition
+- **Progress statistics** - Detailed completion percentages and time analytics
+- **Granular learning control** - Most detailed level of progress tracking available
 
 ### **5. Assignment Management System ✅**
 - **Link-based assignment submissions** (GitHub repos, live URLs, descriptions)
@@ -120,7 +132,8 @@ OpenLearn Backend Architecture
 - **Resource** - All content types (videos, articles, etc.)
 
 ### **Learning Models**
-- **UserProgress** - Individual progress tracking
+- **UserProgress** - Individual section progress tracking
+- **ResourceProgress** - **NEW:** Granular resource-level progress tracking
 - **Assignment & Submission** - Assignment management
 - **Badge & UserBadge** - Achievement system
 - **Specialization** - Multi-league learning paths
@@ -133,9 +146,10 @@ OpenLearn Backend Architecture
 
 ## 🚀 **API ENDPOINTS SUMMARY**
 
-### **User-Facing Endpoints: 22 Routes**
+### **User-Facing Endpoints: 27 Routes**
 - **Course Discovery:** 6 endpoints for browsing and enrollment
 - **Learning Journey:** 8 endpoints for progress and content access
+- **Resource Progress Tracking:** 5 endpoints for granular resource interaction
 - **Assignment System:** 4 endpoints for submissions and feedback
 - **Social Features:** 2 endpoints for achievement sharing
 - **Profile Management:** 2 endpoints for account management
@@ -168,6 +182,7 @@ OpenLearn Backend Architecture
 9. **RESOURCE_MANAGEMENT_API_DOCUMENTATION.md** - Content management guide
 10. **SECTION_MANAGEMENT_API_DOCUMENTATION.md** - Section organization guide
 11. **WEEK_MANAGEMENT_API_DOCUMENTATION.md** - Week structure guide
+12. **🆕 RESOURCE_PROGRESS_API_DOCUMENTATION.md** - Granular resource progress tracking guide
 
 ### **Each Documentation Includes:**
 - ✅ Complete endpoint descriptions
@@ -276,10 +291,11 @@ OpenLearn Backend Architecture
 
 ### **What's Implemented:**
 ✅ **All 10 major backend systems** fully operational  
-✅ **22 user-facing endpoints** with complete functionality  
+✅ **27 user-facing endpoints** with complete functionality (updated from 22)  
 ✅ **50+ administrative endpoints** for full platform management  
-✅ **15+ database models** with proper relationships  
+✅ **16+ database models** with proper relationships (including ResourceProgress)  
 ✅ **Comprehensive API documentation** for frontend developers  
+✅ **🆕 Granular resource progress tracking** - most detailed learning analytics available  
 ✅ **Role-based security system** supporting your organizational hierarchy  
 ✅ **Docker integration** for easy development and deployment  
 ✅ **TypeScript type safety** throughout the entire application  

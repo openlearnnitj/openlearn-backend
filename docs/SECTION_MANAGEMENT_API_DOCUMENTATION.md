@@ -269,11 +269,33 @@ Retrieve a specific section with user progress information.
     "resources": [
       {
         "id": "resource_id",
-        "name": "ML Fundamentals Video",
+        "title": "ML Fundamentals Video",
         "description": "Introduction video covering ML basics",
         "type": "VIDEO",
         "url": "https://example.com/video",
-        "order": 1
+        "order": 1,
+        "progress": {
+          "isCompleted": true,
+          "completedAt": "2024-01-15T11:30:00Z",
+          "personalNote": "Great introduction to ML concepts",
+          "markedForRevision": false,
+          "timeSpent": 3600
+        }
+      },
+      {
+        "id": "resource_id_2",
+        "title": "ML Types Article",
+        "description": "Comprehensive article on supervised vs unsupervised learning",
+        "type": "ARTICLE",
+        "url": "https://example.com/article",
+        "order": 2,
+        "progress": {
+          "isCompleted": false,
+          "completedAt": null,
+          "personalNote": "Need to review this again",
+          "markedForRevision": true,
+          "timeSpent": 1800
+        }
       }
     ],
     "userProgress": {
@@ -287,10 +309,17 @@ Retrieve a specific section with user progress information.
 ```
 
 **Progress Information:**
-- `userProgress.isCompleted`: Whether the user has completed this section
-- `userProgress.completedAt`: Timestamp when section was completed (null if not completed)
+- `userProgress.isCompleted`: Whether the user has completed this entire section
+- `userProgress.completedAt`: Timestamp when section was completed (null if not completed)  
 - `userProgress.personalNote`: User's personal notes for this section
 - `userProgress.markedForRevision`: Whether user marked this section for revision
+
+**Resource Progress Information:**
+- `resources[].progress.isCompleted`: Whether the specific resource is completed
+- `resources[].progress.completedAt`: When the resource was completed
+- `resources[].progress.personalNote`: User's notes for this specific resource
+- `resources[].progress.markedForRevision`: Whether resource is marked for revision
+- `resources[].progress.timeSpent`: Time spent on this resource in seconds
 
 ### 5. Update Section
 Update section information.

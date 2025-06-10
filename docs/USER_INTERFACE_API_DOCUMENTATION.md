@@ -183,10 +183,126 @@ Authorization: Bearer <access_token>
 
 ## ✅ **PROGRESS TRACKING**
 
-### 11. Mark Section Complete
+### 11. Get Section Resources with Individual Progress
+**Endpoint:** `GET /api/resource-progress/section/:sectionId/resources`  
+**Access:** All authenticated users  
+**Description:** View all resources in a section with individual progress tracking
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "section": {
+      "id": "section_id",
+      "name": "Introduction to Machine Learning",
+      "description": "Basic ML concepts and applications",
+      "order": 1,
+      "week": {
+        "id": "week_id",
+        "name": "Week 1: ML Fundamentals",
+        "league": {
+          "id": "league_id",
+          "name": "AI/ML"
+        }
+      }
+    },
+    "resources": [
+      {
+        "id": "resource_1",
+        "title": "ML Overview Video",
+        "url": "https://example.com/ml-video",
+        "type": "VIDEO",
+        "order": 1,
+        "progress": {
+          "isCompleted": true,
+          "completedAt": "2024-01-15T11:30:00Z",
+          "personalNote": "Great introduction to ML concepts",
+          "markedForRevision": false,
+          "timeSpent": 3600
+        }
+      },
+      {
+        "id": "resource_2",
+        "title": "ML Types Article",
+        "url": "https://example.com/ml-types",
+        "type": "ARTICLE",
+        "order": 2,
+        "progress": {
+          "isCompleted": false,
+          "completedAt": null,
+          "personalNote": null,
+          "markedForRevision": true,
+          "timeSpent": null
+        }
+      }
+    ],
+    "statistics": {
+      "totalResources": 2,
+      "completedResources": 1,
+      "markedForRevision": 1,
+      "completionPercentage": 50,
+      "totalTimeSpent": 3600
+    }
+  }
+}
+```
+
+### 12. Mark Individual Resource as Completed
+**Endpoint:** `POST /api/resource-progress/:resourceId/complete`  
+**Access:** All authenticated users  
+**Description:** Mark an individual resource (video, article, etc.) as completed with time tracking
+
+**Request Body:**
+```json
+{
+  "timeSpent": 3600,
+  "personalNote": "Excellent overview of machine learning fundamentals. Key takeaway: supervised vs unsupervised learning distinction."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "progress_id",
+    "isCompleted": true,
+    "completedAt": "2024-01-15T11:30:00Z",
+    "personalNote": "Excellent overview of machine learning fundamentals.",
+    "markedForRevision": false,
+    "timeSpent": 3600
+  },
+  "message": "Resource \"ML Overview Video\" marked as completed!"
+}
+```
+
+### 13. Mark Resource for Revision
+**Endpoint:** `POST /api/resource-progress/:resourceId/revision`  
+**Access:** All authenticated users  
+**Description:** Mark a resource for later review (spaced repetition learning)
+
+**Request Body:**
+```json
+{
+  "personalNote": "Need to review the gradient descent section again. Math concepts were challenging."
+}
+```
+
+### 14. Update Resource Notes
+**Endpoint:** `PUT /api/resource-progress/:resourceId/note`  
+**Access:** All authenticated users  
+**Description:** Add or update personal notes for a specific resource
+
+### 15. Get Resources Marked for Revision
+**Endpoint:** `GET /api/resource-progress/revision/list`  
+**Access:** All authenticated users  
+**Description:** Get all resources you've marked for revision across all courses
+
+### 16. Mark Section Complete
 **Endpoint:** `POST /api/progress/sections/:sectionId/complete`  
 **Access:** All authenticated users  
-**Description:** Mark a section as completed and add personal notes
+**Description:** Mark an entire section as completed (after completing individual resources)
 
 **Request Body:**
 ```json
@@ -196,18 +312,10 @@ Authorization: Bearer <access_token>
 }
 ```
 
-### 12. Update Section Notes
+### 17. Update Section Notes
 **Endpoint:** `PUT /api/progress/sections/:sectionId`  
 **Access:** All authenticated users  
-**Description:** Update personal notes or revision flag without marking complete
-
-**Request Body:**
-```json
-{
-  "personalNote": "Updated notes after second review",
-  "markedForRevision": true
-}
-```
+**Description:** Update personal notes or revision flag for sections
 
 ### 13. View League Progress
 **Endpoint:** `GET /api/progress/leagues/:leagueId`  
@@ -488,20 +596,22 @@ const changePassword = async (passwordData) => {
 
 ## 📋 **SUMMARY OF USER-FACING ENDPOINTS**
 
-The OpenLearn platform provides **22 comprehensive user-facing endpoints** organized into these categories:
+The OpenLearn platform provides **27 comprehensive user-facing endpoints** organized into these categories:
 
 ### **Course Discovery & Enrollment (6 endpoints)**
 - Browse cohorts, leagues, and specializations
 - Enroll in learning paths
 - View detailed curriculum information
 
-### **Learning Journey & Progress (8 endpoints)**
+### **Learning Journey & Progress (13 endpoints)**
 - Track progress across leagues and weeks
-- Complete sections and earn badges
-- View personal learning dashboard
+- Complete sections and individual resources
+- Add personal notes and mark items for revision
+- View comprehensive learning analytics
+- Granular resource-level progress tracking
 
 ### **Content Interaction (4 endpoints)**
-- Access learning resources
+- Access learning resources with progress tracking
 - Submit assignments (link-based)
 - View assignment feedback
 
@@ -513,4 +623,12 @@ The OpenLearn platform provides **22 comprehensive user-facing endpoints** organ
 - Update personal information
 - Change password securely
 
-**Total User Endpoints: 22**
+**Total User Endpoints: 27**
+
+### **🎯 New Resource Progress Features:**
+- ✅ **Individual Resource Tracking** - Mark videos, articles, blogs as completed
+- ✅ **Time Tracking** - Track time spent on each resource 
+- ✅ **Personal Notes** - Add notes to any resource for future reference
+- ✅ **Revision Marking** - Flag difficult content for spaced repetition
+- ✅ **Progress Statistics** - Detailed completion percentages and analytics
+- ✅ **Granular Learning** - Track progress at the most detailed level
