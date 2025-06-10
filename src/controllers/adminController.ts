@@ -168,6 +168,108 @@ export class AdminController {
   }
 
   /**
+   * Approve a pending user (alternative method for POST /approve-user)
+   */
+  static async approveUserAlternative(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId, role } = req.body;
+      const currentUser = req.user as TokenPayload;
+
+      // Validate required fields
+      if (!userId) {
+        res.status(400).json({
+          success: false,
+          error: 'User ID is required',
+        });
+        return;
+      }
+
+      // Validate role if provided
+      const validRoles = Object.values(UserRole);
+      if (role && !validRoles.includes(role)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid role specified',
+        });
+        return;
+      }
+
+      // Find the user to approve
+      const userToApprove = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!userToApprove) {
+        res.status(404).json({
+          success: false,
+          error: 'User not found',
+        });
+        return;
+      }
+
+      if (userToApprove.status !== UserStatus.PENDING) {
+        res.status(400).json({
+          success: false,
+          error: 'User is not pending approval',
+        });
+        return;
+      }
+
+      // Update user status and role
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          status: UserStatus.ACTIVE,
+          role: role || userToApprove.role, // Keep existing role if not specified
+          approvedById: currentUser.userId,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          approvedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          userId: currentUser.userId,
+          action: 'USER_APPROVED',
+          description: `Approved user ${updatedUser.email} with role ${updatedUser.role}`,
+          metadata: {
+            approvedUserId: userId,
+            newRole: updatedUser.role,
+            previousStatus: UserStatus.PENDING,
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: updatedUser,
+        message: 'User approved successfully',
+      });
+    } catch (error) {
+      console.error('Approve user alternative error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
    * Update user role
    */
   static async updateUserRole(req: Request, res: Response): Promise<void> {
@@ -246,6 +348,100 @@ export class AdminController {
       });
     } catch (error) {
       console.error('Update user role error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * Update user role (alternative method for PUT /update-role)
+   */
+  static async updateUserRoleAlternative(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId, newRole } = req.body;
+      const currentUser = req.user as TokenPayload;
+
+      // Validate required fields
+      if (!userId || !newRole) {
+        res.status(400).json({
+          success: false,
+          error: 'User ID and new role are required',
+        });
+        return;
+      }
+
+      // Validate role
+      const validRoles = Object.values(UserRole);
+      if (!validRoles.includes(newRole)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid role specified',
+        });
+        return;
+      }
+
+      // Find the user
+      const userToUpdate = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!userToUpdate) {
+        res.status(404).json({
+          success: false,
+          error: 'User not found',
+        });
+        return;
+      }
+
+      // Prevent role changes if user is suspended
+      if (userToUpdate.status === UserStatus.SUSPENDED) {
+        res.status(400).json({
+          success: false,
+          error: 'Cannot update role of suspended user',
+        });
+        return;
+      }
+
+      const previousRole = userToUpdate.role;
+
+      // Update user role
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { role: newRole },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          userId: currentUser.userId,
+          action: 'USER_ROLE_CHANGED',
+          description: `Changed user ${updatedUser.email} role from ${previousRole} to ${newRole}`,
+          metadata: {
+            targetUserId: userId,
+            previousRole,
+            newRole: newRole,
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: updatedUser,
+        message: 'User role updated successfully',
+      });
+    } catch (error) {
+      console.error('Update user role alternative error:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error',
@@ -339,6 +535,99 @@ export class AdminController {
   }
 
   /**
+   * Update user status (alternative method for PUT /update-status)
+   */
+  static async updateUserStatusAlternative(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId, newStatus } = req.body;
+      const currentUser = req.user as TokenPayload;
+
+      // Validate required fields
+      if (!userId || !newStatus) {
+        res.status(400).json({
+          success: false,
+          error: 'User ID and new status are required',
+        });
+        return;
+      }
+
+      // Validate status
+      if (newStatus !== UserStatus.ACTIVE && newStatus !== UserStatus.SUSPENDED) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid status. Only ACTIVE and SUSPENDED are allowed',
+        });
+        return;
+      }
+
+      // Find the user
+      const userToUpdate = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!userToUpdate) {
+        res.status(404).json({
+          success: false,
+          error: 'User not found',
+        });
+        return;
+      }
+
+      // Prevent self-suspension
+      if (userId === currentUser.userId && newStatus === UserStatus.SUSPENDED) {
+        res.status(400).json({
+          success: false,
+          error: 'Cannot suspend your own account',
+        });
+        return;
+      }
+
+      const previousStatus = userToUpdate.status;
+
+      // Update user status
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { status: newStatus },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          userId: currentUser.userId,
+          action: 'USER_STATUS_CHANGED',
+          description: `Changed user ${updatedUser.email} status from ${previousStatus} to ${newStatus}`,
+          metadata: {
+            targetUserId: userId,
+            previousStatus,
+            newStatus: newStatus,
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: updatedUser,
+        message: `User ${newStatus === UserStatus.SUSPENDED ? 'suspended' : 'activated'} successfully`,
+      });
+    } catch (error) {
+      console.error('Update user status alternative error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
    * Get user details by ID
    */
   static async getUserById(req: Request, res: Response): Promise<void> {
@@ -411,6 +700,67 @@ export class AdminController {
       });
     } catch (error) {
       console.error('Get user by ID error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * Get pending users specifically
+   */
+  static async getPendingUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+      
+      const skip = (Number(page) - 1) * Number(limit);
+      const take = Number(limit);
+
+      const [users, total] = await Promise.all([
+        prisma.user.findMany({
+          where: {
+            status: UserStatus.PENDING,
+          },
+          skip,
+          take,
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            twitterHandle: true,
+            linkedinUrl: true,
+            githubUsername: true,
+            kaggleUsername: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        }),
+        prisma.user.count({ 
+          where: { status: UserStatus.PENDING } 
+        }),
+      ]);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          users,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            totalPages: Math.ceil(total / Number(limit)),
+          },
+        },
+        message: 'Pending users retrieved successfully',
+      });
+    } catch (error) {
+      console.error('Get pending users error:', error);
       res.status(500).json({
         success: false,
         error: 'Internal server error',

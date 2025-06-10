@@ -21,6 +21,15 @@ router.use(AuthMiddleware.requireRole(UserRole.GRAND_PATHFINDER, UserRole.CHIEF_
 router.get('/users', AdminController.getUsers);
 
 /**
+ * @route GET /admin/pending-users
+ * @desc Get all pending users awaiting approval
+ * @access Grand Pathfinder, Chief Pathfinder
+ * @query page - Page number (default: 1)
+ * @query limit - Items per page (default: 10)
+ */
+router.get('/pending-users', AdminController.getPendingUsers);
+
+/**
  * @route GET /admin/users/:userId
  * @desc Get detailed user information by ID
  * @access Grand Pathfinder, Chief Pathfinder
@@ -34,6 +43,33 @@ router.get('/users/:userId', AdminController.getUserById);
  * @body role? - Optional role to assign (defaults to current role)
  */
 router.put('/users/:userId/approve', AdminController.approveUser);
+
+/**
+ * @route POST /admin/approve-user
+ * @desc Approve a pending user (alternative endpoint matching documentation)
+ * @access Grand Pathfinder, Chief Pathfinder
+ * @body userId - User ID to approve
+ * @body role? - Optional role to assign (defaults to current role)
+ */
+router.post('/approve-user', AdminController.approveUserAlternative);
+
+/**
+ * @route POST /admin/update-role
+ * @desc Update user role (alternative endpoint matching documentation)
+ * @access Grand Pathfinder, Chief Pathfinder
+ * @body userId - User ID to update
+ * @body newRole - New role to assign
+ */
+router.put('/update-role', AdminController.updateUserRoleAlternative);
+
+/**
+ * @route PUT /admin/update-status
+ * @desc Update user status (alternative endpoint matching documentation)
+ * @access Grand Pathfinder, Chief Pathfinder
+ * @body userId - User ID to update
+ * @body newStatus - New status to assign
+ */
+router.put('/update-status', AdminController.updateUserStatusAlternative);
 
 /**
  * @route PUT /admin/users/:userId/role
