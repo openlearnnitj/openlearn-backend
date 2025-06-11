@@ -357,4 +357,183 @@ export class AssignmentController {
       });
     }
   }
+
+  /**
+   * Update assignment (Pathfinder+ only)
+   */
+  static async updateAssignment(req: Request, res: Response): Promise<void> {
+    try {
+      const { assignmentId } = req.params;
+      const { title, description, dueDate } = req.body;
+      const currentUser = req.user as TokenPayload;
+
+      // Check if assignment exists
+      const existingAssignment = await prisma.assignment.findUnique({
+        where: { id: assignmentId },
+        include: {
+          league: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!existingAssignment) {
+        res.status(404).json({
+          success: false,
+          error: 'Assignment not found',
+        });
+        return;
+      }
+
+      // Build update data
+      const updateData: any = {};
+      if (title !== undefined) {
+        if (!title.trim()) {
+          res.status(400).json({
+            success: false,
+            error: 'Title cannot be empty',
+          });
+          return;
+        }
+        updateData.title = ValidationUtils.sanitizeString(title);
+      }
+      if (description !== undefined) {
+        if (!description.trim()) {
+          res.status(400).json({
+            success: false,
+            error: 'Description cannot be empty',
+          });
+          return;
+        }
+        updateData.description = ValidationUtils.sanitizeString(description);
+      }
+      if (dueDate !== undefined) {
+        updateData.dueDate = dueDate ? new Date(dueDate) : null;
+      }
+
+      // Update the assignment
+      const updatedAssignment = await prisma.assignment.update({
+        where: { id: assignmentId },
+        data: updateData,
+        include: {
+          league: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          _count: {
+            select: {
+              submissions: true,
+            },
+          },
+        },
+      });
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          userId: currentUser.userId,
+          action: AuditAction.ASSIGNMENT_SUBMITTED, // Using existing action as closest match
+          description: `Updated assignment "${updatedAssignment.title}" for league "${updatedAssignment.league.name}"`,
+          metadata: {
+            assignmentId: assignmentId,
+            changes: updateData,
+            leagueId: existingAssignment.leagueId,
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        data: updatedAssignment,
+        message: 'Assignment updated successfully',
+      });
+    } catch (error) {
+      console.error('Update assignment error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  }
+
+  /**
+   * Delete assignment (Pathfinder+ only)
+   */
+  static async deleteAssignment(req: Request, res: Response): Promise<void> {
+    try {
+      const { assignmentId } = req.params;
+      const currentUser = req.user as TokenPayload;
+
+      // Check if assignment exists and get submission count
+      const existingAssignment = await prisma.assignment.findUnique({
+        where: { id: assignmentId },
+        include: {
+          league: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          _count: {
+            select: {
+              submissions: true,
+            },
+          },
+        },
+      });
+
+      if (!existingAssignment) {
+        res.status(404).json({
+          success: false,
+          error: 'Assignment not found',
+        });
+        return;
+      }
+
+      // Check if assignment has submissions
+      if (existingAssignment._count.submissions > 0) {
+        res.status(400).json({
+          success: false,
+          error: `Cannot delete assignment with existing submissions. This assignment has ${existingAssignment._count.submissions} submission(s).`,
+        });
+        return;
+      }
+
+      // Delete the assignment
+      await prisma.assignment.delete({
+        where: { id: assignmentId },
+      });
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          userId: currentUser.userId,
+          action: AuditAction.ASSIGNMENT_SUBMITTED, // Using existing action as closest match
+          description: `Deleted assignment "${existingAssignment.title}" from league "${existingAssignment.league.name}"`,
+          metadata: {
+            assignmentId: assignmentId,
+            assignmentTitle: existingAssignment.title,
+            leagueId: existingAssignment.leagueId,
+            leagueName: existingAssignment.league.name,
+          },
+        },
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Assignment "${existingAssignment.title}" deleted successfully`,
+      });
+    } catch (error) {
+      console.error('Delete assignment error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+      });
+    }
+  }
 }

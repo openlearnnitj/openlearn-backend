@@ -56,4 +56,24 @@ router.get('/submissions', AssignmentController.getUserSubmissions);
  */
 router.get('/my-submissions', AssignmentController.getUserSubmissions);
 
+/**
+ * @route PUT /api/assignments/:assignmentId
+ * @desc Update an assignment
+ * @access Pathfinder+
+ */
+router.put('/:assignmentId', 
+  AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  AssignmentController.updateAssignment
+);
+
+/**
+ * @route DELETE /api/assignments/:assignmentId
+ * @desc Delete an assignment (only if no submissions exist)
+ * @access Pathfinder+
+ */
+router.delete('/:assignmentId', 
+  AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  AssignmentController.deleteAssignment
+);
+
 export default router;

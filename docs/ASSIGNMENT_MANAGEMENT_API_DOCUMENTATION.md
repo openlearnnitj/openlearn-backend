@@ -157,6 +157,81 @@ Retrieve assignment for a specific league with all submissions.
 
 ---
 
+### 4. Update Assignment
+Update an existing assignment (title, description, or due date).
+
+**Endpoint:** `PUT /api/admin/assignments/:assignmentId`  
+**Access:** Chief Pathfinder+  
+**Headers:**
+```json
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <access_token>"
+}
+```
+
+**Request Body:** (All fields are optional)
+```json
+{
+  "title": "Updated AI/ML Final Project",
+  "description": "Build an advanced machine learning model...",
+  "dueDate": "2025-08-15T23:59:59.000Z"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "assignment_id",
+    "title": "Updated AI/ML Final Project",
+    "description": "Build an advanced machine learning model...",
+    "dueDate": "2025-08-15T23:59:59.000Z",
+    "league": {
+      "id": "league_id",
+      "name": "AI/ML"
+    },
+    "_count": {
+      "submissions": 15
+    },
+    "createdAt": "2025-06-10T10:00:00.000Z",
+    "updatedAt": "2025-06-12T15:30:00.000Z"
+  },
+  "message": "Assignment updated successfully"
+}
+```
+
+### 5. Delete Assignment
+Delete an assignment (only allowed if no submissions exist).
+
+**Endpoint:** `DELETE /api/admin/assignments/:assignmentId`  
+**Access:** Chief Pathfinder+  
+**Headers:**
+```json
+{
+  "Authorization": "Bearer <access_token>"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Assignment 'AI/ML Final Project' deleted successfully"
+}
+```
+
+**Error Response (if submissions exist):**
+```json
+{
+  "success": false,
+  "error": "Cannot delete assignment with existing submissions. This assignment has 15 submission(s)."
+}
+```
+
+---
+
 ## Student Assignment Endpoints
 
 ### 4. Submit Assignment
@@ -357,6 +432,26 @@ curl -X POST http://localhost:3001/api/admin/assignments/cm2z1ghi789jkl012/submi
 ```bash
 # Get all assignments (admin view)
 curl -X GET "http://localhost:3001/api/admin/assignments?page=1&limit=10" \
+  -H "Authorization: Bearer <admin_token>"
+```
+
+### Test Update Assignment
+```bash
+# Update assignment title and description
+curl -X PUT http://localhost:3001/api/admin/assignments/cm2z1abc123def456 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <admin_token>" \
+  -d '{
+    "title": "Updated AI/ML Final Project",
+    "description": "Build an advanced machine learning model with deployment",
+    "dueDate": "2025-08-15T23:59:59.000Z"
+  }'
+```
+
+### Test Delete Assignment
+```bash
+# Delete assignment (only works if no submissions exist)
+curl -X DELETE http://localhost:3001/api/admin/assignments/cm2z1abc123def456 \
   -H "Authorization: Bearer <admin_token>"
 ```
 

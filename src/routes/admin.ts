@@ -109,4 +109,21 @@ router.get('/assignments', AssignmentController.getAllAssignments);
  */
 router.get('/assignments/league/:leagueId', AssignmentController.getAssignmentByLeague);
 
+/**
+ * @route PUT /admin/assignments/:assignmentId
+ * @desc Update an assignment
+ * @access Grand Pathfinder, Chief Pathfinder
+ * @body title? - Optional assignment title
+ * @body description? - Optional assignment description
+ * @body dueDate? - Optional due date
+ */
+router.put('/assignments/:assignmentId', AssignmentController.updateAssignment);
+
+/**
+ * @route DELETE /admin/assignments/:assignmentId
+ * @desc Delete an assignment (only if no submissions exist)
+ * @access Grand Pathfinder, Chief Pathfinder
+ */
+router.delete('/assignments/:assignmentId', AssignmentController.deleteAssignment);
+
 export default router;
