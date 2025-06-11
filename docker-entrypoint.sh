@@ -32,30 +32,7 @@ validate_environment() {
     echo "✅ Environment validation passed"
 }
 
-# ========================================
-# DATABASE CONNECTION & HEALTH CHECK
-# ========================================
-wait_for_database() {
-    echo "🔗 Waiting for PostgreSQL database connection..."
-    
-    local max_attempts=30
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        if echo "SELECT 1;" | npx prisma db execute --stdin 2>/dev/null; then
-            echo "✅ Database connection established (attempt $attempt)"
-            return 0
-        fi
-        
-        echo "Database not ready yet (attempt $attempt/$max_attempts), waiting 2 seconds..."
-        sleep 2
-        attempt=$((attempt + 1))
-    done
-    
-    echo "❌ Database connection failed after $max_attempts attempts"
-    echo "🔧 Check your DATABASE_URL configuration in Render"
-    exit 1
-}
+
 
 # ========================================
 # DATABASE MIGRATIONS
@@ -134,9 +111,6 @@ main() {
     
     # Step 1: Validate environment
     validate_environment
-    
-    # Step 2: Wait for database availability
-    wait_for_database
     
     # Step 3: Run database migrations
     run_migrations
