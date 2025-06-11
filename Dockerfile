@@ -1,6 +1,9 @@
 # Use Node.js LTS version as base image
 FROM node:18-alpine AS base
 
+# Install bash and other build dependencies
+RUN apk add --no-cache bash curl git
+
 # Set working directory
 WORKDIR /app
 
@@ -13,26 +16,17 @@ RUN npm ci && npm cache clean --force
 # Copy source code
 COPY . .
 
-RUN bash ./render-build.sh
-
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build TypeScript
-RUN npm run build
-
-# Clean up dev dependencies after build
-RUN npm ci --only=production && npm cache clean --force
+# Make build script executable and run it
+RUN chmod +x ./render-build.sh && bash ./render-build.sh
 
 # Production stage
 FROM node:18-alpine AS production
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install runtime dependencies
+RUN apk add --no-cache dumb-init curl
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S openlearn -u 1001
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && adduser -S openlearn -u 1001
 
 # Set working directory
 WORKDIR /app
@@ -49,10 +43,10 @@ USER openlearn
 # Expose port (Render will use PORT environment variable)
 EXPOSE $PORT
 
-# Health check
+# Health check for container monitoring
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node dist/health.js
+  CMD curl -f http://localhost:$PORT/health || exit 1
 
-# Start application
+# Start application with proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/server.js"]
