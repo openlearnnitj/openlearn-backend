@@ -70,6 +70,33 @@ seed_admin_user() {
 }
 
 # ========================================
+# PRISMA ENGINE DIAGNOSTICS
+# ========================================
+check_prisma_engines() {
+    echo "🔧 Checking Prisma engine compatibility..."
+    
+    # Check if Prisma client is accessible
+    if ! node -e "require('@prisma/client')" 2>/dev/null; then
+        echo "❌ Prisma client not accessible"
+        exit 1
+    fi
+    
+    # Check OpenSSL version
+    echo "🔒 OpenSSL Version: $(openssl version)"
+    
+    # Check Prisma binary engines
+    if [ -d "node_modules/.prisma/client" ]; then
+        echo "✅ Prisma client directory found"
+        ls -la node_modules/.prisma/client/
+    else
+        echo "⚠️ Prisma client directory not found, regenerating..."
+        npx prisma generate --no-hints
+    fi
+    
+    echo "✅ Prisma engine checks completed"
+}
+
+# ========================================
 # SYSTEM HEALTH VERIFICATION
 # ========================================
 verify_system_health() {
@@ -111,6 +138,7 @@ main() {
     
     # Step 1: Validate environment
     validate_environment
+    check_prisma_engines
     
     # Step 3: Run database migrations
     run_migrations

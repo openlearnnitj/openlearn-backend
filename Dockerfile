@@ -4,7 +4,16 @@
 FROM node:18-alpine AS builder
 
 # Install build dependencies needed for compilation
-RUN apk add --no-cache bash curl git python3 make g++
+RUN apk add --no-cache \
+    bash \
+    curl \
+    git \
+    python3 \
+    make \
+    g++ \
+    openssl \
+    openssl-dev \
+    libc6-compat
 
 # Set working directory
 WORKDIR /app
@@ -58,7 +67,8 @@ RUN apk add --no-cache \
     dumb-init \
     curl \
     bash \
-    postgresql-client \
+    openssl \
+    libc6-compat \
     && echo "✅ Runtime dependencies installed"
 
 # Create non-root user for security (OpenLearn security best practice)
