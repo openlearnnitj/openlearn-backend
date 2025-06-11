@@ -120,6 +120,30 @@ verify_system_health() {
     echo "✅ System health verification passed"
 }
 
+test_database_connection() {
+    echo "🔗 Testing database connection..."
+    
+    # Simple connection test using Prisma
+    if node -e "
+        const { PrismaClient } = require('@prisma/client');
+        const prisma = new PrismaClient();
+        prisma.\$connect()
+          .then(() => {
+            console.log('✅ Database connection successful');
+            return prisma.\$disconnect();
+          })
+          .catch((err) => {
+            console.error('❌ Database connection failed:', err.message);
+            process.exit(1);
+          });
+    "; then
+        echo "✅ Database is accessible and ready"
+    else
+        echo "❌ Database connection test failed"
+        exit 1
+    fi
+}
+
 # ========================================
 # MAIN INITIALIZATION SEQUENCE
 # ========================================
@@ -130,9 +154,9 @@ main() {
     echo "   Working Directory: $(pwd)"
     echo "   User: $(whoami)"
     echo "   Environment Variables:"
-    echo "     - DATABASE_URL: ${DATABASE_URL:+✅ Configured}${DATABASE_URL:-❌ Missing}"
-    echo "     - JWT_SECRET: ${JWT_SECRET:+✅ Configured}${JWT_SECRET:-❌ Missing}"
-    echo "     - ADMIN_EMAIL: ${ADMIN_EMAIL:+✅ Set}${ADMIN_EMAIL:-⚠️ Using default}"
+    echo "     - DATABASE_URL: ${DATABASE_URL:+✅ Configured} ${DATABASE_URL:-❌ Missing}"
+    echo "     - JWT_SECRET: ${JWT_SECRET:+✅ Configured} ${JWT_SECRET:-❌ Missing}"
+    echo "     - ADMIN_EMAIL: ${ADMIN_EMAIL:+✅ Set} ${ADMIN_EMAIL:-⚠️ Using default}"
     echo "     - NODE_ENV: ${NODE_ENV:-development}"
     echo "     - PORT: ${PORT:-3000}"
     
@@ -141,7 +165,8 @@ main() {
     check_prisma_engines
     
     # Step 3: Run database migrations
-    run_migrations
+    # run_migrations
+    test_database_connection
     
     # Step 4: Seed admin user
     seed_admin_user
