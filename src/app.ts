@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import config from './config/environment';
+// import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
+// import { logger } from './config/logger';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -22,16 +24,16 @@ import leaderboardRoutes from './routes/leaderboard';
 
 const app = express();
 
-// Security middleware
 app.use(helmet());
 
-// CORS middleware - Relaxed for testing
-app.use(cors({
-  origin: true, // Allow all origins during testing
+const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -73,13 +75,21 @@ app.use('*', (req, res) => {
 });
 
 // Global error handler
+// app.use(errorLogger);
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Global error handler:', error);
+  // Log error details
+  console.error('Unhandled error:', {
+    message: error.message,
+    stack: config.isDevelopment ? error.stack : undefined,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+  });
   
   res.status(error.status || 500).json({
     success: false,
-    error: error.message || 'Internal Server Error',
-    ...(config.nodeEnv === 'development' && { stack: error.stack }),
+    error: config.isProduction ? 'Internal Server Error' : error.message,
+    ...(config.isDevelopment && { stack: error.stack }),
   });
 });
 

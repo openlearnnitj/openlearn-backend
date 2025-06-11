@@ -44,8 +44,8 @@ COPY --from=base --chown=openlearn:nodejs /app/prisma ./prisma
 # Switch to non-root user
 USER openlearn
 
-# Expose port
-EXPOSE 3000
+# Expose port (Render will use PORT environment variable)
+EXPOSE $PORT
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

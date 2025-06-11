@@ -1,0 +1,45 @@
+# Render Configuration for OpenLearn Backend
+# This file documents the Render service configuration
+
+services:
+  - type: web
+    name: openlearn-backend
+    env: node
+    region: oregon # or your preferred region
+    plan: starter # or standard/pro based on your needs
+    
+    # Build configuration
+    buildCommand: ./render-build.sh
+    startCommand: npm run start
+    
+    # Environment variables (set these in Render dashboard)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        sync: false # Render will set this automatically
+      - key: DATABASE_URL
+        sync: false # Link to your Render PostgreSQL database
+      - key: JWT_SECRET
+        sync: false # Set this as a secret
+      - key: JWT_REFRESH_SECRET
+        sync: false # Set this as a secret
+      - key: CORS_ORIGIN
+        value: https://your-frontend-domain.com
+    
+    # Health check
+    healthCheckPath: /health
+    
+    # Auto-deploy from main branch
+    autoDeploy: true
+
+# Database service (PostgreSQL)
+  - type: pserv
+    name: openlearn_database
+    env: postgresql
+    plan: free # or paid plan for production
+    
+# Redis service (optional, for caching)
+  - type: redis
+    name: openlearn_redis
+    plan: free

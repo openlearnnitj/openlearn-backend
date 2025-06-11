@@ -1,31 +1,40 @@
 import app from './app';
 import config from './config/environment';
 import DatabaseConnection from './config/database';
+// import { logger } from './config/logger';
 
 const startServer = async () => {
   try {
+    // Log startup information
+    console.log('🚀 Starting OpenLearn Backend Server');
+    console.log(`Environment: ${config.nodeEnv}`);
+    console.log(`Port: ${config.port}`);
+    console.log(`Node Version: ${process.version}`);
+
     // Test database connection
-    console.log('Testing database connection...');
+    console.log('🔗 Testing database connection...');
     await DatabaseConnection.getInstance().$connect();
-    console.log('Database connected successfully');
+    console.log('✅ Database connected successfully');
 
     // Start the server
-    const server = app.listen(config.port, () => {
-      console.log(`OpenLearn API server running on port ${config.port}`);
-      console.log(`Environment: ${config.nodeEnv}`);
-      console.log(`Health check: http://localhost:${config.port}/health`);
+    const server = app.listen(config.port, '0.0.0.0', () => {
+      console.log('🎉 OpenLearn API server started successfully');
+      console.log(`🌐 Server running on port ${config.port}`);
+      console.log(`🔍 Health check: http://localhost:${config.port}/health`);
+      console.log(`📡 Process ID: ${process.pid}`);
     });
 
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
-      console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+      console.log(`🛑 Received ${signal}. Starting graceful shutdown...`);
       
       server.close(async () => {
-        console.log('HTTP server closed');
+        console.log('📡 HTTP server closed');
         
         try {
           await DatabaseConnection.disconnect();
           console.log('✅ Database connection closed');
+          console.log('👋 Graceful shutdown completed');
           process.exit(0);
         } catch (error) {
           console.error('❌ Error during graceful shutdown:', error);
