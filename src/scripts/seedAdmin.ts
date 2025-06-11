@@ -16,15 +16,15 @@ async function createGrandPathfinder() {
     });
 
     if (existingGrandPathfinder) {
-      console.log('✅ Grand Pathfinder already exists:', existingGrandPathfinder.email);
-      console.log('📧 Email:', existingGrandPathfinder.email);
-      console.log('👤 Name:', existingGrandPathfinder.name);
-      console.log('🎭 Role:', existingGrandPathfinder.role);
-      console.log('📊 Status:', existingGrandPathfinder.status);
+      console.log('Grand Pathfinder already exists:', existingGrandPathfinder.email);
+      console.log('Email:', existingGrandPathfinder.email);
+      console.log('Name:', existingGrandPathfinder.name);
+      console.log('Role:', existingGrandPathfinder.role);
+      console.log('Status:', existingGrandPathfinder.status);
       return;
     }
 
-    console.log('👑 Creating Grand Pathfinder user...');
+    console.log('Creating Grand Pathfinder user...');
 
     // Create the Grand Pathfinder
     const hashedPassword = await PasswordUtils.hashPassword('SecurePass123!');
@@ -42,13 +42,13 @@ async function createGrandPathfinder() {
       }
     });
 
-    console.log('✅ Grand Pathfinder created successfully!');
-    console.log('📧 Email: admin@openlearn.com');
-    console.log('🔑 Password: SecurePass123!');
-    console.log('👤 Name:', grandPathfinder.name);
-    console.log('🆔 User ID:', grandPathfinder.id);
-    console.log('🎭 Role:', grandPathfinder.role);
-    console.log('📊 Status:', grandPathfinder.status);
+    console.log('Grand Pathfinder created successfully!');
+    console.log('Email: admin@openlearn.com');
+    console.log('Password: SecurePass123!');
+    console.log('Name:', grandPathfinder.name);
+    console.log('User ID:', grandPathfinder.id);
+    console.log('Role:', grandPathfinder.role);
+    console.log('Status:', grandPathfinder.status);
     
     // Create audit log for this action
     await prisma.auditLog.create({
@@ -64,7 +64,7 @@ async function createGrandPathfinder() {
       }
     });
 
-    console.log('📝 Audit log created for Grand Pathfinder creation');
+    console.log('Audit log created for Grand Pathfinder creation');
 
   } catch (error) {
     console.error('❌ Error creating Grand Pathfinder:', error);

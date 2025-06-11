@@ -12,16 +12,16 @@ const startServer = async () => {
     console.log(`Node Version: ${process.version}`);
 
     // Test database connection
-    console.log('🔗 Testing database connection...');
+    console.log('Testing database connection...');
     await DatabaseConnection.getInstance().$connect();
     console.log('✅ Database connected successfully');
 
     // Start the server
     const server = app.listen(config.port, '0.0.0.0', () => {
-      console.log('🎉 OpenLearn API server started successfully');
-      console.log(`🌐 Server running on port ${config.port}`);
-      console.log(`🔍 Health check: http://localhost:${config.port}/health`);
-      console.log(`📡 Process ID: ${process.pid}`);
+      console.log('OpenLearn API server started successfully');
+      console.log(`Server running on port ${config.port}`);
+      console.log(`Health check: http://localhost:${config.port}/health`);
+      console.log(`Process ID: ${process.pid}`);
     });
 
     // Graceful shutdown
@@ -29,11 +29,11 @@ const startServer = async () => {
       console.log(`🛑 Received ${signal}. Starting graceful shutdown...`);
       
       server.close(async () => {
-        console.log('📡 HTTP server closed');
+        console.log('HTTP server closed');
         
         try {
           await DatabaseConnection.disconnect();
-          console.log('✅ Database connection closed');
+          console.log('Database connection closed');
           console.log('👋 Graceful shutdown completed');
           process.exit(0);
         } catch (error) {

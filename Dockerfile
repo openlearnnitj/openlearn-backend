@@ -13,6 +13,8 @@ RUN npm ci && npm cache clean --force
 # Copy source code
 COPY . .
 
+RUN bash ./render-build.sh
+
 # Generate Prisma client
 RUN npx prisma generate
 
