@@ -6,7 +6,7 @@ import DatabaseConnection from './config/database';
 const startServer = async () => {
   try {
     // Log startup information
-    console.log('🚀 Starting OpenLearn Backend Server');
+    console.log('Starting OpenLearn Backend Server');
     console.log(`Environment: ${config.nodeEnv}`);
     console.log(`Port: ${config.port}`);
     console.log(`Node Version: ${process.version}`);

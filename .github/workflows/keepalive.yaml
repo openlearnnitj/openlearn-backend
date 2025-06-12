@@ -1,0 +1,180 @@
+# .github/workflows/keepalive.yml
+name: OpenLearn Keep-Alive Service
+
+on:
+  schedule:
+    # Runs every 10 minutes to prevent Render free tier spin-down
+    - cron: '*/10 * * * *'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Override backend URL for testing'
+        required: false
+        default: ''
+
+env:
+  # Your deployed Render app URL
+  BACKEND_URL: https://openlearn-backend.onrender.com
+  USER_AGENT: OpenLearn-GitHub-KeepAlive/1.0
+
+jobs:
+  keep-openlearn-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+    - name: OpenLearn Keep-Alive Started
+      run: |
+        echo "OpenLearn Backend Keep-Alive Service"
+        echo "Execution Time: $(date)"
+        echo "Target URL: ${{ env.BACKEND_URL }}"
+        echo "User Agent: ${{ env.USER_AGENT }}"
+        echo ""
+
+    - name: Health Check Ping
+      id: health_check
+      run: |
+        echo "Performing health check..."
+        
+        TARGET_URL="${{ github.event.inputs.target_url || env.BACKEND_URL }}"
+        
+        # Perform health check with detailed logging
+        if curl -f -v \
+           -H "X-Cron-Ping: true" \
+           -H "User-Agent: ${{ env.USER_AGENT }}" \
+           --max-time 30 \
+           --retry 2 \
+           --retry-delay 5 \
+           "$TARGET_URL/health" \
+           -o health_response.json; then
+          
+          echo "✅ Health check successful!"
+          echo "Response received:"
+          cat health_response.json | jq '.' || cat health_response.json
+          echo ""
+          echo "health_status=success" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ Health check failed, will attempt wake-up..."
+          echo "health_status=failed" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Wake-Up Service (if needed)
+      if: steps.health_check.outputs.health_status == 'failed'
+      run: |
+        echo "Health check failed - attempting to wake up OpenLearn backend..."
+        
+        TARGET_URL="${{ github.event.inputs.target_url || env.BACKEND_URL }}"
+        
+        if curl -f -v \
+           -X POST \
+           -H "X-Cron-Ping: true" \
+           -H "User-Agent: ${{ env.USER_AGENT }}" \
+           -H "Content-Type: application/json" \
+           --max-time 45 \
+           --retry 3 \
+           --retry-delay 10 \
+           "$TARGET_URL/wake-up" \
+           -o wakeup_response.json; then
+          
+          echo "✅ Wake-up request successful!"
+          echo "Wake-up response:"
+          cat wakeup_response.json | jq '.' || cat wakeup_response.json
+        else
+          echo "❌ Wake-up request failed"
+          echo "OpenLearn backend may be experiencing issues"
+          exit 1
+        fi
+
+    - name: Retry Health Check (after wake-up)
+      if: steps.health_check.outputs.health_status == 'failed'
+      run: |
+        echo "Retrying health check after wake-up..."
+        sleep 10  # Give the service time to fully wake up
+        
+        TARGET_URL="${{ github.event.inputs.target_url || env.BACKEND_URL }}"
+        
+        if curl -f \
+           -H "X-Cron-Ping: true" \
+           -H "User-Agent: ${{ env.USER_AGENT }}" \
+           --max-time 30 \
+           "$TARGET_URL/health" \
+           -o retry_health_response.json; then
+          
+          echo "✅ Retry health check successful!"
+          echo "Response after wake-up:"
+          cat retry_health_response.json | jq '.' || cat retry_health_response.json
+        else
+          echo "❌ Health check still failing after wake-up"
+          echo "Critical: OpenLearn backend is not responding"
+          exit 1
+        fi
+
+    - name: Fetch Keep-Alive Statistics
+      run: |
+        echo "Fetching OpenLearn keep-alive statistics..."
+        
+        TARGET_URL="${{ github.event.inputs.target_url || env.BACKEND_URL }}"
+        
+        if curl -f \
+           -H "User-Agent: ${{ env.USER_AGENT }}" \
+           --max-time 20 \
+           "$TARGET_URL/health/keepalive-stats" \
+           -o stats_response.json; then
+          
+          echo "✅ Statistics retrieved successfully!"
+          echo ""
+          echo "OpenLearn Keep-Alive Statistics:"
+          echo "=================================="
+          cat stats_response.json | jq '.keepAliveStats' || cat stats_response.json
+          echo ""
+        else
+          echo "⚠️ Could not retrieve keep-alive statistics (non-critical)"
+        fi
+
+    - name: Quick API Test
+      run: |
+        echo "Performing quick API connectivity test..."
+        
+        TARGET_URL="${{ github.event.inputs.target_url || env.BACKEND_URL }}"
+        
+        # Test the simple ping endpoint
+        if curl -f \
+           -H "User-Agent: ${{ env.USER_AGENT }}" \
+           --max-time 15 \
+           "$TARGET_URL/ping" \
+           -o ping_response.json; then
+          
+          echo "✅ API ping test successful!"
+          echo "Ping response:"
+          cat ping_response.json | jq '.uptime, .nodeVersion' || echo "Ping successful but JSON parsing failed"
+        else
+          echo "API ping test failed (non-critical)"
+        fi
+
+    - name: ✅ Keep-Alive Completed
+      run: |
+        echo ""
+        echo "OpenLearn Keep-Alive Service Completed Successfully!"
+        echo "======================================================"
+        echo "Completion Time: $(date)"
+        echo "Next scheduled run: $(date -d '+10 minutes')"
+        echo "OpenLearn backend is alive and ready for students!"
+        echo ""
+
+  # Optional: Send notifications on failures
+  notify-on-failure:
+    runs-on: ubuntu-latest
+    needs: keep-openlearn-alive
+    if: failure()
+    
+    steps:
+    - name: Alert on Keep-Alive Failure
+      run: |
+        echo "ALERT: OpenLearn Keep-Alive Failed!"
+        echo "======================================"
+        echo "Failed At: $(date)"
+        echo "Target: ${{ env.BACKEND_URL }}"
+        echo ""
+       
