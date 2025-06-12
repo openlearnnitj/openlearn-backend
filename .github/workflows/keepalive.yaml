@@ -133,6 +133,38 @@ jobs:
           echo "⚠️ Could not retrieve keep-alive statistics (non-critical)"
         fi
 
+    - name: Update System Status
+      run: |
+        echo "Updating system status monitoring..."
+        
+        TARGET_URL="${{ github.event.inputs.target_url || env.BACKEND_URL }}"
+        
+        # Get current system status
+        if curl -f \
+           -H "User-Agent: ${{ env.USER_AGENT }}" \
+           --max-time 20 \
+           "$TARGET_URL/api/status" \
+           -o status_response.json; then
+          
+          echo "✅ Status page data retrieved!"
+          echo "Overall Status:"
+          cat status_response.json | jq -r '.data.overallStatus' || echo "Status data available"
+          echo "Component Status:"
+          cat status_response.json | jq -r '.data.components[] | "\(.component): \(.status) (uptime: \(.uptime)%)"' || echo "Component data available"
+          echo ""
+          
+          # Check if there are any active incidents
+          INCIDENT_COUNT=$(cat status_response.json | jq -r '.data.activeIncidents | length' 2>/dev/null || echo "0")
+          if [ "$INCIDENT_COUNT" -gt 0 ]; then
+            echo "⚠️ Active incidents detected: $INCIDENT_COUNT"
+            cat status_response.json | jq -r '.data.activeIncidents[] | "- \(.title) (\(.severity))"' || echo "Incident details available"
+          else
+            echo "✅ No active incidents"
+          fi
+        else
+          echo "⚠️ Could not retrieve system status (non-critical)"
+        fi
+
     - name: Quick API Test
       run: |
         echo "Performing quick API connectivity test..."

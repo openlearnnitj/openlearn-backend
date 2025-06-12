@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import config from './config/environment';
 import { prisma } from './config/database';
 // import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
@@ -22,10 +23,36 @@ import socialRoutes from './routes/social';
 import badgeRoutes from './routes/badges';
 import assignmentRoutes from './routes/assignments';
 import leaderboardRoutes from './routes/leaderboard';
+import statusRoutes from './routes/status';
 
 const app = express();
 
-app.use(helmet());
+// Configure helmet with relaxed CSP for status page
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'", 
+        "'unsafe-inline'", // Allow inline scripts
+        "https://cdn.tailwindcss.com", // Allow Tailwind CSS CDN
+        "https://unpkg.com" // Allow unpkg CDN as fallback
+      ],
+      styleSrc: [
+        "'self'", 
+        "'unsafe-inline'", // Allow inline styles
+        "https://cdn.tailwindcss.com", // Allow Tailwind CSS CDN
+        "https://unpkg.com" // Allow unpkg CDN as fallback
+      ],
+      connectSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
 
 const corsOptions = {
   credentials: true,
@@ -45,6 +72,14 @@ app.use(cors(corsOptions));
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Static file serving for status page assets
+app.use('/public', express.static(path.join(__dirname, '../public')));
+
+// Favicon route to prevent 404 errors
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end(); // No content response
+});
 
 // Health check endpoint
 /**
@@ -365,6 +400,21 @@ app.get('/health/keepalive-stats', async (req, res) => {
 });
 
 
+// Status Page Web Route - Serve HTML page directly
+app.get('/status-page', (req, res) => {
+  try {
+    res.sendFile(path.join(__dirname, '../public/status-page.html'));
+  } catch (error) {
+    console.error('Failed to serve status page:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load status page',
+      message: 'The status page is temporarily unavailable'
+    });
+  }
+});
+
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -374,6 +424,7 @@ app.use('/api/specializations', specializationRoutes);
 app.use('/api/weeks', weekRoutes);
 app.use('/api/sections', sectionRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/status', statusRoutes); 
 app.use('/api', resourceRoutes);
 app.use('/api/resource-progress', resourceProgressRoutes);
 app.use('/api/analytics', analyticsRoutes);

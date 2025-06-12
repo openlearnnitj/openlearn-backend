@@ -1,6 +1,7 @@
 import app from './app';
 import config from './config/environment';
 import DatabaseConnection from './config/database';
+import HealthCheckScheduler from './services/HealthCheckScheduler';
 // import { logger } from './config/logger';
 
 const startServer = async () => {
@@ -15,6 +16,12 @@ const startServer = async () => {
     console.log('Testing database connection...');
     await DatabaseConnection.getInstance().$connect();
     console.log('✅ Database connected successfully');
+
+    // Initialize and start health check scheduler
+    console.log('Starting health check scheduler...');
+    const healthScheduler = new HealthCheckScheduler(DatabaseConnection.getInstance());
+    healthScheduler.start();
+    console.log('✅ Health check scheduler started');
 
     // Start the server
     const server = app.listen(config.port, '0.0.0.0', () => {
