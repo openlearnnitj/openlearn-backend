@@ -28,16 +28,15 @@ RUN echo "📦 Installing OpenLearn dependencies..." && \
     npm cache clean --force && \
     echo "✅ Dependencies installed successfully"
 
-# Copy Prisma schema for client generation
-COPY prisma ./prisma
+# Copy source files and assets
+COPY src/ ./src/
+COPY public/ ./public/
+COPY prisma/ ./prisma/
 
 # Generate Prisma client (no DATABASE_URL needed for generation)
 RUN echo "🔧 Generating Prisma client for OpenLearn..." && \
     npx prisma generate --no-hints && \
     echo "✅ Prisma client generated successfully"
-
-# Copy source code for TypeScript compilation
-COPY src ./src
 
 # Build TypeScript application
 RUN echo "🔨 Building OpenLearn Backend TypeScript..." && \
@@ -84,6 +83,7 @@ COPY --from=builder --chown=openlearn:nodejs /app/dist ./dist
 COPY --from=builder --chown=openlearn:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=openlearn:nodejs /app/package*.json ./
 COPY --from=builder --chown=openlearn:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=openlearn:nodejs /app/public ./public
 
 # Copy and prepare runtime initialization script
 COPY --chown=openlearn:nodejs docker-entrypoint.sh ./

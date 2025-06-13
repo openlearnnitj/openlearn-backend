@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { LeaderboardService } from '../services/leaderboardService';
-
+//
 export class LeaderboardController {
   /**
    * Get top 10 users based on resources completed

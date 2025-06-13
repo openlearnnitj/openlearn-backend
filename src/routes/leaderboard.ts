@@ -3,7 +3,7 @@ import { LeaderboardController } from '../controllers/leaderboardController';
 import { AuthMiddleware } from '../middleware/auth';
 
 const router = Router();
-
+//
 /**
  * @route   GET /api/leaderboard
  * @desc    Get top 10 users based on resources completed
