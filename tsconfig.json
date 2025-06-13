@@ -122,6 +122,7 @@
     "dist",
     "prisma/**/*",
     "docker/**/*",
-    "docs/**/*"
+    "docs/**/*",
+    "frontend/**/*"
   ]
 }

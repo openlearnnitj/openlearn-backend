@@ -157,3 +157,6 @@ export class AuthMiddleware {
     }
   }
 }
+
+// Export convenient middleware functions
+export const authMiddleware = AuthMiddleware.authenticate;

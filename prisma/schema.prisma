@@ -1,6 +1,7 @@
 // OpenLearn Platform Schema
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -409,3 +410,84 @@ model AuditLog {
   
   @@map("audit_logs")
 }
+
+// System Status & Monitoring
+enum SystemComponent {
+  API
+  DATABASE
+  AUTHENTICATION
+}
+
+enum SystemStatus {
+  OPERATIONAL
+  DEGRADED_PERFORMANCE
+  PARTIAL_OUTAGE
+  MAJOR_OUTAGE
+  MAINTENANCE
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  MONITORING
+  RESOLVED
+}
+
+model StatusCheck {
+  id String @id @default(cuid())
+  
+  component     SystemComponent
+  status        SystemStatus
+  responseTime  Int?            // Response time in milliseconds
+  uptime        Boolean         @default(true)
+  details       Json?           // Additional status details
+  checkedAt     DateTime        @default(now())
+  
+  @@map("status_checks")
+}
+
+model StatusIncident {
+  id String @id @default(cuid())
+  
+  title         String
+  description   String
+  component     SystemComponent
+  severity      IncidentSeverity
+  status        IncidentStatus
+  
+  startedAt     DateTime         @default(now())
+  resolvedAt    DateTime?
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  // Relations
+  updates       IncidentUpdate[]
+  
+  @@map("status_incidents")
+}
+
+model IncidentUpdate {
+  id String @id @default(cuid())
+  
+  incidentId    String
+  incident      StatusIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  
+  title         String
+  description   String
+  status        IncidentStatus
+  
+  createdAt     DateTime @default(now())
+  
+  @@map("incident_updates")
+}
+
+
+
