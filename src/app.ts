@@ -412,141 +412,162 @@ app.get('/status-page', (req, res) => {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/png" href="https://avatars.githubusercontent.com/u/208047818?s=400&u=dfc76ca68211e1f2251c63e57982bae0855edec8&v=4">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background: #0f172a;
+            background: #fafafa;
             min-height: 100vh;
-            position: relative;
+            margin: 0;
+            color: #1f2937;
         }
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 25% 25%, #fbbf24 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, #f59e0b 0%, transparent 50%),
-                linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            opacity: 0.8;
-            z-index: -1;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
         }
-        .status-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(251, 191, 36, 0.2);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        
+        .header {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
         }
-        .header-section {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #0f172a;
-        }
-        .loading-spinner {
-            border: 3px solid rgba(251, 191, 36, 0.3);
-            border-top: 3px solid #fbbf24;
-            border-radius: 50%;
+        
+        .logo {
             width: 40px;
             height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        
+        .status-operational { border-left: 3px solid #10b981; }
+        .status-degraded { border-left: 3px solid #f59e0b; }
+        .status-outage { border-left: 3px solid #ef4444; }
+        .status-maintenance { border-left: 3px solid #3b82f6; }
+        
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            background: #fbbf24;
+            color: #1f2937;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background: #f59e0b;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .loading-spinner {
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #fbbf24;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .status-card {
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(251, 191, 36, 0.1);
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
         }
-        .status-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        .status-operational { border-left-color: #10b981; }
-        .status-degraded { border-left-color: #f59e0b; }
-        .status-outage { border-left-color: #ef4444; }
-        .status-maintenance { border-left-color: #3b82f6; }
-        .openlearn-logo {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            object-fit: cover;
-            border: 2px solid rgba(251, 191, 36, 0.3);
-            box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #0f172a;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
-        }
-        .uptime-info {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border: 1px solid #fbbf24;
-            color: #92400e;
-        }
-        .uptime-bar {
-            height: 24px;
-            background: #f3f4f6;
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            gap: 1px;
-        }
-        .uptime-segment {
-            height: 100%;
-            flex: 1;
-            border-radius: 1px;
-            transition: all 0.2s ease;
-        }
-        .uptime-segment:hover {
-            transform: scaleY(1.1);
-        }
-        .logo-container {
+        
+        .uptime-chart {
+            height: 60px;
+            background: #f9fafb;
+            border-radius: 6px;
+            padding: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
+            margin: 1rem 0;
         }
-        .openlearn-brand {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-            letter-spacing: -0.5px;
+        
+        .uptime-bar {
+            height: 32px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
         }
+        
+        .uptime-segment {
+            height: 100%;
+            flex: 1;
+            margin-right: 1px;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .metric-card {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .text-green { color: #059669; }
+        .text-yellow { color: #d97706; }
+        .text-red { color: #dc2626; }
+        .text-blue { color: #2563eb; }
+        .text-gray { color: #6b7280; }
+        
+        .bg-green { background-color: #10b981; }
+        .bg-yellow { background-color: #f59e0b; }
+        .bg-red { background-color: #ef4444; }
+        .bg-blue { background-color: #3b82f6; }
+        .bg-gray { background-color: #6b7280; }
     </style>
 </head>
 <body>
     <div id="status-page-root">
         <div class="min-h-screen flex items-center justify-center p-4">
-            <div class="glass-effect rounded-xl p-8 text-center max-w-md w-full shadow-2xl">
-                <div class="logo-container mx-auto mb-4">
+            <div class="card text-center max-w-md w-full">
+                <div class="mb-4">
                     <img 
                         src="https://avatars.githubusercontent.com/u/208047818?s=400&u=dfc76ca68211e1f2251c63e57982bae0855edec8&v=4" 
                         alt="OpenLearn" 
-                        class="w-8 h-8 rounded-lg"
+                        class="logo mx-auto"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
                     >
-                    <div class="openlearn-brand text-xl hidden">OL</div>
+                    <div class="text-2xl font-bold text-amber-600 hidden">OL</div>
                 </div>
                 <div class="loading-spinner mb-4"></div>
-                <h2 class="text-xl font-semibold text-gray-900 mb-2">Loading System Status</h2>
+                <h2 class="text-xl font-semibold mb-2">Loading System Status</h2>
                 <p class="text-gray-600">Connecting to OpenLearn services...</p>
             </div>
         </div>
@@ -773,18 +794,18 @@ app.get('/status-page', (req, res) => {
             renderLoading() {
                 return \`
                     <div class="min-h-screen flex items-center justify-center p-4">
-                        <div class="glass-effect rounded-xl p-8 text-center max-w-md w-full shadow-2xl">
-                            <div class="logo-container mx-auto mb-4">
+                        <div class="card text-center max-w-md w-full">
+                            <div class="mb-4">
                                 <img 
                                     src="https://avatars.githubusercontent.com/u/208047818?s=400&u=dfc76ca68211e1f2251c63e57982bae0855edec8&v=4" 
                                     alt="OpenLearn" 
-                                    class="w-8 h-8 rounded-lg"
+                                    class="logo mx-auto"
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
                                 >
-                                <div class="openlearn-brand text-xl hidden">OL</div>
+                                <div class="text-2xl font-bold text-amber-600 hidden">OL</div>
                             </div>
                             <div class="loading-spinner mb-4"></div>
-                            <h2 class="text-xl font-semibold text-gray-900 mb-2">Loading System Status</h2>
+                            <h2 class="text-xl font-semibold mb-2">Loading System Status</h2>
                             <p class="text-gray-600">Connecting to OpenLearn services...</p>
                         </div>
                     </div>
@@ -794,22 +815,22 @@ app.get('/status-page', (req, res) => {
             renderError() {
                 return \`
                     <div class="min-h-screen flex items-center justify-center p-4">
-                        <div class="glass-effect rounded-xl p-8 text-center max-w-md w-full shadow-2xl border border-red-200">
-                            <div class="logo-container mx-auto mb-4">
+                        <div class="card text-center max-w-md w-full border-red-200">
+                            <div class="mb-4">
                                 <img 
                                     src="https://avatars.githubusercontent.com/u/208047818?s=400&u=dfc76ca68211e1f2251c63e57982bae0855edec8&v=4" 
                                     alt="OpenLearn" 
-                                    class="w-8 h-8 rounded-lg"
+                                    class="logo mx-auto"
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
                                 >
-                                <div class="openlearn-brand text-xl hidden">OL</div>
+                                <div class="text-2xl font-bold text-amber-600 hidden">OL</div>
                             </div>
                             <div class="text-red-500 text-4xl mb-4">⚠</div>
-                            <h2 class="text-xl font-bold text-gray-900 mb-3">Service Unavailable</h2>
+                            <h2 class="text-xl font-bold mb-3">Service Unavailable</h2>
                             <p class="text-gray-600 mb-6">\${this.error}</p>
                             <button
                                 onclick="window.statusPage.fetchStatusData()"
-                                class="btn-primary font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
+                                class="btn"
                             >
                                 Retry Connection
                             </button>
@@ -825,85 +846,76 @@ app.get('/status-page', (req, res) => {
                 const isAllOperational = this.statusData.overallStatus === SystemStatus.OPERATIONAL;
 
                 return \`
-                    <div class="min-h-screen">
+                    <div class="container">
                         <!-- Header -->
-                        <header class="header-section shadow-lg">
-                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-4">
-                                        <img 
-                                            src="https://avatars.githubusercontent.com/u/208047818?s=400&u=dfc76ca68211e1f2251c63e57982bae0855edec8&v=4" 
-                                            alt="OpenLearn" 
-                                            class="openlearn-logo"
-                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-                                        >
-                                        <div class="text-4xl font-bold hidden" style="color: #fbbf24;">OL</div>
-                                        <div>
-                                            <h1 class="text-2xl font-bold">OpenLearn Status</h1>
-                                            <p class="text-opacity-80">System health and uptime monitoring</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-3 h-3 rounded-full \${overallConfig.dot}"></div>
-                                        <span class="text-lg font-medium text-white">
-                                            \${isAllOperational ? 'All Systems Operational' : this.getOverallStatusMessage()}
-                                        </span>
+                        <div class="header">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <img 
+                                        src="https://avatars.githubusercontent.com/u/208047818?s=400&u=dfc76ca68211e1f2251c63e57982bae0855edec8&v=4" 
+                                        alt="OpenLearn" 
+                                        class="logo"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                                    >
+                                    <div class="text-2xl font-bold text-amber-600 hidden">OL</div>
+                                    <div>
+                                        <h1 class="text-2xl font-bold text-gray-900">OpenLearn Status</h1>
+                                        <p class="text-gray-600">System health and uptime monitoring</p>
                                     </div>
                                 </div>
+                                
+                                <div class="flex items-center space-x-3">
+                                    <div class="status-dot \${overallConfig.dot}"></div>
+                                    <span class="text-lg font-medium text-gray-900">
+                                        \${isAllOperational ? 'All Systems Operational' : this.getOverallStatusMessage()}
+                                    </span>
+                                </div>
                             </div>
-                        </header>
+                        </div>
 
-                        <!-- Main Content -->
-                        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                            <div class="space-y-8">
-                                <!-- Current Status -->
-                                \${this.renderCurrentStatus()}
-                                
-                                <!-- System Components -->
-                                \${this.renderComponents()}
-                                
-                                <!-- Uptime Metrics -->
-                                \${this.renderUptimeMetrics()}
-                                
-                                <!-- Incidents -->
-                                \${this.renderIncidents()}
-                            </div>
-                        </main>
-
+                        <!-- Current Status -->
+                        \${this.renderCurrentStatus()}
+                        
+                        <!-- System Components -->
+                        \${this.renderComponents()}
+                        
+                        <!-- Uptime Metrics -->
+                        \${this.renderUptimeMetrics()}
+                        
+                        <!-- Incidents -->
+                        \${this.renderIncidents()}
+                        
                         <!-- Footer -->
-                        <footer class="glass-effect border-t border-white/20 mt-16">
-                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                                <div class="flex items-center justify-between flex-wrap gap-4">
-                                    <div class="flex items-center space-x-4">
-                                        <button
-                                            id="refresh-btn"
-                                            class="flex items-center space-x-2 btn-primary font-medium py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 \${this.isLoading ? 'opacity-50 cursor-not-allowed' : ''}"
-                                            \${this.isLoading ? 'disabled' : ''}
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                            </svg>
-                                            <span>\${this.isLoading ? 'Refreshing...' : 'Refresh'}</span>
-                                        </button>
-                                        
-                                        <label class="flex items-center space-x-2 text-sm text-gray-600">
-                                            <input
-                                                type="checkbox"
-                                                id="auto-refresh-toggle"
-                                                \${this.autoRefresh ? 'checked' : ''}
-                                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                            >
-                                            <span>Auto-refresh (30s)</span>
-                                        </label>
-                                    </div>
+                        <div class="card mt-8">
+                            <div class="flex items-center justify-between flex-wrap gap-4">
+                                <div class="flex items-center space-x-4">
+                                    <button
+                                        id="refresh-btn"
+                                        class="btn flex items-center space-x-2 \${this.isLoading ? 'opacity-50 cursor-not-allowed' : ''}"
+                                        \${this.isLoading ? 'disabled' : ''}
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        <span>\${this.isLoading ? 'Refreshing...' : 'Refresh'}</span>
+                                    </button>
                                     
-                                    <div class="text-sm text-gray-500">
-                                        Last updated: \${formatRelativeTime(this.lastUpdated)}
-                                    </div>
+                                    <label class="flex items-center space-x-2 text-sm text-gray-600">
+                                        <input
+                                            type="checkbox"
+                                            id="auto-refresh-toggle"
+                                            \${this.autoRefresh ? 'checked' : ''}
+                                            class="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                                        >
+                                        <span>Auto-refresh (30s)</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="text-sm text-gray-500">
+                                    Last updated: \${formatRelativeTime(this.lastUpdated)}
                                 </div>
                             </div>
-                        </footer>
+                        </div>
                     </div>
                 \`;
             }
@@ -914,7 +926,7 @@ app.get('/status-page', (req, res) => {
                 const overallConfig = getStatusConfig(this.statusData.overallStatus);
                 
                 return \`
-                    <div class="glass-effect rounded-lg shadow-lg border border-white/20 p-6">
+                    <div class="card \${overallConfig.class}">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h2 class="text-lg font-semibold text-gray-900 mb-1">Current Status</h2>
@@ -934,12 +946,13 @@ app.get('/status-page', (req, res) => {
             }
 
             renderComponents() {
-                if (!this.statusData.components || this.statusData.components.length === 0) {                return \`
-                    <div class="glass-effect rounded-lg shadow-sm border border-white/20 p-6">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">System Components</h2>
-                        <p class="text-gray-600">No component data available</p>
-                    </div>
-                \`;
+                if (!this.statusData.components || this.statusData.components.length === 0) {
+                    return \`
+                        <div class="card">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">System Components</h2>
+                            <p class="text-gray-600">No component data available</p>
+                        </div>
+                    \`;
                 }
 
                 const componentsHtml = this.statusData.components.map(component => {
@@ -949,10 +962,10 @@ app.get('/status-page', (req, res) => {
                     const uptimeColor = getUptimeColor(component.uptime);
                     
                     return \`
-                        <div class="status-card bg-white rounded-lg shadow-sm border border-gray-200 p-6 \${config.class}">
+                        <div class="card \${config.class}">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center space-x-3">
-                                    <div class="w-3 h-3 rounded-full \${config.dot}"></div>
+                                    <div class="status-dot \${config.dot}"></div>
                                     <div>
                                         <h3 class="font-semibold text-gray-900">\${componentName}</h3>
                                         <p class="text-sm text-gray-500">Last checked: \${formatRelativeTime(component.lastChecked)}</p>
@@ -980,14 +993,8 @@ app.get('/status-page', (req, res) => {
                                 </div>
                             </div>
                             
-                            <!-- Uptime Chart -->
-                            <div class="uptime-bar">
-                                \${this.generateUptimeVisualization(component)}
-                            </div>
-                            <div class="flex justify-between text-xs text-gray-500 mt-2">
-                                <span>90 days ago</span>
-                                <span>Today</span>
-                            </div>
+                            <!-- Today's Uptime -->
+                            \${this.renderTodayUptime(component)}
                         </div>
                     \`;
                 }).join('');
@@ -996,6 +1003,22 @@ app.get('/status-page', (req, res) => {
                     <div class="space-y-4">
                         <h2 class="text-lg font-semibold text-gray-900">System Components</h2>
                         \${componentsHtml}
+                    </div>
+                \`;
+            }
+            }
+
+            renderTodayUptime(component) {
+                return \`
+                    <div class="uptime-chart">
+                        <div class="flex items-center space-x-2">
+                            <div class="status-dot \${component.status === 'OPERATIONAL' ? 'bg-green' : component.status === 'DEGRADED_PERFORMANCE' ? 'bg-yellow' : 'bg-red'}"></div>
+                            <span class="text-sm text-gray-600">
+                                \${component.status === 'OPERATIONAL' ? 'Running smoothly today' : 
+                                  component.status === 'DEGRADED_PERFORMANCE' ? 'Some performance issues today' : 
+                                  'Experiencing issues today'}
+                            </span>
+                        </div>
                     </div>
                 \`;
             }
@@ -1021,22 +1044,22 @@ app.get('/status-page', (req, res) => {
                 if (!this.statusData.uptime) return '';
 
                 return \`
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="card">
                         <h2 class="text-lg font-semibold text-gray-900 mb-6">Uptime Summary</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="text-center">
+                        <div class="metric-grid">
+                            <div class="metric-card">
                                 <div class="text-2xl font-bold \${getUptimeColor(this.statusData.uptime.last24h)} mb-1">
                                     \${formatUptime(this.statusData.uptime.last24h)}
                                 </div>
                                 <div class="text-sm font-medium text-gray-600">Last 24 Hours</div>
                             </div>
-                            <div class="text-center">
+                            <div class="metric-card">
                                 <div class="text-2xl font-bold \${getUptimeColor(this.statusData.uptime.last7d)} mb-1">
                                     \${formatUptime(this.statusData.uptime.last7d)}
                                 </div>
                                 <div class="text-sm font-medium text-gray-600">Last 7 Days</div>
                             </div>
-                            <div class="text-center">
+                            <div class="metric-card">
                                 <div class="text-2xl font-bold \${getUptimeColor(this.statusData.uptime.last30d)} mb-1">
                                     \${formatUptime(this.statusData.uptime.last30d)}
                                 </div>
@@ -1051,7 +1074,7 @@ app.get('/status-page', (req, res) => {
                 const hasIncidents = this.statusData.activeIncidents && this.statusData.activeIncidents.length > 0;
                 
                 return \`
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="card">
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-lg font-semibold text-gray-900">Recent Incidents</h2>
                             <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium \${hasIncidents ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'} border">
