@@ -53,6 +53,9 @@ export class LeaderboardService {
    */
   static async getTopUsersByResourcesCompleted(limit: number = 10): Promise<LeaderboardUser[]> {
     try {
+      // First, get the total number of available resources in the system
+      const totalAvailableResources = await prisma.sectionResource.count();
+
       // Get users with their resource completion stats
       const usersWithStats = await prisma.user.findMany({
         where: {
@@ -102,11 +105,6 @@ export class LeaderboardService {
             select: {
               id: true
             }
-          },
-          _count: {
-            select: {
-              resourceProgress: true // Total resources attempted
-            }
           }
         }
       });
@@ -115,7 +113,7 @@ export class LeaderboardService {
       const leaderboardData = usersWithStats
         .map(user => {
           const resourcesCompleted = user.resourceProgress.length;
-          const totalResources = user._count.resourceProgress;
+          const totalResources = totalAvailableResources; // Use actual total available resources
           const completionPercentage = totalResources > 0 
             ? Math.round((resourcesCompleted / totalResources) * 100) 
             : 0;
@@ -222,6 +220,9 @@ export class LeaderboardService {
    */
   static async getFilteredLeaderboard(filters: LeaderboardFilters): Promise<LeaderboardUser[]> {
     try {
+      // First, get the total number of available resources in the system
+      const totalAvailableResources = await prisma.sectionResource.count();
+
       const whereClause: any = {
         status: 'ACTIVE'
       };
@@ -298,11 +299,6 @@ export class LeaderboardService {
             select: {
               id: true
             }
-          },
-          _count: {
-            select: {
-              resourceProgress: true
-            }
           }
         }
       });
@@ -311,7 +307,7 @@ export class LeaderboardService {
       const leaderboardData = usersWithStats
         .map(user => {
           const resourcesCompleted = user.resourceProgress.length;
-          const totalResources = user._count.resourceProgress;
+          const totalResources = totalAvailableResources; // Use actual total available resources
           const completionPercentage = totalResources > 0 
             ? Math.round((resourcesCompleted / totalResources) * 100) 
             : 0;
