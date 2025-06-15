@@ -1,5 +1,0 @@
-{"success":false,"error":"Internal server error during login"}--_curl_--
->     "email": "admin@openlearn.com"
---_curl_--
->     "password": "SecurePass123!"
->   
