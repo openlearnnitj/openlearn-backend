@@ -79,7 +79,7 @@ module.exports = {
       user: 'ubuntu',
       host: ['openlearn.org.in'],
       ref: 'origin/main',
-      repo: 'git@github.com:your-username/openlearn-js.git',
+      repo: 'git@github.com:openlearnnitj/openlearn-backend.git',
       path: '/home/ubuntu/openlearn',
       'pre-deploy-local': '',
       'post-deploy': 'npm install && npm run build && npx prisma migrate deploy && pm2 reload ecosystem.config.js --env production',
@@ -91,7 +91,7 @@ module.exports = {
       user: 'ubuntu',
       host: ['staging.openlearn.org.in'],
       ref: 'origin/develop',
-      repo: 'git@github.com:your-username/openlearn-js.git',
+      repo: 'git@github.com:openlearnnitj/openlearn-backend.git',
       path: '/home/ubuntu/openlearn-staging',
       'post-deploy': 'npm install && npm run build && npx prisma migrate deploy && pm2 reload ecosystem.config.js --env staging'
     }

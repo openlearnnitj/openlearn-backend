@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # OpenLearn API Application
   app:
     build:
       context: .
@@ -13,8 +14,6 @@ services:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN}
@@ -22,22 +21,21 @@ services:
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS}
     depends_on:
       - postgres
-      - redis
     deploy:
       resources:
         limits:
-          # Limit to 400MB to leave room for system on t2.micro
-          memory: 400M
-          cpus: '0.5'
+          # Allocate 600MB for the app (leaving 350MB for system + Postgres)
+          memory: 600M
+          cpus: '1.2'
         reservations:
-          memory: 300M
-          cpus: '0.25'
+          memory: 400M
+          cpus: '0.8'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     volumes:
       - app-logs:/app/logs
       - app-uploads:/app/uploads
@@ -46,10 +44,10 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
 
-  # PostgreSQL Database
+  # PostgreSQL Database (Lightweight configuration)
   postgres:
     image: postgres:15-alpine
     container_name: openlearn-postgres
@@ -58,60 +56,39 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-openlearn_prod}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Optimize Postgres for low memory
+      POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Custom PostgreSQL config for low memory
+      - ./postgres-low-memory.conf:/etc/postgresql/postgresql.conf
     ports:
       - "5432:5432"
     networks:
       - openlearn-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
       retries: 3
     deploy:
       resources:
         limits:
-          memory: 200M
-          cpus: '0.3'
+          # Allocate 250MB for Postgres
+          memory: 250M
+          cpus: '0.6'
         reservations:
           memory: 150M
-          cpus: '0.1'
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: openlearn-redis
-    restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    networks:
-      - openlearn-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 100M
           cpus: '0.2'
-        reservations:
-          memory: 50M
-          cpus: '0.1'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 networks:
   openlearn-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
 
 volumes:
   app-logs:
@@ -119,6 +96,4 @@ volumes:
   app-uploads:
     driver: local
   postgres_data:
-    driver: local
-  redis_data:
     driver: local
