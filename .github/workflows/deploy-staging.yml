@@ -1,0 +1,289 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop, staging]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  ENVIRONMENT: staging
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: openlearn_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Generate Prisma Client
+      run: npx prisma generate
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+
+    - name: Run database migrations
+      run: npx prisma migrate deploy
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+
+    - name: Run tests
+      run: npm test
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+        REDIS_URL: redis://localhost:6379
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret
+        JWT_REFRESH_SECRET: test-refresh-secret
+
+    - name: Build application
+      run: npm run build
+
+  deploy:
+    name: Deploy to Staging
+    needs: [test]
+    runs-on: ubuntu-latest
+    environment: 
+      name: staging
+      url: https://staging.openlearn.org.in
+    timeout-minutes: 20
+    
+    # Only deploy if tests pass and it's not a PR from a fork
+    if: >
+      needs.test.result == 'success' && 
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment-package
+        cp -r . deployment-package/
+        cd deployment-package
+        rm -rf .git .github node_modules logs
+        tar -czf ../openlearn-staging-${{ github.sha }}.tar.gz .
+
+    - name: Upload to Staging EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST_STAGING }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        port: 22
+        source: "openlearn-staging-${{ github.sha }}.tar.gz"
+        target: "/home/${{ secrets.EC2_USER }}/deployments/"
+
+    - name: Deploy to Staging EC2
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ secrets.EC2_HOST_STAGING }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        port: 22
+        timeout: 1200s
+        script: |
+          set -e
+          
+          echo "🚀 Starting staging deployment..."
+          
+          cd /home/${{ secrets.EC2_USER }}
+          mkdir -p deployments backups
+          
+          # Backup current deployment
+          if [ -d "openlearn-backend" ]; then
+            mv openlearn-backend backups/openlearn-backend-staging-backup-$(date +%Y%m%d_%H%M%S)
+            ls -dt backups/openlearn-backend-staging-backup-* | tail -n +3 | xargs -r rm -rf
+          fi
+          
+          # Extract new deployment
+          mkdir -p openlearn-backend
+          tar -xzf deployments/openlearn-staging-${{ github.sha }}.tar.gz -C openlearn-backend
+          cd openlearn-backend
+          
+          # Create staging environment file
+          mkdir -p environments
+          cat > environments/.env.staging << 'EOF'
+          NODE_ENV=staging
+          PORT=3000
+          APP_NAME=OpenLearn Backend Staging
+          
+          # Database
+          DATABASE_URL=${{ secrets.DATABASE_URL_STAGING }}
+          
+          # JWT Configuration
+          JWT_SECRET=${{ secrets.JWT_SECRET_STAGING }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_STAGING }}
+          JWT_EXPIRES_IN=15m
+          JWT_REFRESH_EXPIRES_IN=7d
+          
+          # Redis Configuration
+          REDIS_URL=redis://localhost:6379
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD_STAGING }}
+          
+          # CORS Configuration
+          CORS_ORIGIN=https://staging.openlearn.org.in
+          
+          # Rate Limiting (more relaxed for staging)
+          RATE_LIMIT_WINDOW_MS=15
+          RATE_LIMIT_MAX_REQUESTS=200
+          
+          # File Upload Configuration
+          MAX_FILE_SIZE=50485760
+          UPLOAD_DIR=uploads
+          REQUIRE_EMAIL_VERIFICATION=false
+          
+          # Logging
+          LOG_LEVEL=debug
+          
+          # Email Configuration (staging)
+          SMTP_HOST=${{ secrets.SMTP_HOST_STAGING }}
+          SMTP_PORT=${{ secrets.SMTP_PORT_STAGING }}
+          SMTP_USER=${{ secrets.SMTP_USER_STAGING }}
+          SMTP_PASS=${{ secrets.SMTP_PASS_STAGING }}
+          EOF
+          
+          # Deploy using docker compose
+          docker-compose -f deployment/docker/docker-compose.staging.yml down || true
+          docker image prune -f || true
+          docker-compose -f deployment/docker/docker-compose.staging.yml build
+          docker-compose -f deployment/docker/docker-compose.staging.yml up -d
+          
+          # Wait for services
+          sleep 30
+          
+          # Run migrations
+          docker-compose -f deployment/docker/docker-compose.staging.yml exec -T app npx prisma migrate deploy || echo "Migration warning"
+          
+          # Health check
+          for i in {1..6}; do
+            if curl -f -s http://localhost:3000/health > /dev/null; then
+              echo "✅ Staging deployment successful!"
+              exit 0
+            fi
+            sleep 10
+          done
+          
+          echo "❌ Staging deployment failed health check"
+          exit 1
+
+    - name: Verify staging deployment
+      run: |
+        sleep 30
+        if curl -f -s https://staging.openlearn.org.in/health; then
+          echo "✅ Staging verification successful"
+        else
+          echo "⚠️ Staging verification failed (may not be exposed publicly)"
+        fi
+
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('🚀 Staging Deployment')
+          );
+          
+          const body = `## 🚀 Staging Deployment Successful
+          
+          Your changes have been deployed to the staging environment!
+          
+          **Environment:** Staging
+          **Commit:** \`${{ github.sha }}\`
+          **Deployed at:** ${new Date().toISOString()}
+          
+          ### 🔗 Testing Links
+          - 🏥 Health Check: https://staging.openlearn.org.in/health
+          - 📊 Status Page: https://staging.openlearn.org.in/status-page
+          - 🔗 API Base: https://staging.openlearn.org.in/api
+          
+          ### 📝 Testing Notes
+          - This is a staging environment with test data
+          - Feel free to test all functionality
+          - Report any issues in this PR
+          
+          ---
+          *Deployment ID: ${{ github.sha }}*`;
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: body
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }
+
+  notify:
+    name: Send Notifications
+    needs: [test, deploy]
+    runs-on: ubuntu-latest
+    if: always() && needs.deploy.result != 'skipped'
+    
+    steps:
+    - name: Send Slack notification
+      if: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        if [ "${{ needs.deploy.result }}" == "success" ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ OpenLearn Backend deployed to Staging!\n🔗 https://staging.openlearn.org.in\n📝 Commit: ${{ github.sha }}\n👤 By: ${{ github.actor }}"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+        else
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ OpenLearn Backend staging deployment failed!\n🔍 Check: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+        fi

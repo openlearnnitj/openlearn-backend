@@ -1,0 +1,419 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+env:
+  NODE_VERSION: '18'
+  ENVIRONMENT: production
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: openlearn_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Generate Prisma Client
+      run: npx prisma generate
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+
+    - name: Run database migrations
+      run: npx prisma migrate deploy
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+
+    - name: Run tests
+      run: npm test
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+        REDIS_URL: redis://localhost:6379
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret
+        JWT_REFRESH_SECRET: test-refresh-secret
+
+    - name: Run TypeScript check
+      run: npm run type-check || npx tsc --noEmit
+
+    - name: Run linting
+      run: npm run lint || echo "Linting not configured"
+
+    - name: Build application
+      run: npm run build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          dist/
+          node_modules/
+          package*.json
+          prisma/
+        retention-days: 1
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level high
+
+    - name: Check for vulnerabilities
+      run: npx audit-ci --config .audit-ci.json || echo "Audit CI not configured"
+
+  deploy:
+    name: Deploy to Production
+    needs: [test, security-scan]
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: https://openlearn.org.in
+    timeout-minutes: 30
+    
+    if: >
+      (needs.test.result == 'success' && needs.security-scan.result == 'success') ||
+      github.event.inputs.force_deploy == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts
+
+    - name: Create deployment package
+      run: |
+        # Create deployment directory
+        mkdir -p deployment-package
+        
+        # Copy application files
+        cp -r . deployment-package/
+        cd deployment-package
+        
+        # Remove unnecessary files
+        rm -rf .git .github node_modules/.cache logs
+        
+        # Create tarball
+        tar -czf ../openlearn-backend-${{ github.sha }}.tar.gz .
+        cd ..
+        
+        # Generate deployment metadata
+        cat > deployment-metadata.json << EOF
+        {
+          "version": "${{ github.sha }}",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "environment": "${{ env.ENVIRONMENT }}",
+          "triggered_by": "${{ github.actor }}",
+          "branch": "${{ github.ref_name }}",
+          "commit_message": $(echo '${{ github.event.head_commit.message }}' | jq -R .)
+        }
+        EOF
+
+    - name: Upload to EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST_PRODUCTION }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        port: 22
+        source: "openlearn-backend-${{ github.sha }}.tar.gz,deployment-metadata.json"
+        target: "/home/${{ secrets.EC2_USER }}/deployments/"
+        timeout: 300s
+
+    - name: Deploy to Production EC2
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ secrets.EC2_HOST_PRODUCTION }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        port: 22
+        timeout: 1800s
+        script: |
+          set -e
+          
+          echo "🚀 Starting production deployment..."
+          echo "Deployment ID: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+          
+          # Setup directories
+          cd /home/${{ secrets.EC2_USER }}
+          mkdir -p deployments backups logs
+          
+          # Backup current deployment
+          if [ -d "openlearn-backend" ]; then
+            echo "📦 Creating backup..."
+            mv openlearn-backend backups/openlearn-backend-backup-$(date +%Y%m%d_%H%M%S)
+            
+            # Keep only last 5 backups
+            ls -dt backups/openlearn-backend-backup-* | tail -n +6 | xargs -r rm -rf
+          fi
+          
+          # Extract new deployment
+          echo "📦 Extracting new deployment..."
+          mkdir -p openlearn-backend
+          tar -xzf deployments/openlearn-backend-${{ github.sha }}.tar.gz -C openlearn-backend
+          cd openlearn-backend
+          
+          # Create production environment file
+          echo "🔧 Setting up environment..."
+          mkdir -p environments
+          cat > environments/.env.production << 'EOF'
+          NODE_ENV=production
+          PORT=3000
+          APP_NAME=OpenLearn Backend Production
+          
+          # Database
+          DATABASE_URL=${{ secrets.DATABASE_URL_PRODUCTION }}
+          
+          # JWT Configuration
+          JWT_SECRET=${{ secrets.JWT_SECRET_PRODUCTION }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_PRODUCTION }}
+          JWT_EXPIRES_IN=15m
+          JWT_REFRESH_EXPIRES_IN=7d
+          
+          # Redis Configuration
+          REDIS_URL=redis://localhost:6379
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD_PRODUCTION }}
+          
+          # CORS Configuration
+          CORS_ORIGIN=https://openlearn.org.in,https://www.openlearn.org.in
+          
+          # Rate Limiting
+          RATE_LIMIT_WINDOW_MS=15
+          RATE_LIMIT_MAX_REQUESTS=100
+          
+          # File Upload Configuration
+          MAX_FILE_SIZE=10485760
+          UPLOAD_DIR=uploads
+          REQUIRE_EMAIL_VERIFICATION=true
+          
+          # Logging
+          LOG_LEVEL=info
+          
+          # Email Configuration
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+          
+          # Monitoring (if configured)
+          SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+          
+          # Slack notifications (optional)
+          SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+          EOF
+          
+          # Stop existing containers
+          echo "🛑 Stopping existing containers..."
+          docker-compose -f deployment/docker/docker-compose.production.yml down || true
+          
+          # Clean up old images
+          echo "🧹 Cleaning up old Docker images..."
+          docker image prune -f || true
+          
+          # Build and start new containers
+          echo "🔨 Building new containers..."
+          docker-compose -f deployment/docker/docker-compose.production.yml build --no-cache
+          
+          echo "🚀 Starting new containers..."
+          docker-compose -f deployment/docker/docker-compose.production.yml up -d
+          
+          # Wait for services to start
+          echo "⏳ Waiting for services to start..."
+          sleep 45
+          
+          # Run database migrations
+          echo "🗄️ Running database migrations..."
+          docker-compose -f deployment/docker/docker-compose.production.yml exec -T app npx prisma migrate deploy || echo "⚠️ Migration warning (continuing...)"
+          
+          # Health check
+          echo "🏥 Performing health check..."
+          for i in {1..10}; do
+            echo "Health check attempt $i/10..."
+            if curl -f -s --max-time 10 http://localhost:3000/health > /dev/null; then
+              echo "✅ Application is healthy!"
+              break
+            fi
+            
+            if [ $i -eq 10 ]; then
+              echo "❌ Health check failed after 10 attempts"
+              
+              # Attempt rollback
+              echo "🔄 Attempting rollback..."
+              latest_backup=$(ls -dt /home/${{ secrets.EC2_USER }}/backups/openlearn-backend-backup-* 2>/dev/null | head -n 1)
+              if [ -n "$latest_backup" ]; then
+                cd /home/${{ secrets.EC2_USER }}
+                docker-compose -f openlearn-backend/deployment/docker/docker-compose.production.yml down || true
+                rm -rf openlearn-backend
+                mv "$latest_backup" openlearn-backend
+                cd openlearn-backend
+                docker-compose -f deployment/docker/docker-compose.production.yml up -d
+                echo "🔄 Rollback completed"
+              fi
+              
+              exit 1
+            fi
+            
+            sleep 10
+          done
+          
+          # Final verification
+          echo "🔍 Final verification..."
+          docker-compose -f deployment/docker/docker-compose.production.yml ps
+          
+          # Log successful deployment
+          echo "$(date): Successful deployment of ${{ github.sha }} by ${{ github.actor }}" >> logs/deployment.log
+          
+          echo "🎉 Production deployment completed successfully!"
+          echo "📊 Health check: https://openlearn.org.in/health"
+          echo "📊 Status page: https://openlearn.org.in/status-page"
+
+    - name: Verify deployment
+      run: |
+        echo "🔍 Verifying deployment..."
+        
+        # Wait a bit more for full startup
+        sleep 30
+        
+        # Test health endpoint
+        for i in {1..5}; do
+          if curl -f -s https://openlearn.org.in/health; then
+            echo "✅ Production health check passed"
+            break
+          fi
+          
+          if [ $i -eq 5 ]; then
+            echo "❌ Production health check failed"
+            exit 1
+          fi
+          
+          sleep 10
+        done
+        
+        # Test API endpoint
+        if curl -f -s https://openlearn.org.in/api/status; then
+          echo "✅ Production API check passed"
+        else
+          echo "⚠️ Production API check failed (non-critical)"
+        fi
+
+    - name: Update deployment status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Deployment successful!"
+          echo "🌐 Production URL: https://openlearn.org.in"
+          echo "📊 Health: https://openlearn.org.in/health"
+          echo "📊 Status: https://openlearn.org.in/status-page"
+        else
+          echo "❌ Deployment failed!"
+        fi
+
+  notify:
+    name: Send Notifications
+    needs: [test, security-scan, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Send Slack notification
+      if: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        if [ "${{ needs.deploy.result }}" == "success" ]; then
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ OpenLearn Backend deployed successfully to Production!\n🌐 https://openlearn.org.in\n📊 Status: https://openlearn.org.in/status-page\n🚀 Deployed by: ${{ github.actor }}\n📝 Commit: ${{ github.sha }}"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+        else
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ OpenLearn Backend deployment to Production failed!\n🔍 Check: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\n👤 Triggered by: ${{ github.actor }}"}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+        fi
+    
+    - name: Create deployment summary
+      run: |
+        echo "## 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.deploy.result }}" == "success" ]; then
+          echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🌐 **Production URL:** https://openlearn.org.in" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Health Check:** https://openlearn.org.in/health" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Status Page:** https://openlearn.org.in/status-page" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the deployment logs for details." >> $GITHUB_STEP_SUMMARY
+        fi
