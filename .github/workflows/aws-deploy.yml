@@ -5,14 +5,14 @@ on:
     branches: [ main ]
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Deployment environment'
+      deployment_type:
+        description: 'Deployment type'
         required: true
-        default: 'production'
+        default: 'micro'
         type: choice
         options:
+        - micro
         - production
-        - staging
 
 jobs:
   test:
