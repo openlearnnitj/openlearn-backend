@@ -1,4 +1,4 @@
-name: 🧪 Deploy to Staging (Render)
+name: Deploy to Staging (Render)
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: 🧪 Run Tests
+    name: Run Tests
     runs-on: ubuntu-latest
     
     services:
@@ -26,32 +26,32 @@ jobs:
           - 5432:5432
 
     steps:
-    - name: 📥 Checkout code
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: 📦 Setup Node.js
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
 
-    - name: 📦 Install dependencies
+    - name: Install dependencies
       run: npm ci
 
-    - name: 🔍 Run ESLint
+    - name: Run ESLint
       run: npm run lint || true
 
-    - name: 🏗️ Build TypeScript
+    - name: Build TypeScript
       run: npm run build
 
-    - name: 🗄️ Setup test database
+    - name: Setup test database
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
       run: |
         npx prisma generate
         npx prisma migrate deploy
 
-    - name: 🧪 Run tests
+    - name: Run tests
       env:
         NODE_ENV: test
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
@@ -60,30 +60,30 @@ jobs:
       run: npm test || true
 
   deploy-staging:
-    name: 🚀 Deploy to Staging (Render)
+    name: Deploy to Staging (Render)
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
     environment: staging
     
     steps:
-    - name: 📥 Checkout code
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: 🚀 Deploy to Render
+    - name: Deploy to Render
       uses: johnbeynon/render-deploy-action@v0.0.8
       with:
         service-id: ${{ secrets.RENDER_SERVICE_ID }}
         api-key: ${{ secrets.RENDER_API_KEY }}
 
-    - name: ⏳ Wait for deployment
+    - name: Wait for deployment
       run: |
-        echo "⏳ Waiting for Render deployment to complete..."
+        echo "Waiting for Render deployment to complete..."
         sleep 60
 
-    - name: 🏥 Health check staging
+    - name: Health check staging
       run: |
-        echo "🏥 Performing health check on staging..."
+        echo "Performing health check on staging..."
         for i in {1..10}; do
           if curl -f -s ${{ secrets.STAGING_URL }}/health > /dev/null; then
             echo "✅ Staging deployment successful!"
@@ -93,17 +93,17 @@ jobs:
               echo "❌ Staging health check failed after 10 attempts"
               exit 1
             fi
-            echo "⏳ Health check attempt $i failed, retrying in 30s..."
+            echo "Health check attempt $i failed, retrying in 30s..."
             sleep 30
           fi
         done
 
-    - name: 📊 Display staging info
+    - name: Display staging info
       run: |
-        echo "🎉 Staging deployment completed!"
-        echo "🔗 Staging URL: ${{ secrets.STAGING_URL }}"
-        echo "📊 Status Page: ${{ secrets.STAGING_URL }}/status-page"
-        echo "🏥 Health Check: ${{ secrets.STAGING_URL }}/health"
+        echo "Staging deployment completed!"
+        echo "Staging URL: ${{ secrets.STAGING_URL }}"
+        echo "Status Page: ${{ secrets.STAGING_URL }}/status-page"
+        echo "Health Check: ${{ secrets.STAGING_URL }}/health"
 
   integration-tests:
     name: 🔧 Integration Tests
@@ -112,15 +112,15 @@ jobs:
     if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
     
     steps:
-    - name: 📥 Checkout code
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: 📦 Setup Node.js
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
 
-    - name: 🧪 Run integration tests against staging
+    - name: Run integration tests against staging
       env:
         STAGING_URL: ${{ secrets.STAGING_URL }}
         TEST_API_KEY: ${{ secrets.TEST_API_KEY }}
@@ -129,10 +129,10 @@ jobs:
         npm ci
         
         # Run integration tests
-        echo "🧪 Running integration tests against staging environment..."
+        echo "Running integration tests against staging environment..."
         
         # Basic API tests
-        echo "📡 Testing API endpoints..."
+        echo "Testing API endpoints..."
         
         # Test health endpoint
         curl -f "$STAGING_URL/health" || exit 1
@@ -150,23 +150,23 @@ jobs:
         echo "✅ Integration tests completed"
 
   notify-staging:
-    name: 📢 Notify Staging Status
+    name: Notify Staging Status
     runs-on: ubuntu-latest
     needs: [deploy-staging, integration-tests]
     if: always()
     
     steps:
-    - name: 📢 Staging Success Notification
+    - name: Staging Success Notification
       if: needs.deploy-staging.result == 'success' && needs.integration-tests.result == 'success'
       run: |
-        echo "🎉 Staging deployment and tests completed successfully!"
-        echo "🔗 Staging: ${{ secrets.STAGING_URL }}"
-        echo "📊 Status: ${{ secrets.STAGING_URL }}/status-page"
+        echo "Staging deployment and tests completed successfully!"
+        echo "Staging: ${{ secrets.STAGING_URL }}"
+        echo "Status: ${{ secrets.STAGING_URL }}/status-page"
         echo "✅ Ready for promotion to production"
 
-    - name: 📢 Staging Failure Notification
+    - name: Staging Failure Notification
       if: needs.deploy-staging.result == 'failure' || needs.integration-tests.result == 'failure'
       run: |
-        echo "❌ Staging deployment or tests failed!"
-        echo "🔍 Please check the logs for details"
-        echo "🚫 Do not promote to production"
+        echo "Staging deployment or tests failed!"
+        echo "Please check the logs for details"
+        echo "Do not promote to production"
