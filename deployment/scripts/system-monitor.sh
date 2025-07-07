@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 APP_NAME="OpenLearn"
-APP_URL="https://openlearn.org.in"
+APP_URL="https:/api.openlearn.org.in"
 API_URL="$APP_URL/api"
 HEALTH_URL="$APP_URL/health"
 STATUS_URL="$API_URL/status"
