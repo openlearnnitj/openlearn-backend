@@ -11,7 +11,6 @@ interface Config {
   refreshTokenSecret: string;
   refreshTokenExpiresIn: string;
   nodeEnv: string;
-  redisUrl?: string;
   logLevel: string;
   isProduction: boolean;
   isDevelopment: boolean;
@@ -25,7 +24,6 @@ const config: Config = {
   refreshTokenSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
   refreshTokenExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   nodeEnv: process.env.NODE_ENV || 'development',
-  redisUrl: process.env.REDIS_URL,
   logLevel: process.env.LOG_LEVEL || 'info',
   isProduction: process.env.NODE_ENV === 'production',
   isDevelopment: process.env.NODE_ENV === 'development',
