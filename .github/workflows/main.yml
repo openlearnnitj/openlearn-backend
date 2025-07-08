@@ -86,7 +86,7 @@ jobs:
         git pull origin main
         
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing dependencies..."
-        npm ci --only=production
+        npm ci
         
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building application..."
         npm run build
