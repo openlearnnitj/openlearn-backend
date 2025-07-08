@@ -1,11 +1,19 @@
-name: CI/CD
+name: OpenLearn CI/CD Pipeline
 
 on:
   push:
     branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+env:
+  NODE_VERSION: '18'
 
 jobs:
+  # Test job runs for all branches and PRs
   test:
+    name: Test & Build
     runs-on: ubuntu-latest
 
     services:
@@ -29,7 +37,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
 
     - name: Install dependencies
@@ -56,12 +64,25 @@ jobs:
         JWT_REFRESH_SECRET: test-refresh-secret
       run: npm test
 
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ github.sha }}
+        path: |
+          coverage/
+          test-results.xml
+        retention-days: 30
+
+  # Deploy job only runs for main branch (after successful tests)
   deploy:
-    name: Deploy to EC2
+    name: Deploy to Production
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
-    environment: production
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: 
+      name: production
+      url: http://${{ secrets.EC2_HOST }}:3000
 
     steps:
     - name: Checkout code
@@ -72,7 +93,110 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.EC2_PRIVATE_KEY }}
 
-    - name: Deploy to EC2
+    - name: Create deployment script
+      run: |
+        cat > deploy-to-server.sh << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting deployment..."
+        
+        # Navigate to application directory
+        cd /home/ubuntu/openlearn-backend
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Pulling latest code..."
+        git reset --hard origin/main
+        git pull origin main
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing dependencies..."
+        npm ci --only=production
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building application..."
+        npm run build
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping containers..."
+        docker-compose down || true
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Cleaning up Docker..."
+        docker system prune -f || true
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting containers..."
+        docker-compose up -d --build
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for services to start..."
+        sleep 30
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running database migrations..."
+        docker-compose exec -T app npx prisma migrate deploy || echo "Migration warning"
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Performing health check..."
+        for i in {1..10}; do
+          if curl -f -s http://localhost:3000/health > /dev/null; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment successful!"
+            exit 0
+          fi
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check attempt $i/10..."
+          sleep 10
+        done
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check failed"
+        docker-compose logs app
+        exit 1
+        EOF
+        
+        chmod +x deploy-to-server.sh
+
+    - name: Copy deployment script to server
       run: |
         ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'cd /home/ubuntu/openlearn-backend && git reset --hard origin/main && git pull && npm install && npm run build && docker-compose down && docker-compose up -d --build && npx prisma migrate deploy'
+        scp -o StrictHostKeyChecking=no deploy-to-server.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+
+    - name: Execute deployment
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash /tmp/deploy-to-server.sh'
+
+    - name: Verify deployment
+      run: |
+        echo "Verifying deployment..."
+        sleep 10
+        
+        # Test health endpoint
+        for i in {1..5}; do
+          if curl -f -s http://${{ secrets.EC2_HOST }}:3000/health; then
+            echo "Production health check passed"
+            break
+          fi
+          
+          if [ $i -eq 5 ]; then
+            echo "Production health check failed"
+            exit 1
+          fi
+          
+          sleep 10
+        done
+
+    - name: Cleanup
+      if: always()
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'rm -f /tmp/deploy-to-server.sh' || true
+
+  # Notify job runs after deployment (success or failure)
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [test, deploy]
+    if: always() && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Deployment Success
+      if: needs.deploy.result == 'success'
+      run: |
+        echo "Deployment to production completed successfully!"
+        echo "Application: http://${{ secrets.EC2_HOST }}:3000"
+        echo "Health Check: http://${{ secrets.EC2_HOST }}:3000/health"
+
+    - name: Deployment Failure
+      if: needs.deploy.result == 'failure'
+      run: |
+        echo "Deployment to production failed!"
+        echo "Check the deployment logs above for details."
