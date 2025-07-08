@@ -4,6 +4,11 @@ set -e
 
 echo "Starting deployment..."
 
+# Load environment variables for docker-compose
+set -a
+source ../.env
+set +a
+
 # Pull the latest code
 git pull
 
@@ -18,6 +23,6 @@ docker-compose down
 docker-compose up -d --build
 
 # Run database migrations
-npx prisma migrate deploy
+docker-compose exec -T app npx prisma migrate deploy --schema ../prisma/schema.prisma
 
 echo "Deployment finished successfully!"
