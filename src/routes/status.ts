@@ -34,6 +34,11 @@ router.get('/test', (req: Request, res: Response) => {
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
+    // Set explicit CORS headers for status endpoint
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    
     const statusData = await statusService.getStatusPageData();
     
     res.json({
@@ -49,6 +54,17 @@ router.get('/', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
     });
   }
+});
+
+/**
+ * OPTIONS /api/status
+ * Handle CORS preflight requests
+ */
+router.options('/', (req: Request, res: Response) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.sendStatus(200);
 });
 
 /**

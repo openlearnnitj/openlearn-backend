@@ -59,7 +59,13 @@ app.use(helmet({
         "data:",
         "https://fonts.gstatic.com" // Allow Google Fonts
       ],
-      connectSrc: ["'self'"],
+      connectSrc: [
+        "'self'", 
+        "https://api.openlearn.org.in",
+        "http://api.openlearn.org.in",
+        "https://*.openlearn.org.in",
+        "http://*.openlearn.org.in"
+      ],
       imgSrc: ["'self'", "data:", "https:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -69,16 +75,32 @@ app.use(helmet({
 }));
 
 const corsOptions = {
-  origin: [
-    'https://api.openlearn.org.in',
-    'http://api.openlearn.org.in', 
-    'https://openlearn.org.in',
-    'http://openlearn.org.in',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5173',
-    'http://127.0.0.1:3000'
-  ],
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow all openlearn.org.in subdomains and common development origins
+    const allowedOrigins = [
+      'https://api.openlearn.org.in',
+      'http://api.openlearn.org.in', 
+      'https://openlearn.org.in',
+      'http://openlearn.org.in',
+      'https://www.openlearn.org.in',
+      'http://www.openlearn.org.in',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000'
+    ];
+    
+    // Check if origin is allowed or if it's a subdomain of openlearn.org.in
+    if (allowedOrigins.includes(origin) || origin.endsWith('.openlearn.org.in')) {
+      return callback(null, true);
+    }
+    
+    // For status page, allow same-origin requests
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 

@@ -106,6 +106,7 @@
     <script>
         // OpenLearn Professional Status Page
         const API_BASE = window.location.origin;
+        console.log('Loading status data from:', `${API_BASE}/api/status`);
         
         const SystemStatus = {
             OPERATIONAL: 'OPERATIONAL',
@@ -271,7 +272,17 @@
                     this.isLoading = true;
                     this.error = null;
                     
-                    const response = await fetch(`${API_BASE}/api/status`);
+                    console.log('Loading status data from:', `${API_BASE}/api/status`);
+                    
+                    const response = await fetch(`${API_BASE}/api/status`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        },
+                        mode: 'cors',
+                        credentials: 'omit'
+                    });
                     
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -288,6 +299,7 @@
                 } catch (error) {
                     this.error = error.message;
                     console.error('Failed to fetch status:', error);
+                    console.error('Error loading status:', error);
                 } finally {
                     this.isLoading = false;
                     this.render();
@@ -345,17 +357,29 @@
             }
 
             renderError() {
+                console.log('Showing error:', this.error);
                 return `
                     <div class="min-h-screen flex items-center justify-center p-4">
                         <div class="glass-effect rounded-2xl p-8 text-center text-white max-w-md w-full">
                             <div class="text-6xl mb-4">⚠️</div>
                             <h2 class="text-2xl font-bold mb-3">Service Unavailable</h2>
-                            <p class="text-blue-100 mb-6">${this.error}</p>
+                            <p class="text-blue-100 mb-4">${this.error}</p>
+                            <p class="text-blue-200 text-sm mb-6">
+                                Trying to connect to: ${API_BASE}/api/status<br>
+                                Check browser console for more details.
+                            </p>
                             <button
-                                onclick="window.statusPage.fetchStatusData()"
-                                class="bg-white text-purple-600 font-semibold py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors duration-200"
+                                onclick="console.log('Retry button clicked'); window.statusPage.fetchStatusData()"
+                                class="bg-white text-purple-600 font-semibold py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors duration-200 mb-3"
                             >
                                 Retry Connection
+                            </button>
+                            <br>
+                            <button
+                                onclick="window.location.reload()"
+                                class="bg-transparent border border-white text-white font-semibold py-2 px-4 rounded-lg hover:bg-white hover:text-purple-600 transition-colors duration-200"
+                            >
+                                Reload Page
                             </button>
                         </div>
                     </div>
