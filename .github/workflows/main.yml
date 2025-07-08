@@ -130,7 +130,7 @@ jobs:
         
         # Test health endpoint
         for i in {1..5}; do
-          if curl -f -s http://${{ secrets.EC2_HOST }}:3000/health; then
+          if curl -f -s http://${{ secrets.EC2_HOST }}/health; then
             echo "Production health check passed"
             break
           fi
@@ -160,8 +160,7 @@ jobs:
       if: needs.deploy.result == 'success'
       run: |
         echo "Deployment to production completed successfully!"
-        echo "Application: http://${{ secrets.EC2_HOST }}:3000"
-        echo "Health Check: http://${{ secrets.EC2_HOST }}:3000/health"
+        echo "Health Check: http://${{ secrets.EC2_HOST }}/health"
 
     - name: Deployment Failure
       if: needs.deploy.result == 'failure'
