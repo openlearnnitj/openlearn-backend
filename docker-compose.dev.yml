@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Development
+  postgres:
+    image: postgres:15-alpine
+    container_name: openlearn-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-openlearn_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openlearn_dev_password}
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./logs/postgres:/var/log/postgresql
+    ports:
+      - "5432:5432"
+    networks:
+      - openlearn-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-openlearn_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for Caching/Sessions (Optional but good for development)
+  redis:
+    image: redis:7-alpine
+    container_name: openlearn-redis-dev
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_dev_password}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_dev_password}
+    volumes:
+      - redis_dev_data:/data
+      - ./logs/redis:/var/log/redis
+    ports:
+      - "6379:6379"
+    networks:
+      - openlearn-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+
+  # Application (Optional - for full Docker development)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openlearn-app-dev
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-openlearn_dev_password}@postgres:5432/${POSTGRES_DB:-openlearn_dev}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_dev_password}@redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
+      - RATE_LIMIT_AUTH_MAX=${RATE_LIMIT_AUTH_MAX}
+      - RATE_LIMIT_STRICT_MAX=${RATE_LIMIT_STRICT_MAX}
+      - RATE_LIMIT_SKIP_DEV=${RATE_LIMIT_SKIP_DEV}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs/app:/app/logs
+      - ./src:/app/src # Hot reload for development
+      - ./prisma:/app/prisma
+    networks:
+      - openlearn-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  openlearn-dev-network:
+    driver: bridge
+    name: openlearn-dev-network
+
+volumes:
+  postgres_dev_data:
+    driver: local
+    name: openlearn-postgres-dev-data
+  redis_dev_data:
+    driver: local
+    name: openlearn-redis-dev-data

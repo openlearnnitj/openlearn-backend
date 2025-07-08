@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import path from 'path';
 import config from './config/environment';
 import { prisma } from './config/database';
+import { generalRateLimit, authRateLimit, strictRateLimit, rateLimitInfo } from './middleware/rateLimiting';
 // import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
 // import { logger } from './config/logger';
 
@@ -26,6 +27,10 @@ import leaderboardRoutes from './routes/leaderboard';
 import statusRoutes from './routes/status';
 
 const app = express();
+
+// Configure Express to trust proxies (for accurate IP detection behind nginx/load balancers)
+// This is essential for rate limiting to work correctly with the real client IP
+app.set('trust proxy', config.isProduction ? 1 : false);
 
 // Configure helmet with relaxed CSP for status page
 app.use(helmet({
@@ -115,6 +120,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Apply general rate limiting to all routes
+app.use(generalRateLimit);
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -189,6 +197,58 @@ app.get('/health', async (req, res) => {
       database: {
         status: 'disconnected'
       }
+    });
+  }
+});
+
+// Rate Limit Information Endpoint
+/**
+ * Rate Limiting Information Endpoint
+ * Provides current rate limiting configuration for monitoring and debugging
+ * 
+ * Usage: curl -f https://your-app.onrender.com/rate-limit-info
+ */
+app.get('/rate-limit-info', (req, res) => {
+  try {
+    const rateInfo = {
+      success: true,
+      message: 'Rate limiting configuration',
+      timestamp: new Date().toISOString(),
+      rateLimiting: {
+        enabled: !rateLimitInfo.config.skipInDevelopment,
+        environment: config.nodeEnv,
+        limits: {
+          general: {
+            ...rateLimitInfo.generalLimit,
+            endpoints: 'Most API endpoints'
+          },
+          authentication: {
+            ...rateLimitInfo.authLimit,
+            endpoints: '/api/auth/*'
+          },
+          admin: {
+            ...rateLimitInfo.strictLimit,
+            endpoints: '/api/admin/*'
+          }
+        },
+        trustProxy: config.isProduction,
+        skipPaths: ['/health', '/ping', '/status', '/favicon.ico'],
+        headers: {
+          standardHeaders: true,
+          includedHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset']
+        }
+      }
+    };
+    
+    res.status(200).json(rateInfo);
+    
+  } catch (error: any) {
+    console.error('❌ Rate limit info check failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: config.isDevelopment ? error.message : 'Failed to retrieve rate limit information',
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -452,9 +512,9 @@ app.get('/status-page', (req, res) => {
 });
 
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
+// API routes with specific rate limiting
+app.use('/api/auth', authRateLimit, authRoutes); // Strict rate limiting for authentication
+app.use('/api/admin', strictRateLimit, adminRoutes); // Strict rate limiting for admin operations
 app.use('/api/cohorts', cohortRoutes);
 app.use('/api/leagues', leagueRoutes);
 app.use('/api/specializations', specializationRoutes);
