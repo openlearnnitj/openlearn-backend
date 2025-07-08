@@ -14,11 +14,19 @@ services:
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
       - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     volumes:
       - ./logs:/app/logs # Bind mount for application logs
     networks:
       - openlearn-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   postgres:
     image: postgres:15-alpine
@@ -33,6 +41,12 @@ services:
       - "5432:5432"
     networks:
       - openlearn-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 networks:
   openlearn-network:

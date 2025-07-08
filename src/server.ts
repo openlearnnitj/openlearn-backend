@@ -4,6 +4,27 @@ import DatabaseConnection from './config/database';
 import HealthCheckScheduler from './services/HealthCheckScheduler';
 // import { logger } from './config/logger';
 
+const connectToDatabase = async (maxRetries = 30, delayMs = 2000) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Database connection attempt ${attempt}/${maxRetries}...`);
+      await DatabaseConnection.getInstance().$connect();
+      console.log('✅ Database connected successfully');
+      return;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.log(`❌ Database connection attempt ${attempt} failed:`, errorMessage);
+      
+      if (attempt === maxRetries) {
+        throw new Error(`Failed to connect to database after ${maxRetries} attempts`);
+      }
+      
+      console.log(`⏳ Retrying in ${delayMs/1000} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+};
+
 const startServer = async () => {
   try {
     // Log startup information
@@ -12,9 +33,9 @@ const startServer = async () => {
     console.log(`Port: ${config.port}`);
     console.log(`Node Version: ${process.version}`);
 
-    // Test database connection
+    // Test database connection with retry logic
     console.log('Testing database connection...');
-    await DatabaseConnection.getInstance().$connect();
+    await connectToDatabase();
     console.log('✅ Database connected successfully');
 
     // Initialize and start health check scheduler
