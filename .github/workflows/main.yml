@@ -11,10 +11,24 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  # Build job runs for all branches and PRs
-  build:
-    name: Build Application
+  # Test job runs for all branches and PRs
+  test:
+    name: Test & Build
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: openlearn_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
     - name: Checkout code
@@ -29,35 +43,48 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Run ESLint
+      run: npm run lint
+
     - name: Build TypeScript
       run: npm run build
 
-    - name: Upload built application
-      uses: actions/upload-artifact@v4
-      with:
-        name: built-app-${{ github.sha }}
-        path: |
-          dist/
-          package.json
-          package-lock.json
-          prisma/
-          docker-compose.yml
-          Dockerfile
-        retention-days: 1
+    - name: Setup test database
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+      run: |
+        npx prisma generate
+        npx prisma migrate deploy
 
-  # Deploy job only runs for main branch (after successful build)
+    - name: Run tests
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+        JWT_SECRET: test-secret
+        JWT_REFRESH_SECRET: test-refresh-secret
+      run: npm test
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ github.sha }}
+        path: |
+          coverage/
+          test-results.xml
+        retention-days: 30
+
+  # Deploy job only runs for main branch (after successful tests)
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: build
+    needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
 
     steps:
-    - name: Download built application
-      uses: actions/download-artifact@v4
-      with:
-        name: built-app-${{ github.sha }}
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.7.0
@@ -79,8 +106,11 @@ jobs:
         git reset --hard origin/main
         git pull origin main
         
-        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing production dependencies..."
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing dependencies..."
         npm ci --only=production
+        
+        echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building application..."
+        npm run build
         
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping containers..."
         docker-compose down || true
@@ -99,7 +129,7 @@ jobs:
         
         echo "[$(date +'%Y-%m-%d %H:%M:%S')] Performing health check..."
         for i in {1..10}; do
-          if curl -f -s http://localhost:3000/health > /dev/null; then
+          if curl -f -s https://localhost:3000/health > /dev/null; then
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment successful!"
             exit 0
           fi
@@ -130,7 +160,7 @@ jobs:
         
         # Test health endpoint
         for i in {1..5}; do
-          if curl -f -s http://${{ secrets.EC2_HOST }}/health; then
+          if curl -f -s https://${{ secrets.EC2_HOST }}/health; then
             echo "Production health check passed"
             break
           fi
@@ -152,7 +182,7 @@ jobs:
   notify:
     name: Notify
     runs-on: ubuntu-latest
-    needs: [build, deploy]
+    needs: [test, deploy]
     if: always() && github.ref == 'refs/heads/main'
     
     steps:
@@ -160,7 +190,8 @@ jobs:
       if: needs.deploy.result == 'success'
       run: |
         echo "Deployment to production completed successfully!"
-        echo "Health Check: http://${{ secrets.EC2_HOST }}/health"
+        echo "Application: https://${{ secrets.EC2_HOST }}:3000"
+        echo "Health Check: https://${{ secrets.EC2_HOST }}:3000/health"
 
     - name: Deployment Failure
       if: needs.deploy.result == 'failure'
