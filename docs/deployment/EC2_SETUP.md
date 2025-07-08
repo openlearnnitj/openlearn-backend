@@ -28,50 +28,46 @@ This guide will walk you through the process of setting up an AWS EC2 instance t
     ssh -i <your-key-pair-name>.pem ubuntu@<your-instance-public-dns>
     ```
 
-## 3. Install Dependencies
+## 3. Automated EC2 Setup
 
-1.  **Update the package list:**
+1.  **Connect to your instance** as described in Section 2.
+2.  **Run the automated setup script:**
     ```bash
-    sudo apt update
+    bash scripts/setup_ec2_micro.sh
     ```
-2.  **Install Node.js and npm:**
-    ```bash
-    sudo apt install -y nodejs npm
-    ```
-3.  **Install Docker and Docker Compose:**
-    ```bash
-    sudo apt install -y docker.io
-    sudo systemctl start docker
-    sudo systemctl enable docker
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
-    ```
-4.  **Install Git:**
-    ```bash
-    sudo apt install -y git
-    ```
+    This script will:
+    *   Update system packages.
+    *   Install Node.js, npm, Docker, Docker Compose, and Git.
+    *   Configure the UFW firewall.
+    *   Clone the OpenLearn backend repository to `/home/ubuntu/openlearn-backend`.
+    *   Create a `.env` file from `.env.example`.
 
-## 4. Clone the Repository
+    **Important:** After this script runs, you will be prompted to log out and log back in to apply Docker group changes. Please do so before proceeding.
 
-1.  **Clone the repository** to your home directory:
-    ```bash
-    git clone https://github.com/openlearnnitj/openlearn-backend.git
-    ```
-
-## 5. Configure Environment Variables
+## 4. Configure Environment Variables
 
 1.  **Navigate to the project directory:**
     ```bash
-    cd openlearn-backend
+    cd /home/ubuntu/openlearn-backend
     ```
-2.  **Create a `.env` file** by copying the example file:
-    ```bash
-    cp .env.example .env
-    ```
-3.  **Edit the `.env` file** and fill in the required values:
+2.  **Edit the `.env` file** and fill in the required values, especially `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, and `CORS_ORIGIN` (your domain, e.g., `https://yourdomain.com`):
     ```bash
     nano .env
     ```
+
+## 5. Configure Nginx and SSL
+
+1.  **Run the Nginx and SSL setup script:**
+    ```bash
+    bash scripts/setup_nginx.sh
+    ```
+    This script will:
+    *   Install Nginx.
+    *   Configure Nginx as a reverse proxy for your application using the `CORS_ORIGIN` from your `.env` file.
+    *   Install Certbot.
+    *   Obtain and configure an SSL certificate for your domain.
+
+    **Note:** Ensure your DNS records are pointing to your EC2 instance's public IP address before running this script for SSL to work correctly.
 
 ## 6. Deploy the Application
 
@@ -79,55 +75,20 @@ This guide will walk you through the process of setting up an AWS EC2 instance t
     ```bash
     bash scripts/deploy.sh
     ```
+    This script will pull the latest code, install dependencies, build the application, restart Docker containers, and run database migrations.
 
-## 7. Configure Nginx as a Reverse Proxy (Optional)
+## 7. Set Up Automated Tasks (Optional)
 
-If you want to use a custom domain and SSL, you can configure Nginx as a reverse proxy.
+1.  **Run the cron job setup script:**
+    ```bash
+    bash scripts/setup_cron_jobs.sh
+    ```
+    This script will set up cron jobs for daily database backups and regular system monitoring.
 
-1.  **Install Nginx:**
-    ```bash
-    sudo apt install -y nginx
-    ```
-2.  **Create a new Nginx configuration file:**
-    ```bash
-    sudo nano /etc/nginx/sites-available/openlearn
-    ```
-3.  **Add the following configuration** to the file, replacing `your_domain` with your actual domain name:
-    ```nginx
-    server {
-        listen 80;
-        server_name your_domain www.your_domain;
+## 8. Monitor Your Application
 
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_cache_bypass $http_upgrade;
-        }
-    }
-    ```
-4.  **Enable the new configuration:**
+1.  **Run the monitoring script:**
     ```bash
-    sudo ln -s /etc/nginx/sites-available/openlearn /etc/nginx/sites-enabled
+    bash scripts/monitor.sh
     ```
-5.  **Test the Nginx configuration:**
-    ```bash
-    sudo nginx -t
-    ```
-6.  **Restart Nginx:**
-    ```bash
-    sudo systemctl restart nginx
-    ```
-
-## 8. Configure SSL with Certbot (Optional)
-
-1.  **Install Certbot:**
-    ```bash
-    sudo apt install -y certbot python3-certbot-nginx
-    ```
-2.  **Obtain an SSL certificate:**
-    ```bash
-    sudo certbot --nginx -d your_domain -d www.your_domain
-    ```
+    This script provides a quick overview of system resources, Docker container status, application logs, and health checks.

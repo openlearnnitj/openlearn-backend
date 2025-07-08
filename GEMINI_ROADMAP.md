@@ -27,3 +27,11 @@ This document outlines the steps to simplify the deployment and CI/CD processes 
 
 - [x] **Phase 6: Final Cleanup**
     - [x] Remove all old and unnecessary files and folders.
+
+- [x] **Phase 7: Automation Scripts and Documentation Update**
+    - [x] Create `scripts/setup_ec2_micro.sh`.
+    - [x] Create `scripts/setup_nginx.sh`.
+    - [x] Create `scripts/monitor.sh`.
+    - [x] Create `scripts/setup_cron_jobs.sh`.
+    - [x] Update `docs/deployment/EC2_SETUP.md`.
+    - [ ] Update `docs/deployment/CI_CD_GUIDE.md` (if necessary).
