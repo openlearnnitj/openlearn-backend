@@ -30,7 +30,8 @@ const app = express();
 
 // Configure Express to trust proxies (for accurate IP detection behind nginx/load balancers)
 // This is essential for rate limiting to work correctly with the real client IP
-app.set('trust proxy', config.isProduction ? 1 : false);
+// Enable trust proxy in development for local testing too
+app.set('trust proxy', true);
 
 // Configure helmet with relaxed CSP for status page
 app.use(helmet({

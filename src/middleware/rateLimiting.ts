@@ -36,8 +36,8 @@ const RATE_LIMIT_CONFIG = {
   // Strict rate limiting for sensitive operations
   strictMaxRequests: parseInt(process.env.RATE_LIMIT_STRICT_MAX || '30'), // 30 requests per window
   
-  // Skip rate limiting in development mode
-  skipInDevelopment: process.env.RATE_LIMIT_SKIP_DEV === 'true' || config.isDevelopment,
+  // Skip rate limiting in development mode only if explicitly enabled
+  skipInDevelopment: process.env.RATE_LIMIT_SKIP_DEV === 'true',
 } as const;
 
 /**
@@ -71,19 +71,33 @@ const rateLimitErrorHandler = (req: Request, res: Response) => {
  */
 const getTrustedKeyGenerator = () => {
   return (req: Request): string => {
-    // In production behind nginx/proxy, use X-Forwarded-For
-    // In development, use direct connection IP
+    // Try multiple sources for getting the real client IP
     const forwardedIp = req.headers['x-forwarded-for'] as string;
-    const directIp = req.connection.remoteAddress;
+    const realIp = req.headers['x-real-ip'] as string;
+    const remoteAddress = req.connection?.remoteAddress || req.socket?.remoteAddress;
+    const clientIp = req.ip;
     
     // Use the first IP in X-Forwarded-For chain (real client IP)
-    if (forwardedIp && config.isProduction) {
+    if (forwardedIp) {
       const clientIp = forwardedIp.split(',')[0].trim();
       return clientIp;
     }
     
-    // Fallback to direct connection IP
-    return directIp || 'unknown';
+    // Fallback to other IP sources
+    if (realIp) {
+      return realIp;
+    }
+    
+    if (clientIp) {
+      return clientIp;
+    }
+    
+    if (remoteAddress) {
+      return remoteAddress;
+    }
+    
+    // Final fallback for local development
+    return 'unknown-' + Math.random().toString(36).substring(7);
   };
 };
 
