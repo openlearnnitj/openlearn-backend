@@ -4,10 +4,8 @@ set -e
 
 echo "Starting deployment..."
 
-# Load environment variables for docker-compose
-set -a
-source ../.env
-set +a
+# Change to the project root directory
+cd /home/ubuntu/openlearn-backend
 
 # Pull the latest code
 git pull
