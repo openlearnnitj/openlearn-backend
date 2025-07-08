@@ -23,7 +23,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || echo "Docker n
 
 # Application Logs
 echo -e "\n-- Application Logs (last 10 lines) --"
-docker logs openlearn-app --tail 10 2>/dev/null || echo "No logs or container 'openlearn-app' not found."
+docker logs openlearn-backend_app_1 --tail 10 2>/dev/null || echo "No logs or container 'openlearn-app' not found."
 
 # Application Health
 echo -e "\n-- Health Check --"
@@ -32,20 +32,4 @@ if curl -sf http://localhost:3000/health > /dev/null; then
 else
     echo "Application is NOT responding on /health"
 fi
-
-# SSL Certificate Check
-echo -e "\n-- SSL Certificate Status --"
-if [ -f "$ENV_FILE" ]; then
-    DOMAIN=$(grep '^CORS_ORIGIN=' "$ENV_FILE" | cut -d'=' -f2 | sed 's|https://||')
-    CERT_PATH="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
-    if [ -f "$CERT_PATH" ]; then
-        EXPIRY=$(openssl x509 -in "$CERT_PATH" -noout -enddate | cut -d= -f2)
-        echo "SSL Certificate for $DOMAIN expires on: $EXPIRY"
-    else
-        echo "No SSL certificate found at: $CERT_PATH"
-    fi
-else
-    echo ".env not found or CORS_ORIGIN missing"
-fi
-
 echo -e "\n==== End of Report ===="
