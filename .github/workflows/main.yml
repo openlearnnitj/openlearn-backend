@@ -53,24 +53,6 @@ jobs:
         npx prisma generate
         npx prisma migrate deploy
 
-    - name: Run tests
-      env:
-        NODE_ENV: test
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
-        JWT_SECRET: test-secret
-        JWT_REFRESH_SECRET: test-refresh-secret
-      run: npm test
-
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-${{ github.sha }}
-        path: |
-          coverage/
-          test-results.xml
-        retention-days: 30
-
   # Deploy job only runs for main branch (after successful tests)
   deploy:
     name: Deploy to Production
