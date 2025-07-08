@@ -27,8 +27,8 @@ export class HealthCheckScheduler {
 
     logger.info('Starting health check scheduler');
 
-    // Health checks every 5 minutes
-    cron.schedule('*/5 * * * *', async () => {
+    // Health checks every hour
+    cron.schedule('0 * * * *', async () => {
       try {
         logger.info('Running scheduled health check');
         await this.statusService.performSystemHealthCheck();

@@ -69,6 +69,16 @@ app.use(helmet({
 }));
 
 const corsOptions = {
+  origin: [
+    'https://api.openlearn.org.in',
+    'http://api.openlearn.org.in', 
+    'https://openlearn.org.in',
+    'http://openlearn.org.in',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 
