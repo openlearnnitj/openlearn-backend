@@ -23,6 +23,6 @@ docker-compose down
 docker-compose up -d --build
 
 # Run database migrations
-docker-compose exec -T app npx prisma migrate deploy --schema ../prisma/schema.prisma
+docker-compose exec -T app npx prisma migrate deploy --schema prisma/schema.prisma
 
 echo "Deployment finished successfully!"
