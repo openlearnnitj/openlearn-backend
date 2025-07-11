@@ -585,54 +585,6 @@ CMD ["npm", "start"]
 - **Caching**: Redis container for session storage
 
 
-
-### Monitoring & Observability
-
-**Health Monitoring System**
-```mermaid
-graph TB
-    subgraph "Health Check Scheduler"
-        CRON[Node-Cron<br/>Every 5 Minutes]
-        HEALTH_SERVICE[Health Check Service]
-    end
-    
-    subgraph "Component Monitoring"
-        API_CHECK[API Endpoint Health]
-        DB_CHECK[Database Connectivity]
-        AUTH_CHECK[Authentication System]
-        EXTERNAL_CHECK[External Dependencies]
-    end
-    
-    subgraph "Alerting & Response"
-        STATUS_DB[(Status Database)]
-        INCIDENT_MGT[Incident Management]
-        STATUS_PAGE[Public Status Page]
-        NOTIFICATIONS[Alert Notifications]
-    end
-    
-    CRON --> HEALTH_SERVICE
-    HEALTH_SERVICE --> API_CHECK
-    HEALTH_SERVICE --> DB_CHECK
-    HEALTH_SERVICE --> AUTH_CHECK
-    HEALTH_SERVICE --> EXTERNAL_CHECK
-    
-    API_CHECK --> STATUS_DB
-    DB_CHECK --> STATUS_DB
-    AUTH_CHECK --> STATUS_DB
-    EXTERNAL_CHECK --> STATUS_DB
-    
-    STATUS_DB --> INCIDENT_MGT
-    INCIDENT_MGT --> STATUS_PAGE
-    INCIDENT_MGT --> NOTIFICATIONS
-```
-
-**Monitoring Features**
-- **Real-time Health Checks**: Automated monitoring every 5 minutes
-- **Performance Metrics**: Response times, throughput, and resource usage
-- **Uptime Tracking**: 24h/7d/30d availability statistics
-- **Error Tracking**: Comprehensive error logging and alerting
-- **Public Status Page**: Real-time system status at `api.openlearn.org.in/status/public`
-
 ### CI/CD Pipeline
 
 **Automated Deployment Workflow**
