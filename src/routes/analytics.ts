@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AnalyticsController } from '../controllers/analyticsController';
+import { HierarchicalAnalyticsController } from '../controllers/hierarchicalAnalyticsController';
 import { AuthMiddleware } from '../middleware/auth';
 import { UserRole } from '@prisma/client';
 
@@ -34,5 +35,16 @@ router.get('/cohort/:cohortId',
  * @access All authenticated users (self) or Pathfinder+ (any user)
  */
 router.get('/user/:userId', AnalyticsController.getUserReport);
+
+/**
+ * @route GET /api/analytics/counts
+ * @desc Get hierarchical count analytics (total and completed for all levels)
+ * @query userId (optional) - specific user ID, defaults to current user
+ * @query leagueId (optional) - get detailed breakdown for specific league
+ * @query weekId (optional) - get counts for specific week
+ * @query sectionId (optional) - get counts for specific section
+ * @access All authenticated users
+ */
+router.get('/counts', HierarchicalAnalyticsController.getHierarchicalCounts);
 
 export default router;

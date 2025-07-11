@@ -8,11 +8,13 @@
 *Featuring role-based learning paths, specializations, progress tracking, and gamification*
 
 [![Website](https://img.shields.io/badge/Website-openlearn.org.in-blue?style=for-the-badge&logo=web)](https://openlearn.org.in)
-[![Status](https://img.shields.io/badge/Status-Production-green?style=for-the-badge)](https://openlearn.org.in/status-page)
+[![API](https://img.shields.io/badge/API-api.openlearn.org.in-green?style=for-the-badge&logo=fastapi)](https://api.openlearn.org.in)
+[![Status](https://img.shields.io/badge/Status-Production-green?style=for-the-badge)](https://api.openlearn.org.in/status/public)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Express](https://img.shields.io/badge/Express-4.18+-black?style=for-the-badge&logo=express)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-5.0+-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 </div>
 
@@ -33,6 +35,7 @@
 - **[PROGRESS_TRACKING_API_DOCUMENTATION.md](./docs/PROGRESS_TRACKING_API_DOCUMENTATION.md)** - Learning progress tracking
 - **[RESOURCE_PROGRESS_API_DOCUMENTATION.md](./docs/RESOURCE_PROGRESS_API_DOCUMENTATION.md)** - Resource completion tracking
 - **[ANALYTICS_API_DOCUMENTATION.md](./docs/ANALYTICS_API_DOCUMENTATION.md)** - Platform analytics
+- **[HIERARCHICAL_ANALYTICS_API_DOCUMENTATION.md](./docs/HIERARCHICAL_ANALYTICS_API_DOCUMENTATION.md)** - Hierarchical analytics endpoint
 - **[LEADERBOARD_API_DOCUMENTATION.md](./docs/LEADERBOARD_API_DOCUMENTATION.md)** - Competitive features
 
 ### Gamification & Social
@@ -280,45 +283,6 @@ erDiagram
     }
 ```
 
-### Monitoring Architecture
-
-```mermaid
-graph TB
-    subgraph "Health Monitoring System"
-        SCHEDULER[Node-Cron Scheduler<br/>Every 5 Minutes]
-        HEALTH_SVC[Health Check Service]
-        STATUS_SVC[Status Service]
-    end
-    
-    subgraph "System Components"
-        API[API Health Check]
-        DB[Database Connectivity]
-        AUTH[Authentication System]
-    end
-    
-    subgraph "Status Storage"
-        STATUS_CHECKS[(SystemStatus)]
-        INCIDENTS[(StatusIncident)]
-        UPDATES[(IncidentUpdate)]
-    end
-    
-    subgraph "External Monitoring"
-        GITHUB_ACTIONS[GitHub Actions<br/>Keep-Alive Pings]
-        RENDER[Render Hosting]
-    end
-    
-    SCHEDULER --> HEALTH_SVC
-    HEALTH_SVC --> API
-    HEALTH_SVC --> DB
-    HEALTH_SVC --> AUTH
-    HEALTH_SVC --> STATUS_SVC
-    STATUS_SVC --> STATUS_CHECKS
-    STATUS_SVC --> INCIDENTS
-    STATUS_SVC --> UPDATES
-    
-    GITHUB_ACTIONS --> RENDER
-    RENDER --> API
-```
 
 ## Project Structure
 
@@ -440,6 +404,331 @@ sequenceDiagram
     API->>C: JSON Response
 ```
 
+## DevOps Architecture
+
+### Infrastructure Overview
+
+```mermaid
+graph TB
+    subgraph "Production Environment"
+        subgraph "Frontend Layer"
+            DOMAIN[api.openlearn.org.in]
+            LB[Load Balancer]
+            NGINX[Nginx Proxy]
+        end
+        
+        subgraph "Application Layer"
+            DOCKER[Docker Container]
+            NODE[Node.js + Express]
+            APP[OpenLearn Backend]
+        end
+        
+        subgraph "Data Layer"
+            PG[(PostgreSQL 15)]
+            REDIS[(Redis Cache)]
+        end
+        
+        subgraph "Monitoring Layer"
+            HEALTH[Health Checks]
+            LOGS[Application Logs]
+            METRICS[Performance Metrics]
+            STATUS[Status Page]
+        end
+    end
+    
+    subgraph "Development Environment"
+        LOCAL[Local Development]
+        COMPOSE[Docker Compose]
+        DEV_DB[(Local PostgreSQL)]
+    end
+    
+    subgraph "CI/CD Pipeline"
+        GITHUB[GitHub Repository]
+        ACTIONS[GitHub Actions]
+        BUILD[Automated Build]
+        DEPLOY[Auto Deploy]
+    end
+    
+    DOMAIN --> LB
+    LB --> NGINX
+    NGINX --> DOCKER
+    DOCKER --> NODE
+    NODE --> APP
+    APP --> PG
+    APP --> REDIS
+    APP --> HEALTH
+    HEALTH --> STATUS
+    
+    LOCAL --> COMPOSE
+    COMPOSE --> DEV_DB
+    
+    GITHUB --> ACTIONS
+    ACTIONS --> BUILD
+    BUILD --> DEPLOY
+    DEPLOY --> DOCKER
+```
+
+### Deployment Strategy
+
+**Production Deployment**
+- **Platform**: EC2 Cloud infrastructure
+- **Containerization**: Docker containers for consistency and scalability
+- **Reverse Proxy**: Nginx for SSL termination
+- **Database**: Managed PostgreSQL with connection pooling
+- **DNS**: Custom domain with SSL certificates (api.openlearn.org.in)
+
+**Environment Management**
+```mermaid
+graph LR
+    DEV[Development] --> STAGING[Staging]
+    STAGING --> PROD[Production]
+    
+    subgraph "Development"
+        LOCAL_ENV[Local Environment]
+        DOCKER_COMPOSE[Docker Compose]
+        DEV_DB[Local PostgreSQL]
+    end
+    
+    subgraph "Staging"
+        STAGING_SERVER[Staging Server]
+        STAGING_DB[Staging Database]
+        E2E_TESTS[E2E Testing]
+    end
+    
+    subgraph "Production"
+        PROD_SERVER[Production Server]
+        PROD_DB[Production Database]
+        MONITORING[24/7 Monitoring]
+    end
+```
+
+## Monitoring & Observability
+
+Our production system includes comprehensive monitoring with real-time health checks, status updates, and alerting.
+
+### Health Monitoring Architecture
+
+```mermaid
+graph TB
+    subgraph "Health Check Scheduler"
+        CRON[Node-Cron<br/>Every 5 Minutes]
+        HEALTH_SERVICE[Health Check Service]
+    end
+
+    subgraph "Component Monitoring"
+        API_CHECK[API Endpoint Health]
+        DB_CHECK[Database Connectivity]
+        AUTH_CHECK[Authentication System]
+        EXTERNAL_CHECK[External Dependencies]
+    end
+
+    subgraph "Alerting & Response"
+        STATUS_DB[(Status Database)]
+        INCIDENT_MGT[Incident Management]
+        STATUS_PAGE[Public Status Page]
+        NOTIFICATIONS[Alert Notifications]
+    end
+
+    CRON --> HEALTH_SERVICE
+    HEALTH_SERVICE --> API_CHECK
+    HEALTH_SERVICE --> DB_CHECK
+    HEALTH_SERVICE --> AUTH_CHECK
+    HEALTH_SERVICE --> EXTERNAL_CHECK
+
+    API_CHECK --> STATUS_DB
+    DB_CHECK --> STATUS_DB
+    AUTH_CHECK --> STATUS_DB
+    EXTERNAL_CHECK --> STATUS_DB
+
+    STATUS_DB --> INCIDENT_MGT
+    INCIDENT_MGT --> STATUS_PAGE
+    INCIDENT_MGT --> NOTIFICATIONS
+```
+
+### Key Features
+
+* Real-time health checks every 5 minutes
+* 24h/7d/30d uptime monitoring
+* Incident alerting and logs
+* [Public Status Page](https://api.openlearn.org.in/status-page)
+
+
+### Container Architecture
+
+**Docker Configuration**
+```dockerfile
+# Multi-stage build for optimized production images
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npx prisma generate
+RUN npm run build
+
+FROM node:18-alpine AS production
+WORKDIR /app
+RUN apk add --no-cache curl
+COPY package*.json ./
+RUN npm ci --only=production
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+**Container Orchestration**
+- **Local Development**: Docker Compose with hot reload
+- **Production**: Docker containers with health checks
+- **Database**: Containerized PostgreSQL with persistent volumes
+- **Caching**: Redis container for session storage
+
+
+
+### Monitoring & Observability
+
+**Health Monitoring System**
+```mermaid
+graph TB
+    subgraph "Health Check Scheduler"
+        CRON[Node-Cron<br/>Every 5 Minutes]
+        HEALTH_SERVICE[Health Check Service]
+    end
+    
+    subgraph "Component Monitoring"
+        API_CHECK[API Endpoint Health]
+        DB_CHECK[Database Connectivity]
+        AUTH_CHECK[Authentication System]
+        EXTERNAL_CHECK[External Dependencies]
+    end
+    
+    subgraph "Alerting & Response"
+        STATUS_DB[(Status Database)]
+        INCIDENT_MGT[Incident Management]
+        STATUS_PAGE[Public Status Page]
+        NOTIFICATIONS[Alert Notifications]
+    end
+    
+    CRON --> HEALTH_SERVICE
+    HEALTH_SERVICE --> API_CHECK
+    HEALTH_SERVICE --> DB_CHECK
+    HEALTH_SERVICE --> AUTH_CHECK
+    HEALTH_SERVICE --> EXTERNAL_CHECK
+    
+    API_CHECK --> STATUS_DB
+    DB_CHECK --> STATUS_DB
+    AUTH_CHECK --> STATUS_DB
+    EXTERNAL_CHECK --> STATUS_DB
+    
+    STATUS_DB --> INCIDENT_MGT
+    INCIDENT_MGT --> STATUS_PAGE
+    INCIDENT_MGT --> NOTIFICATIONS
+```
+
+**Monitoring Features**
+- **Real-time Health Checks**: Automated monitoring every 5 minutes
+- **Performance Metrics**: Response times, throughput, and resource usage
+- **Uptime Tracking**: 24h/7d/30d availability statistics
+- **Error Tracking**: Comprehensive error logging and alerting
+- **Public Status Page**: Real-time system status at `api.openlearn.org.in/status/public`
+
+### CI/CD Pipeline
+
+**Automated Deployment Workflow**
+```mermaid
+graph LR
+    subgraph "Source Control"
+        DEV_BRANCH[Development Branch]
+        FEATURE_BRANCH[Feature Branches]
+        MAIN_BRANCH[Main Branch]
+    end
+    
+    subgraph "CI Pipeline"
+        LINT[Code Linting]
+        TEST[Unit Tests]
+        BUILD[Build Application]
+        SECURITY[Security Scan]
+    end
+    
+    subgraph "CD Pipeline"
+        STAGING_DEPLOY[Deploy to Staging]
+        E2E_TEST[E2E Testing]
+        PROD_DEPLOY[Deploy to Production]
+        HEALTH_CHECK[Post-Deploy Health Check]
+    end
+    
+    FEATURE_BRANCH --> LINT
+    DEV_BRANCH --> LINT
+    LINT --> TEST
+    TEST --> BUILD
+    BUILD --> SECURITY
+    SECURITY --> STAGING_DEPLOY
+    STAGING_DEPLOY --> E2E_TEST
+    E2E_TEST --> PROD_DEPLOY
+    PROD_DEPLOY --> HEALTH_CHECK
+    MAIN_BRANCH --> PROD_DEPLOY
+```
+
+**Pipeline Features**
+- **Automated Testing**: Unit tests, integration tests, and E2E testing
+- **Code Quality**: ESLint, Prettier, and TypeScript strict mode
+- **Security Scanning**: Automated vulnerability scanning
+- **Database Migrations**: Automated Prisma migration deployment
+- **Zero-Downtime Deployment**: Rolling updates with health checks
+- **Rollback Capability**: Quick rollback on deployment failures
+
+
+## Performance & Scalability
+
+### Database
+- Prisma with connection pooling
+- Proper indexing and optimized queries
+- Automated migrations and Prisma Studio for debugging
+
+### Application
+- Efficient memory management and garbage collection
+- API rate limiting to avoid abuse
+- Load tested under simulated stress
+
+### Caching
+- Redis for session and response caching
+- API response-level caching for heavy requests
+- Planned CDN integration for assets
+
+### Monitoring
+- Performance metrics: latency, error rates, throughput
+- Alerting on thresholds via health system
+
+## Security
+
+OpenLearn includes multiple layers of protection across API, user access, and external interfaces.
+
+### Security Stack
+
+- **WAF & SSL**: Reverse-proxied through Nginx with SSL and certificate renewal
+- **JWT Auth**: Secure token-based authentication with refresh rotation
+- **Role-Based Access Control**: Granular permission matrix across roles
+- **Helmet.js**: Default HTTP security headers
+- **Validation & Sanitization**: All requests validated with express-validator
+- **Rate Limiting**: Configurable thresholds for endpoints
+- **Audit Logging**: User activity logs and incident traceability
+
+
+### Backup & Disaster Recovery
+
+**Backup Strategy**
+- **Database Backups**: Automated daily backups with 30-day retention
+- **Application Backups**: Source code versioned in Git
+- **Configuration Backups**: Environment configurations and secrets
+- **Log Retention**: Structured logs with configurable retention policies
+
+**Disaster Recovery Plan**
+- **RTO (Recovery Time Objective)**: < 1 hour for critical services
+- **RPO (Recovery Point Objective)**: < 15 minutes for data loss
+- **Failover Strategy**: Automated failover to backup infrastructure
+- **Data Recovery**: Point-in-time recovery from backup snapshots
+
 ## User Roles & Permissions
 
 ### Role Hierarchy
@@ -465,73 +754,40 @@ System Administration |    ✗    |     ✗      |        ✗         |        �
 ### Essential Endpoints
 ```bash
 # Health & Status
-GET  /health              # System health check
-GET  /api/status          # Detailed system status
-GET  /status-page         # Visual status dashboard
+GET  /health                    # System health check
+GET  /api/status/public         # Public system status
+GET  /api/status/components     # Component status details
 
 # Authentication
-POST /api/auth/register   # User registration
-POST /api/auth/login      # User login
-POST /api/auth/refresh    # Token refresh
-POST /api/auth/logout     # User logout
+POST /api/auth/register         # User registration
+POST /api/auth/login           # User login
+POST /api/auth/refresh         # Token refresh
+POST /api/auth/logout          # User logout
 
 # Learning Content
-GET  /api/cohorts         # List cohorts
-GET  /api/leagues         # List leagues
-GET  /api/weeks           # List weeks
-GET  /api/sections        # List sections
-GET  /api/resources       # List resources
+GET  /api/cohorts              # List cohorts
+GET  /api/leagues              # List leagues
+GET  /api/weeks                # List weeks
+GET  /api/sections             # List sections
+GET  /api/resources            # List resources
 
 # Progress Tracking
-GET  /api/progress        # User progress
-POST /api/progress/section # Mark section complete
-POST /api/progress/resource # Mark resource complete
+GET  /api/progress             # User progress
+POST /api/progress/section     # Mark section complete
+POST /api/progress/resource    # Mark resource complete
+
+# Analytics (NEW)
+GET  /api/analytics/counts     # Hierarchical count analytics
+GET  /api/analytics/platform   # Platform overview stats
+GET  /api/analytics/user/:id   # User-specific analytics
 
 # Assignments
-GET  /api/assignments     # List assignments
-POST /api/assignments/submit # Submit assignment
+GET  /api/assignments          # List assignments
+POST /api/assignments/submit   # Submit assignment
 
 # Gamification
-GET  /api/badges          # List badges
-GET  /api/leaderboard     # Leaderboard data
-```
-
-## Security Features
-
-### Authentication & Authorization
-- **JWT Authentication** - Access tokens (15min) + refresh tokens (7 days)
-- **Role-Based Access Control (RBAC)** - Hierarchical permission system
-- **Password Security** - bcrypt hashing with salt rounds
-- **Token Rotation** - Automatic refresh token rotation for security
-
-### Input Validation & Security
-- **Input Validation & Sanitization** - express-validator with custom rules
-- **Rate Limiting** - 5 req/15min for auth, 100 req/15min general
-- **CORS Protection** - Configurable cross-origin policies
-- **Security Headers** - Helmet.js middleware
-- **Database Security** - Prisma ORM with prepared statements
-
-### Security Architecture
-```mermaid
-graph TB
-    Client[Client Request] --> CORS[CORS Validation]
-    CORS --> Headers[Security Headers]
-    Headers --> Rate[Rate Limiting]
-    Rate --> Auth[JWT Authentication]
-    Auth --> RBAC[Role-Based Authorization]
-    RBAC --> Valid[Input Validation]
-    Valid --> Sanitize[Data Sanitization]
-    Sanitize --> Controller[Controller Logic]
-    
-    subgraph "Security Layers"
-        CORS
-        Headers
-        Rate
-        Auth
-        RBAC
-        Valid
-        Sanitize
-    end
+GET  /api/badges               # List badges
+GET  /api/leaderboard         # Leaderboard data
 ```
 
 ## Development Setup
@@ -609,52 +865,6 @@ npx prisma studio
 npx prisma db seed
 ```
 
-## System Status & Monitoring
-
-### Real-time Monitoring
-Our production system includes comprehensive monitoring:
-
-- **Real-time Health Checks** - Every 5 minutes across all components
-- **Uptime Tracking** - 24h/7d/30d uptime statistics
-- **Performance Metrics** - Response times and system resources
-- **Incident Management** - Automatic issue detection and reporting
-- **Keep-Alive System** - Prevents cold starts on free tier hosting
-
-### Monitored Components
-- **API Server** - Main application endpoints
-- **Database** - PostgreSQL connection and performance
-- **Authentication** - JWT token validation and user sessions
-
-### Status Dashboard
-Visit [openlearn.org.in/status-page](https://openlearn.org.in/status-page) for real-time system status including:
-- Component health status
-- Response time metrics
-- Uptime statistics
-- Recent incidents and updates
-
-## Deployment
-
-### Production Deployment (Render.com)
-The application is deployed on Render.com with the following configuration:
-
-```yaml
-# render.yaml
-services:
-  - type: web
-    name: openlearn-backend
-    env: node
-    plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: openlearn-postgres
-          property: connectionString
-```
-
 ### Deployment Commands
 ```bash
 # Build for production
@@ -665,13 +875,19 @@ npm start
 
 # Production database migration
 npx prisma migrate deploy
+
+# Docker deployment
+docker compose up -d
+
+# Check deployment status
+curl https://api.openlearn.org.in/health
 ```
 
 ### Live Deployment
 - **Production Website**: [https://openlearn.org.in](https://openlearn.org.in)
-- **System Status**: [https://openlearn.org.in/status-page](https://openlearn.org.in/status-page)
-- **API Base URL**: `https://openlearn.org.in/api`
-- **Health Check**: [https://openlearn.org.in/health](https://openlearn.org.in/health)
+- **API Base URL**: `https://api.openlearn.org.in`
+- **System Status**: [https://api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
+- **Health Check**: [https://api.openlearn.org.in/health](https://api.openlearn.org.in/health)
 
 ## Database Schema
 
@@ -757,26 +973,6 @@ npx prisma migrate deploy
 }
 ```
 
-## Performance & Scalability
-
-### Database Optimization
-- Proper indexing on frequently queried fields
-- Prisma query optimization
-- Connection pooling
-- Efficient relationship loading
-
-### Caching Strategy
-- Redis for session management
-- API response caching for static content
-- Database query result caching
-- CDN integration for static assets
-
-### Monitoring & Alerting
-- Application performance monitoring
-- Database performance tracking
-- Error rate monitoring
-- Uptime monitoring with alerts
-
 ## Contributing
 
 We welcome contributions to improve the OpenLearn platform. Here's how you can help:
@@ -812,7 +1008,8 @@ We welcome contributions to improve the OpenLearn platform. Here's how you can h
 
 ### Project Links
 - **Website**: [openlearn.org.in](https://openlearn.org.in)
-- **Status Page**: [openlearn.org.in/status-page](https://openlearn.org.in/status-page)
+- **API Base URL**: [api.openlearn.org.in](https://api.openlearn.org.in)
+- **Status Page**: [api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
 - **API Documentation**: Available in the `/docs` directory
 - **GitHub Repository**: [Link to repository]
 
@@ -832,6 +1029,5 @@ When reporting issues, please include:
 
 *OpenLearn Platform • TypeScript Backend API*
 
-**Version 1.0.0** • **Production Ready** • **Open Source**
-
-</div># Test CI/CD
+**Version 1.1.0** • **Production Ready** • **Open Source**
+</div>
