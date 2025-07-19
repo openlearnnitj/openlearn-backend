@@ -1,5 +1,6 @@
 import express from 'express';
 import EmailController from '../controllers/emailController';
+import { EmailTemplateController } from '../controllers/EmailTemplateController';
 import { authMiddleware } from '../middleware/auth';
 import { authorize } from '../middleware/authorize';
 import { UserRole } from '@prisma/client';
@@ -52,33 +53,50 @@ router.get('/test-smtp',
   emailController.testSMTP.bind(emailController)
 );
 
-// Template management
+// Template management (Enhanced with new controller)
 router.get('/templates', 
   authMiddleware, 
-  emailController.getTemplates.bind(emailController)
+  EmailTemplateController.getTemplates
 );
 
 router.get('/templates/:templateId', 
   authMiddleware, 
-  emailController.getTemplate.bind(emailController)
+  EmailTemplateController.getTemplate
 );
 
 router.post('/templates', 
   authMiddleware, 
   authorize([UserRole.PATHFINDER]),
-  emailController.createTemplate.bind(emailController)
+  EmailTemplateController.createTemplate
 );
 
 router.put('/templates/:templateId', 
   authMiddleware, 
   authorize([UserRole.PATHFINDER]),
-  emailController.updateTemplate.bind(emailController)
+  EmailTemplateController.updateTemplate
 );
 
 router.delete('/templates/:templateId', 
   authMiddleware, 
   authorize([UserRole.PATHFINDER]),
-  emailController.deleteTemplate.bind(emailController)
+  EmailTemplateController.deleteTemplate
+);
+
+// New enhanced template endpoints
+router.post('/templates/:templateId/duplicate', 
+  authMiddleware, 
+  authorize([UserRole.PATHFINDER]),
+  EmailTemplateController.duplicateTemplate
+);
+
+router.post('/templates/:templateId/preview', 
+  authMiddleware, 
+  EmailTemplateController.previewTemplate
+);
+
+router.get('/templates/:templateId/variables', 
+  authMiddleware, 
+  EmailTemplateController.getTemplateVariables
 );
 
 export default router;
