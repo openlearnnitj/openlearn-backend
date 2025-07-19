@@ -714,6 +714,9 @@ GET  /health                    # System health check
 GET  /api/status/public         # Public system status
 GET  /api/status/components     # Component status details
 
+# Public Endpoints (No Authentication Required)
+GET  /api/public/cohorts-structure  # Complete cohorts → leagues → weeks structure
+
 # Authentication
 POST /api/auth/register         # User registration
 POST /api/auth/login           # User login

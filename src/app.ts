@@ -26,6 +26,7 @@ import assignmentRoutes from './routes/assignments';
 import leaderboardRoutes from './routes/leaderboard';
 import emailRoutes from './routes/emailRoutes';
 import statusRoutes from './routes/status';
+import publicRoutes from './routes/public';
 
 const app = express();
 
@@ -564,6 +565,8 @@ app.get('/status-page', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/simple-status.html'));
 });
 
+// Public API routes (no authentication required)
+app.use('/api/public', publicRoutes);
 
 // API routes with specific rate limiting
 app.use('/api/auth', authRateLimit, authRoutes); // Strict rate limiting for authentication
