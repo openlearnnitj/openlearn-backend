@@ -379,7 +379,8 @@ erDiagram
 - **Authentication**: JWT with refresh token rotation
 - **Validation**: express-validator with custom rules
 - **Security**: Helmet.js + custom middleware
-- **Caching**: Redis for session management
+- **Caching**: Redis for session management and job queuing
+- **Email Service**: SMTP with background worker processing
 - **Deployment**: Render.com with Docker containers
 
 ### Request Flow Architecture
@@ -421,11 +422,12 @@ graph TB
             DOCKER[Docker Container]
             NODE[Node.js + Express]
             APP[OpenLearn Backend]
+            WORKER[Email Worker]
         end
         
         subgraph "Data Layer"
             PG[(PostgreSQL 15)]
-            REDIS[(Redis Cache)]
+            REDIS[(Redis Cache & Queue)]
         end
         
         subgraph "Monitoring Layer"
@@ -457,6 +459,8 @@ graph TB
     APP --> PG
     APP --> REDIS
     APP --> HEALTH
+    WORKER --> REDIS
+    WORKER --> PG
     HEALTH --> STATUS
     
     LOCAL --> COMPOSE
@@ -790,6 +794,15 @@ JWT_REFRESH_EXPIRES_IN=7d
 # Redis (optional for development)
 REDIS_URL=redis://localhost:6379
 
+# Email Service Configuration
+EMAIL_ENABLED=true
+EMAIL_FROM=noreply@openlearn.org.in
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
 # Security
 CORS_ORIGIN=http://localhost:3000,http://localhost:5173
 RATE_LIMIT_WINDOW_MS=15
@@ -924,6 +937,99 @@ curl https://api.openlearn.org.in/health
   }
 }
 ```
+
+
+
+## Redis & Email Integration
+
+### Redis Cache System
+
+OpenLearn integrates Redis for high-performance caching, session management, and background job queuing:
+
+**Configuration**
+```env
+# Redis connection
+REDIS_URL=redis://localhost:6379
+
+# Production Redis (SSL enabled)
+REDIS_URL=rediss://username:password@host:port
+```
+
+**Use Cases**
+- **Session Storage**: JWT token blacklisting and user session management
+- **Cache Layer**: Frequently accessed data (user profiles, course content)
+- **Queue Management**: Background job processing for email notifications
+- **Rate Limiting**: Distributed rate limiting across multiple instances
+
+**Health Monitoring**
+Redis connectivity is monitored through:
+- `/health/detailed` endpoint checks Redis connection
+- System status page displays Redis cache status
+- Automatic reconnection handling with exponential backoff
+
+### Email Service & Worker System
+
+OpenLearn implements a robust email system with background processing:
+
+**Architecture**
+```mermaid
+graph TB
+    subgraph "Email Flow"
+        API[API Request]
+        QUEUE[Redis Queue]
+        WORKER[Email Worker]
+        SMTP[SMTP Service]
+        USER[User Email]
+    end
+    
+    API --> QUEUE
+    QUEUE --> WORKER
+    WORKER --> SMTP
+    SMTP --> USER
+    
+    subgraph "Email Types"
+        WELCOME[Welcome Email]
+        VERIFY[Email Verification]
+        PROGRESS[Progress Updates]
+        BADGES[Badge Notifications]
+        ASSIGN[Assignment Reminders]
+    end
+```
+
+**Email Configuration**
+```env
+# SMTP Settings
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# Email Features
+EMAIL_FROM=noreply@openlearn.org.in
+EMAIL_ENABLED=true
+```
+
+**Background Worker**
+- Processes email jobs asynchronously via Redis queue
+- Handles bulk notifications (cohort announcements, badge awards)
+- Implements retry logic with exponential backoff
+- Monitors email delivery status and failures
+
+**Email Templates**
+- Welcome emails for new users
+- Email verification for account security
+- Progress milestone notifications
+- Badge achievement celebrations
+- Assignment deadline reminders
+- Weekly digest emails
+
+**Health Monitoring**
+Email service health is tracked through:
+- SMTP connection testing in health checks
+- Queue status monitoring
+- Email delivery rate tracking
+- Failed email job alerting
 
 ## Contributing
 

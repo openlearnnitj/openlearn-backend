@@ -305,6 +305,57 @@ app.get('/health/detailed', async (req, res) => {
     
     const dbResponseTime = Date.now() - startTime;
     
+    // Test Redis connection
+    let redisStatus = 'unknown';
+    let redisResponseTime = 0;
+    try {
+      const redisStartTime = Date.now();
+      const IORedis = require('ioredis');
+      const redis = new IORedis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || undefined,
+        connectTimeout: 5000,
+        commandTimeout: 3000,
+      });
+      
+      await redis.ping();
+      redisResponseTime = Date.now() - redisStartTime;
+      redisStatus = 'connected';
+      redis.disconnect();
+    } catch (error) {
+      console.warn('Redis health check failed:', error);
+      redisStatus = 'disconnected';
+    }
+    
+    // Test Email Service (SMTP)
+    let emailStatus = 'unknown';
+    let emailDetails = {};
+    try {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransporter({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASSWORD,
+        },
+      });
+      
+      await transporter.verify();
+      emailStatus = 'connected';
+      emailDetails = {
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        secure: process.env.SMTP_SECURE === 'true',
+      };
+    } catch (error) {
+      console.warn('Email service health check failed:', error);
+      emailStatus = 'disconnected';
+      emailDetails = { error: 'SMTP verification failed' };
+    }
+    
     // Calculate completion rate
     const completionRate = totalSections > 0 
       ? Math.round((completedSections / totalSections) * 100) 

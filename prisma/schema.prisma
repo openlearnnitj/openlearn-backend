@@ -431,6 +431,8 @@ enum SystemComponent {
   API
   DATABASE
   AUTHENTICATION
+  REDIS
+  EMAIL_SERVICE
 }
 
 enum SystemStatus {
