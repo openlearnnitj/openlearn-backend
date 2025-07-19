@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../config/database';
 import Redis from 'ioredis';
-import nodemailer from 'nodemailer';
+import SMTPService from '../services/email/SMTPService';
 
 const router = Router();
 
@@ -209,81 +209,77 @@ router.get('/redis-debug', async (req, res) => {
  */
 router.get('/email-debug', async (req, res) => {
   try {
-    console.log('🔍 Debugging Email service connectivity...');
+    console.log('🔍 Debugging Resend Email service connectivity...');
     
     const emailConfig = {
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      user: process.env.SMTP_USER,
+      apiKey: process.env.RESEND_API_KEY,
+      fromEmail: process.env.RESEND_FROM_EMAIL,
+      provider: 'Resend',
       enabled: process.env.EMAIL_ENABLED === 'true',
-      from: process.env.EMAIL_FROM,
     };
     
     console.log('📊 Email config:', {
       ...emailConfig,
-      user: emailConfig.user ? emailConfig.user.replace(/(.{3}).*(@.*)/, '$1***$2') : 'NOT_SET',
+      apiKey: emailConfig.apiKey ? emailConfig.apiKey.substring(0, 10) + '...' : 'NOT_SET',
     });
     
-    if (!emailConfig.host || !emailConfig.user || !process.env.SMTP_PASS) {
+    if (!emailConfig.apiKey || !emailConfig.fromEmail) {
       return res.json({
         success: false,
-        error: 'Email configuration incomplete',
+        error: 'Resend configuration incomplete',
         debug: {
           missingVars: {
-            SMTP_HOST: !emailConfig.host,
-            SMTP_USER: !emailConfig.user,
-            SMTP_PASS: !process.env.SMTP_PASS,
+            RESEND_API_KEY: !emailConfig.apiKey,
+            RESEND_FROM_EMAIL: !emailConfig.fromEmail,
           },
           config: {
             ...emailConfig,
-            user: emailConfig.user ? emailConfig.user.replace(/(.{3}).*(@.*)/, '$1***$2') : 'NOT_SET',
+            apiKey: emailConfig.apiKey ? emailConfig.apiKey.substring(0, 10) + '...' : 'NOT_SET',
           }
         }
       });
     }
     
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      host: emailConfig.host,
-      port: emailConfig.port,
-      secure: emailConfig.secure,
-      auth: {
-        user: emailConfig.user,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    // Test Resend service
+    const emailService = new SMTPService();
+    const connectionTest = await emailService.testConnection();
     
-    // Test connection
-    const connectionTest = await transporter.verify();
-    
-    res.json({
-      success: true,
-      data: {
-        connectionStatus: 'SUCCESS',
-        connectionTest,
-        config: {
-          ...emailConfig,
-          user: emailConfig.user.replace(/(.{3}).*(@.*)/, '$1***$2'),
+    if (connectionTest.success) {
+      res.json({
+        success: true,
+        data: {
+          connectionStatus: 'SUCCESS',
+          provider: 'Resend API',
+          config: emailService.getConfig(),
         },
-      },
-      message: 'Email service connectivity test successful'
-    });
+        message: 'Resend email service connectivity test successful'
+      });
+    } else {
+      res.json({
+        success: false,
+        error: connectionTest.error,
+        debug: {
+          provider: 'Resend API',
+          config: {
+            ...emailConfig,
+            apiKey: emailConfig.apiKey ? emailConfig.apiKey.substring(0, 10) + '...' : 'NOT_SET',
+          }
+        }
+      });
+    }
     
   } catch (error: any) {
-    console.error('❌ Email debug error:', error);
+    console.error('❌ Resend email debug error:', error);
     res.json({
       success: false,
       error: error.message,
       errorCode: error.code,
       debug: {
+        provider: 'Resend API',
         emailConfig: {
-          host: process.env.SMTP_HOST,
-          port: process.env.SMTP_PORT,
-          secure: process.env.SMTP_SECURE,
-          user: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{3}).*(@.*)/, '$1***$2') : 'NOT_SET',
+          apiKey: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 10) + '...' : 'NOT_SET',
+          fromEmail: process.env.RESEND_FROM_EMAIL,
           enabled: process.env.EMAIL_ENABLED,
-          from: process.env.EMAIL_FROM,
         },
         errorStack: error.stack,
       }

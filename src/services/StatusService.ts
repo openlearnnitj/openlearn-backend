@@ -444,10 +444,36 @@ export class StatusService {
         uptime: authHealthy,
       });
 
+      // Redis Health Check
+      const redisStartTime = Date.now();
+      const redisHealthy = await this.checkRedisHealth();
+      const redisResponseTime = Date.now() - redisStartTime;
+
+      await this.recordHealthCheck({
+        component: SystemComponent.REDIS,
+        status: redisHealthy ? SystemStatus.OPERATIONAL : SystemStatus.MAJOR_OUTAGE,
+        responseTime: redisResponseTime,
+        uptime: redisHealthy,
+      });
+
+      // Email Service Health Check
+      const emailStartTime = Date.now();
+      const emailHealthy = await this.checkEmailServiceHealth();
+      const emailResponseTime = Date.now() - emailStartTime;
+
+      await this.recordHealthCheck({
+        component: SystemComponent.EMAIL_SERVICE,
+        status: emailHealthy ? SystemStatus.OPERATIONAL : SystemStatus.MAJOR_OUTAGE,
+        responseTime: emailResponseTime,
+        uptime: emailHealthy,
+      });
+
       logger.info('System health check completed', {
         api: { healthy: apiHealthy, responseTime: apiResponseTime },
         database: { healthy: dbHealthy, responseTime: dbResponseTime },
         authentication: { healthy: authHealthy, responseTime: authResponseTime },
+        redis: { healthy: redisHealthy, responseTime: redisResponseTime },
+        email: { healthy: emailHealthy, responseTime: emailResponseTime },
       });
     } catch (error) {
       logger.error('System health check failed', { error: error instanceof Error ? error.message : 'Unknown error' });
@@ -490,6 +516,49 @@ export class StatusService {
       return true;
     } catch (error) {
       logger.error('Authentication health check failed', { error: error instanceof Error ? error.message : 'Unknown error' });
+      return false;
+    }
+  }
+
+  /**
+   * Check Redis health by testing connection and basic operations
+   */
+  private async checkRedisHealth(): Promise<boolean> {
+    try {
+      const Redis = require('ioredis');
+      const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+      
+      // Test basic Redis operations
+      await redis.ping();
+      await redis.set('health_check', 'test', 'EX', 60);
+      const result = await redis.get('health_check');
+      await redis.del('health_check');
+      
+      await redis.disconnect();
+      
+      return result === 'test';
+    } catch (error) {
+      logger.error('Redis health check failed', { error: error instanceof Error ? error.message : 'Unknown error' });
+      return false;
+    }
+  }
+
+  /**
+   * Check Email service health by testing Resend API connection
+   */
+  private async checkEmailServiceHealth(): Promise<boolean> {
+    try {
+      // Test Resend API connection
+      const { Resend } = require('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      // Test API key validity by attempting to get domains (this doesn't send an email)
+      const domains = await resend.domains.list();
+      
+      // If we get here without throwing, the API key is valid
+      return true;
+    } catch (error) {
+      logger.error('Email service health check failed', { error: error instanceof Error ? error.message : 'Unknown error' });
       return false;
     }
   }

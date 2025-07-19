@@ -1,61 +1,35 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { SMTPConfig } from '../../types';
 import config from '../../config/environment';
 
 /**
- * SMTP Service for sending emails
- * Handles the actual email delivery using nodemailer
+ * Resend Email Service for sending emails
+ * Handles the actual email delivery using Resend API
  */
 export class SMTPService {
-  private transporter: nodemailer.Transporter;
-  private smtpConfig: SMTPConfig;
+  private resend: Resend;
+  private emailConfig: {
+    apiKey: string;
+    fromEmail: string;
+    fromName: string;
+  };
 
-  constructor(smtpConfig?: SMTPConfig) {
-    this.smtpConfig = smtpConfig || this.getDefaultSMTPConfig();
-    this.transporter = this.createTransporter();
-  }
+  constructor(apiKey?: string) {
+    const resendApiKey = apiKey || process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY is required');
+    }
 
-  /**
-   * Get default SMTP configuration from environment variables
-   */
-  private getDefaultSMTPConfig(): SMTPConfig {
-    return {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      user: process.env.SMTP_USER || '',
-      password: process.env.SMTP_PASSWORD || '',
+    this.resend = new Resend(resendApiKey);
+    this.emailConfig = {
+      apiKey: resendApiKey,
+      fromEmail: process.env.RESEND_FROM_EMAIL || '"OpenLearn Platform" <info@openlearn.org.in>',
       fromName: process.env.SMTP_FROM_NAME || 'OpenLearn Platform',
-      fromEmail: process.env.SMTP_FROM_EMAIL || 'noreply@openlearn.org.in',
-      replyTo: process.env.SMTP_REPLY_TO || undefined,
     };
   }
 
   /**
-   * Create nodemailer transporter
-   */
-  private createTransporter(): nodemailer.Transporter {
-    return nodemailer.createTransport({
-      host: this.smtpConfig.host,
-      port: this.smtpConfig.port,
-      secure: this.smtpConfig.secure,
-      auth: {
-        user: this.smtpConfig.user,
-        pass: this.smtpConfig.password,
-      },
-      tls: {
-        rejectUnauthorized: false, // Add this for GoDaddy SMTP compatibility
-      },
-      pool: true, // Use connection pooling
-      maxConnections: 5, // Limit concurrent connections
-      maxMessages: 100, // Limit messages per connection
-      rateDelta: 1000, // Rate limiting: 1 second
-      rateLimit: 10, // Rate limiting: 10 emails per rateDelta
-    });
-  }
-
-  /**
-   * Send a single email
+   * Send a single email using Resend API
    */
   async sendEmail(options: {
     to: string;
@@ -67,29 +41,44 @@ export class SMTPService {
     attachments?: any[];
   }): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const mailOptions = {
-        from: `"${this.smtpConfig.fromName}" <${this.smtpConfig.fromEmail}>`,
-        to: options.to,
+      const emailData: any = {
+        from: this.emailConfig.fromEmail,
+        to: [options.to],
         subject: options.subject,
         html: options.html,
         text: options.text,
-        cc: options.cc,
-        bcc: options.bcc,
-        attachments: options.attachments,
-        replyTo: this.smtpConfig.replyTo,
-        headers: {
-          'List-Unsubscribe': `<mailto:unsubscribe@openlearn.org.in?subject=Unsubscribe>`,
-          'X-Mailer': 'OpenLearn Platform v1.0',
-        },
       };
 
-      const info = await this.transporter.sendMail(mailOptions);
+      // Add CC if provided
+      if (options.cc && options.cc.length > 0) {
+        emailData.cc = options.cc;
+      }
+
+      // Add BCC if provided
+      if (options.bcc && options.bcc.length > 0) {
+        emailData.bcc = options.bcc;
+      }
+
+      // Add attachments if provided
+      if (options.attachments && options.attachments.length > 0) {
+        emailData.attachments = options.attachments;
+      }
+
+      const result = await this.resend.emails.send(emailData);
       
-      console.log(`Email sent successfully to ${options.to}. Message ID: ${info.messageId}`);
+      if (result.error) {
+        console.error(`Failed to send email to ${options.to}:`, result.error);
+        return {
+          success: false,
+          error: result.error.message || 'Unknown error occurred while sending email',
+        };
+      }
+
+      console.log(`Email sent successfully to ${options.to}. Message ID: ${result.data?.id}`);
       
       return {
         success: true,
-        messageId: info.messageId,
+        messageId: result.data?.id,
       };
     } catch (error: any) {
       console.error(`Failed to send email to ${options.to}:`, error);
@@ -102,47 +91,136 @@ export class SMTPService {
   }
 
   /**
-   * Test SMTP connection
+   * Test Resend API connection
    */
   async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
-      await this.transporter.verify();
-      console.log('SMTP connection test successful');
-      
+      // Send a test email to verify the API key works
+      const result = await this.resend.emails.send({
+        from: this.emailConfig.fromEmail,
+        to: ['test@resend.dev'], // Resend's test email that accepts all emails
+        subject: 'OpenLearn Email Service Test',
+        html: '<p>This is a test email to verify Resend API connection.</p>',
+      });
+
+      if (result.error) {
+        console.error('Resend API test failed:', result.error);
+        return {
+          success: false,
+          error: result.error.message || 'Resend API test failed',
+        };
+      }
+
+      console.log('Resend API connection test successful');
       return { success: true };
     } catch (error: any) {
-      console.error('SMTP connection test failed:', error);
+      console.error('Resend API connection test failed:', error);
       
       return {
         success: false,
-        error: error.message || 'SMTP connection test failed',
+        error: error.message || 'Resend API connection test failed',
       };
     }
   }
 
   /**
-   * Close the SMTP connection
+   * Close the connection (no-op for Resend as it uses HTTP API)
    */
   async close(): Promise<void> {
-    if (this.transporter) {
-      this.transporter.close();
+    // No need to close anything for Resend API
+    console.log('Resend service closed (no persistent connection)');
+  }
+
+  /**
+   * Update email configuration
+   */
+  updateConfig(newConfig: { apiKey?: string; fromEmail?: string; fromName?: string }): void {
+    if (newConfig.apiKey) {
+      this.resend = new Resend(newConfig.apiKey);
+      this.emailConfig.apiKey = newConfig.apiKey;
+    }
+    
+    if (newConfig.fromEmail) {
+      this.emailConfig.fromEmail = newConfig.fromEmail;
+    }
+    
+    if (newConfig.fromName) {
+      this.emailConfig.fromName = newConfig.fromName;
     }
   }
 
   /**
-   * Update SMTP configuration
+   * Get current email configuration (without API key)
    */
-  updateConfig(newConfig: Partial<SMTPConfig>): void {
-    this.smtpConfig = { ...this.smtpConfig, ...newConfig };
-    this.transporter = this.createTransporter();
+  getConfig(): { fromEmail: string; fromName: string; provider: string } {
+    return {
+      fromEmail: this.emailConfig.fromEmail,
+      fromName: this.emailConfig.fromName,
+      provider: 'Resend',
+    };
   }
 
   /**
-   * Get current SMTP configuration (without password)
+   * Send bulk emails (batch sending)
    */
-  getConfig(): Omit<SMTPConfig, 'password'> {
-    const { password, ...configWithoutPassword } = this.smtpConfig;
-    return configWithoutPassword;
+  async sendBulkEmails(emails: Array<{
+    to: string;
+    subject: string;
+    html?: string;
+    text?: string;
+  }>): Promise<{ 
+    success: boolean; 
+    results: Array<{ success: boolean; messageId?: string; error?: string; to: string }>;
+    totalSent: number;
+    totalFailed: number;
+  }> {
+    const results: Array<{ success: boolean; messageId?: string; error?: string; to: string }> = [];
+    
+    try {
+      // Send emails in batches to avoid rate limiting
+      const batchSize = 10;
+      const batches = [];
+      
+      for (let i = 0; i < emails.length; i += batchSize) {
+        batches.push(emails.slice(i, i + batchSize));
+      }
+
+      for (const batch of batches) {
+        const batchPromises = batch.map(async (email) => {
+          const result = await this.sendEmail(email);
+          return { ...result, to: email.to };
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+
+        // Small delay between batches to respect rate limits
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      const totalSent = results.filter(r => r.success).length;
+      const totalFailed = results.filter(r => !r.success).length;
+
+      console.log(`Bulk email sending completed: ${totalSent} sent, ${totalFailed} failed`);
+
+      return {
+        success: totalFailed === 0,
+        results,
+        totalSent,
+        totalFailed,
+      };
+    } catch (error: any) {
+      console.error('Bulk email sending failed:', error);
+      
+      return {
+        success: false,
+        results,
+        totalSent: 0,
+        totalFailed: emails.length,
+      };
+    }
   }
 }
 

@@ -27,8 +27,8 @@ export class HealthCheckScheduler {
 
     logger.info('Starting health check scheduler');
 
-    // Health checks every hour
-    cron.schedule('0 * * * *', async () => {
+    // Health checks every 5 minutes (instead of every hour)
+    cron.schedule('*/5 * * * *', async () => {
       try {
         logger.info('Running scheduled health check');
         await this.statusService.performSystemHealthCheck();
@@ -288,6 +288,22 @@ export class HealthCheckScheduler {
       isRunning: this.isRunning,
       uptime: process.uptime(),
     };
+  }
+
+  /**
+   * Manually trigger a health check (useful for testing)
+   */
+  async runHealthCheckNow(): Promise<void> {
+    try {
+      logger.info('Manually triggered health check');
+      await this.statusService.performSystemHealthCheck();
+      logger.info('Manual health check completed');
+    } catch (error) {
+      logger.error('Manual health check failed', { 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      throw error;
+    }
   }
 }
 
