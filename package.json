@@ -32,6 +32,8 @@
     "docker:logs": "docker compose logs -f",
     "db:test:local": "ts-node src/scripts/testNeonLocal.ts",
     "db:test:prod": "node dist/scripts/testNeonLocal.js",
+    "debug:email": "ts-node src/scripts/debugEmailProduction.ts",
+    "debug:email:prod": "node dist/scripts/debugEmailProduction.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
