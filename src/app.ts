@@ -311,20 +311,26 @@ app.get('/health/detailed', async (req, res) => {
     let redisStatus = 'unknown';
     let redisResponseTime = 0;
     try {
-      const redisStartTime = Date.now();
-      const IORedis = require('ioredis');
-      const redis = new IORedis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-        connectTimeout: 5000,
-        commandTimeout: 3000,
-      });
-      
-      await redis.ping();
-      redisResponseTime = Date.now() - redisStartTime;
-      redisStatus = 'connected';
-      redis.disconnect();
+      const redisUrl = process.env.REDIS_URL;
+      if (!redisUrl || redisUrl.trim() === '') {
+        redisStatus = 'disabled';
+      } else {
+        const redisStartTime = Date.now();
+        const IORedis = require('ioredis');
+        const redis = new IORedis({
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD || undefined,
+          connectTimeout: 3000,
+          commandTimeout: 2000,
+          maxRetriesPerRequest: 1,
+        });
+        
+        await redis.ping();
+        redisResponseTime = Date.now() - redisStartTime;
+        redisStatus = 'connected';
+        redis.disconnect();
+      }
     } catch (error) {
       console.warn('Redis health check failed:', error);
       redisStatus = 'disconnected';
@@ -334,24 +340,40 @@ app.get('/health/detailed', async (req, res) => {
     let emailStatus = 'unknown';
     let emailDetails = {};
     try {
-      const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransporter({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD,
-        },
-      });
+      const smtpHost = process.env.SMTP_HOST;
+      const smtpUser = process.env.SMTP_USER;
+      const smtpPass = process.env.SMTP_PASSWORD || process.env.SMTP_PASS;
       
-      await transporter.verify();
-      emailStatus = 'connected';
-      emailDetails = {
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        secure: process.env.SMTP_SECURE === 'true',
-      };
+      if (!smtpHost || !smtpUser || !smtpPass) {
+        emailStatus = 'misconfigured';
+        emailDetails = { 
+          error: 'Missing required environment variables',
+          missing: {
+            SMTP_HOST: !smtpHost,
+            SMTP_USER: !smtpUser,
+            SMTP_PASSWORD: !smtpPass,
+          }
+        };
+      } else {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransporter({
+          host: smtpHost,
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        });
+        
+        await transporter.verify();
+        emailStatus = 'connected';
+        emailDetails = {
+          host: smtpHost,
+          port: process.env.SMTP_PORT || '587',
+          secure: process.env.SMTP_SECURE === 'true',
+        };
+      }
     } catch (error) {
       console.warn('Email service health check failed:', error);
       emailStatus = 'disconnected';
@@ -387,6 +409,18 @@ app.get('/health/detailed', async (req, res) => {
         responseTime: `${dbResponseTime}ms`,
         performance: dbResponseTime < 100 ? 'excellent' : 
                     dbResponseTime < 500 ? 'good' : 'slow'
+      },
+      redis: {
+        status: redisStatus,
+        responseTime: redisResponseTime > 0 ? `${redisResponseTime}ms` : 'N/A',
+        enabled: !!process.env.REDIS_URL && process.env.REDIS_URL.trim() !== '',
+        url: process.env.REDIS_URL ? 'configured' : 'not_set',
+      },
+      emailService: {
+        status: emailStatus,
+        enabled: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASSWORD || process.env.SMTP_PASS)),
+        details: emailDetails,
+        host: process.env.SMTP_HOST || 'not_configured',
       },
       openlearnMetrics: {
         users: {
