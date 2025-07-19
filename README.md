@@ -476,11 +476,12 @@ graph TB
 ### Deployment Strategy
 
 **Production Deployment**
-- **Platform**: EC2 Cloud infrastructure
+- **Platform**: AWS EC2 Cloud infrastructure  
 - **Containerization**: Docker containers for consistency and scalability
 - **Reverse Proxy**: Nginx for SSL termination
-- **Database**: Managed PostgreSQL with connection pooling
+- **Database**: PostgreSQL with connection pooling
 - **DNS**: Custom domain with SSL certificates (api.openlearn.org.in)
+- **Email**: GoDaddy SMTP (Port 465, SSL)
 
 **Environment Management**
 ```mermaid
@@ -798,14 +799,17 @@ JWT_REFRESH_EXPIRES_IN=7d
 # Redis (optional for development)
 REDIS_URL=redis://localhost:6379
 
-# Email Service Configuration
+# Email Configuration
+SMTP_HOST=smtpout.secureserver.net
+SMTP_PORT=port
+SMTP_SECURE=true
+SMTP_USER=email
+SMTP_PASSWORD="secure-password"
+
+# Email Features
+SMTP_FROM_NAME="OpenLearn Platform"
+SMTP_FROM_EMAIL=email
 EMAIL_ENABLED=true
-EMAIL_FROM=noreply@openlearn.org.in
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
 
 # Security
 CORS_ORIGIN=http://localhost:3000,http://localhost:5173
@@ -857,6 +861,7 @@ curl https://api.openlearn.org.in/health
 - **API Base URL**: `https://api.openlearn.org.in`
 - **System Status**: [https://api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
 - **Health Check**: [https://api.openlearn.org.in/health](https://api.openlearn.org.in/health)
+- **Infrastructure**: AWS EC2 with Docker containers
 
 ## Database Schema
 
@@ -1000,17 +1005,16 @@ graph TB
     end
 ```
 
-**Email Configuration**
+**Email Configuration (Production)**
 ```env
-# SMTP Settings
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-
-# Email Features
-EMAIL_FROM=noreply@openlearn.org.in
+# SMTP Settings (GoDaddy - Working Configuration)
+SMTP_HOST=smtpout.secureserver.net
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=info@openlearn.org.in
+SMTP_PASSWORD="?g7wwcWJm%#H_T9"
+SMTP_FROM_NAME="OpenLearn Platform"
+SMTP_FROM_EMAIL=info@openlearn.org.in
 EMAIL_ENABLED=true
 ```
 
@@ -1073,7 +1077,7 @@ We welcome contributions to improve the OpenLearn platform. Here's how you can h
 - **API Base URL**: [api.openlearn.org.in](https://api.openlearn.org.in)
 - **Status Page**: [api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
 - **API Documentation**: Available in the `/docs` directory
-- **GitHub Repository**: [Link to repository]
+- **GitHub Repository**: Current repository
 
 ### Reporting Issues
 When reporting issues, please include:
