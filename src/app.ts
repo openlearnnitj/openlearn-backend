@@ -616,7 +616,6 @@ app.use('/api/weeks', weekRoutes);
 app.use('/api/sections', sectionRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/status', statusRoutes); 
-app.use('/api', resourceRoutes);
 app.use('/api/resource-progress', resourceProgressRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/social', socialRoutes);
@@ -624,6 +623,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api', resourceRoutes); // ✅ Moved to end - catches remaining /api/* routes
 
 // 404 handler
 app.use('*', (req, res) => {
