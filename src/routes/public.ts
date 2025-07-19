@@ -88,81 +88,54 @@ router.get('/cohorts-structure', async (req, res) => {
       });
     }
 
-    // Single optimized query with nested includes
-    const cohorts = await prisma.cohort.findMany({
-      where: {
-        isActive: true, // Only return active cohorts
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        isActive: true,
-        specializations: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            leagues: {
-              select: {
-                league: {
-                  select: {
-                    id: true,
-                    name: true,
-                    description: true,
-                    weeks: {
-                      select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                        order: true,
-                      },
-                      orderBy: {
-                        order: 'asc', // Order weeks by their sequence
-                      },
-                    },
-                  },
-                },
-              },
-              orderBy: {
-                order: 'asc', // Order leagues by their sequence in specialization
-              },
+    // SIMPLIFIED APPROACH: Work with existing production data structure
+    // Get cohorts and all leagues with their weeks (bypassing specializations)
+    const [cohorts, leagues] = await Promise.all([
+      prisma.cohort.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          isActive: true,
+        },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.league.findMany({
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          weeks: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              order: true,
             },
+            orderBy: { order: 'asc' },
           },
         },
-      },
-      orderBy: {
-        name: 'asc', // Order cohorts alphabetically
-      },
-    });
+        orderBy: { name: 'asc' },
+      })
+    ]);
 
-    // Transform the data to flatten the structure for frontend consumption
-    const transformedCohorts = cohorts.map(cohort => {
-      // Get unique leagues from all specializations in this cohort
-      const leaguesMap = new Map();
-      
-      cohort.specializations.forEach(specialization => {
-        specialization.leagues.forEach(specLeague => {
-          const league = specLeague.league;
-          if (!leaguesMap.has(league.id)) {
-            leaguesMap.set(league.id, {
-              id: league.id,
-              name: league.name,
-              description: league.description,
-              weeks: league.weeks,
-            });
-          }
-        });
-      });
+    // For now, attach all leagues to each cohort
+    // In the future, when specializations are properly set up, we can use the proper relationships
+    const transformedCohorts = cohorts.map(cohort => ({
+      id: cohort.id,
+      name: cohort.name,
+      description: cohort.description,
+      isActive: cohort.isActive,
+      leagues: leagues.map(league => ({
+        id: league.id,
+        name: league.name,
+        description: league.description,
+        weeks: league.weeks,
+      })),
+    }));
 
-      return {
-        id: cohort.id,
-        name: cohort.name,
-        description: cohort.description,
-        isActive: cohort.isActive,
-        leagues: Array.from(leaguesMap.values()),
-      };
-    });
+    const totalWeeks = leagues.reduce((sum, league) => sum + league.weeks.length, 0);
 
     res.json({
       success: true,
@@ -171,10 +144,9 @@ router.get('/cohorts-structure', async (req, res) => {
       meta: {
         timestamp: new Date().toISOString(),
         totalCohorts: transformedCohorts.length,
-        totalLeagues: transformedCohorts.reduce((sum, cohort) => sum + cohort.leagues.length, 0),
-        totalWeeks: transformedCohorts.reduce((sum, cohort) => 
-          sum + cohort.leagues.reduce((weekSum, league) => weekSum + league.weeks.length, 0), 0
-        ),
+        totalLeagues: leagues.length,
+        totalWeeks,
+        note: 'Using simplified structure: all leagues attached to all cohorts (pending specialization setup)',
       },
     });
 
