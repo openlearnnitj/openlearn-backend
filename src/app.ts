@@ -603,11 +603,13 @@ app.get('/status-page', (req, res) => {
 // Public API routes (no authentication required)
 app.use('/api/public', publicRoutes);
 
+// Authentication routes (public endpoints for login, signup, password reset)
+app.use('/api/auth', authRateLimit, authRoutes); // Public auth endpoints
+
 // Debug routes (should be secured or removed in production)
 app.use('/api/debug', debugRoutes);
 
 // API routes with specific rate limiting
-app.use('/api/auth', authRateLimit, authRoutes); // Strict rate limiting for authentication
 app.use('/api/admin', strictRateLimit, adminRoutes); // Strict rate limiting for admin operations
 app.use('/api/cohorts', cohortRoutes);
 app.use('/api/leagues', leagueRoutes);
