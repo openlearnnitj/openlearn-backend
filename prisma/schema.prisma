@@ -50,6 +50,12 @@ model User {
   auditLogs       AuditLog[]
   assignmentSubmissions AssignmentSubmission[]
   
+  // Email service relations
+  createdEmailTemplates EmailTemplate[] @relation("EmailTemplateCreator")
+  createdEmailJobs      EmailJob[] @relation("EmailJobCreator")
+  emailLogs            EmailLog[] @relation("EmailRecipient")
+  emailAuditLogs       EmailAuditLog[] @relation("EmailAuditUser")
+  
   // Self-referential for approval workflow
   approvedBy   User?   @relation("UserApproval", fields: [approvedById], references: [id])
   approvedById String?
@@ -391,6 +397,15 @@ enum AuditAction {
   RESOURCE_DELETED
   RESOURCE_REORDERED
   ASSIGNMENT_SUBMITTED
+  EMAIL_TEMPLATE_CREATED
+  EMAIL_TEMPLATE_UPDATED
+  EMAIL_TEMPLATE_DELETED
+  EMAIL_SENT
+  EMAIL_FAILED
+  BULK_EMAIL_STARTED
+  BULK_EMAIL_COMPLETED
+  BULK_EMAIL_FAILED
+  EMAIL_SETTINGS_UPDATED
   ERROR_OCCURRED
   UNCAUGHT_EXCEPTION
   UNHANDLED_REJECTION
@@ -487,6 +502,236 @@ model IncidentUpdate {
   createdAt     DateTime @default(now())
   
   @@map("incident_updates")
+}
+
+// Email Service Models
+
+// Email Categories
+enum EmailCategory {
+  WELCOME
+  NOTIFICATION
+  MARKETING
+  SYSTEM
+  COURSE_UPDATE
+  ACHIEVEMENT
+  ADMIN
+  REMINDER
+}
+
+// Email Templates
+model EmailTemplate {
+  id          String @id @default(cuid())
+  name        String @unique // "welcome_email", "course_completion"
+  subject     String
+  htmlContent String // HTML template with variables
+  textContent String? // Plain text fallback
+  variables   Json   // Available template variables
+  isActive    Boolean @default(true)
+  
+  // Template metadata
+  category    EmailCategory
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdById String
+  createdBy   User @relation("EmailTemplateCreator", fields: [createdById], references: [id])
+  
+  // Relations
+  emailJobs   EmailJob[]
+  
+  @@map("email_templates")
+}
+
+// Email Recipient Types
+enum EmailRecipientType {
+  INDIVIDUAL
+  ROLE_BASED
+  COHORT_BASED
+  LEAGUE_BASED
+  ALL_USERS
+  CUSTOM_LIST
+}
+
+// Email Job Status
+enum EmailJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  SCHEDULED
+}
+
+// Email Jobs (Queue Records)
+model EmailJob {
+  id           String @id @default(cuid())
+  jobId        String @unique // Bull queue job ID
+  
+  // Email details
+  templateId   String?
+  template     EmailTemplate? @relation(fields: [templateId], references: [id])
+  
+  subject      String
+  htmlContent  String
+  textContent  String?
+  
+  // Recipients
+  recipientType EmailRecipientType
+  recipients    Json // Array of recipient data
+  totalCount    Int
+  
+  // Filtering criteria
+  roleFilter    UserRole?
+  cohortFilter  String? // Cohort ID
+  leagueFilter  String? // League ID
+  statusFilter  UserStatus?
+  
+  // Status tracking
+  status       EmailJobStatus @default(QUEUED)
+  priority     Int @default(0)
+  scheduledFor DateTime?
+  
+  // Execution tracking
+  startedAt    DateTime?
+  completedAt  DateTime?
+  failedAt     DateTime?
+  
+  // Results
+  sentCount    Int @default(0)
+  failedCount  Int @default(0)
+  errorMessage String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdById  String
+  createdBy    User @relation("EmailJobCreator", fields: [createdById], references: [id])
+  
+  // Relations
+  emailLogs    EmailLog[]
+  
+  @@map("email_jobs")
+}
+
+// Individual Email Status
+enum EmailStatus {
+  PENDING
+  SENT
+  DELIVERED
+  BOUNCED
+  FAILED
+  OPENED
+  CLICKED
+  UNSUBSCRIBED
+}
+
+// Individual Email Logs
+model EmailLog {
+  id          String @id @default(cuid())
+  
+  jobId       String
+  job         EmailJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  recipientId String
+  recipient   User @relation("EmailRecipient", fields: [recipientId], references: [id])
+  
+  email       String // Recipient email at time of sending
+  subject     String
+  
+  status      EmailStatus @default(PENDING)
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bouncedAt   DateTime?
+  
+  // Error tracking
+  error       String?
+  retryCount  Int @default(0)
+  
+  // Provider tracking
+  messageId   String? // SMTP message ID
+  providerData Json?  // Provider-specific data
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([jobId, recipientId])
+  @@map("email_logs")
+}
+
+// Email Settings/Configuration
+model EmailSettings {
+  id       String @id @default(cuid())
+  
+  // SMTP Configuration
+  smtpHost     String
+  smtpPort     Int
+  smtpUser     String
+  smtpPassword String // Encrypted
+  smtpSecure   Boolean @default(true)
+  
+  // Default settings
+  fromName     String @default("OpenLearn Platform")
+  fromEmail    String
+  replyToEmail String?
+  
+  // Rate limiting
+  maxEmailsPerHour   Int @default(100)
+  maxEmailsPerMinute Int @default(10)
+  batchSize          Int @default(10)
+  
+  // Features
+  trackOpens  Boolean @default(true)
+  trackClicks Boolean @default(true)
+  
+  isActive    Boolean @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("email_settings")
+}
+
+// Email Audit Actions
+enum EmailAuditAction {
+  TEMPLATE_CREATED
+  TEMPLATE_UPDATED
+  TEMPLATE_DELETED
+  EMAIL_SENT
+  EMAIL_FAILED
+  EMAIL_OPENED
+  EMAIL_CLICKED
+  EMAIL_BOUNCED
+  EMAIL_UNSUBSCRIBED
+  BULK_EMAIL_STARTED
+  BULK_EMAIL_COMPLETED
+  BULK_EMAIL_FAILED
+  SETTINGS_UPDATED
+}
+
+// Email-specific Audit Logs
+model EmailAuditLog {
+  id          String @id @default(cuid())
+  
+  userId      String?
+  user        User? @relation("EmailAuditUser", fields: [userId], references: [id])
+  
+  action      EmailAuditAction
+  description String?
+  metadata    Json? // Store additional context as JSON
+  
+  // Related entities
+  templateId  String?
+  jobId       String?
+  emailLogId  String?
+  
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("email_audit_logs")
 }
 
 

@@ -24,6 +24,7 @@ import socialRoutes from './routes/social';
 import badgeRoutes from './routes/badges';
 import assignmentRoutes from './routes/assignments';
 import leaderboardRoutes from './routes/leaderboard';
+import emailRoutes from './routes/emailRoutes';
 import statusRoutes from './routes/status';
 
 const app = express();
@@ -529,6 +530,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/assignments', assignmentRoutes);
+app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
 // 404 handler

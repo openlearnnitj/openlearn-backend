@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Congratulations on Course Completion!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #28a745;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .congratulations {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .achievement-badge {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .trophy {
+            font-size: 3em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎓 OpenLearn</div>
+            <p>Excellence in Learning</p>
+        </div>
+        
+        <div class="congratulations">
+            <div class="trophy">🏆</div>
+            <h1>Congratulations, {{userName}}!</h1>
+            <p style="font-size: 1.2em; margin: 0;">You've successfully completed</p>
+            <h2 style="margin: 10px 0;">{{courseName}}</h2>
+        </div>
+        
+        <div class="content">
+            <p>What an incredible achievement! You've demonstrated dedication, perseverance, and a commitment to excellence that truly sets you apart.</p>
+            
+            <h3>📊 Your Learning Journey:</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{completionPercentage}}%</div>
+                    <div>Completion Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{totalHours}}</div>
+                    <div>Hours Invested</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{sectionsCompleted}}</div>
+                    <div>Sections Completed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{resourcesViewed}}</div>
+                    <div>Resources Explored</div>
+                </div>
+            </div>
+            
+            {{#if badgeEarned}}
+            <div class="achievement-badge">
+                <h3>🏅 New Badge Earned!</h3>
+                <p><strong>{{badgeName}}</strong></p>
+                <p>{{badgeDescription}}</p>
+            </div>
+            {{/if}}
+            
+            {{#if certificateAvailable}}
+            <div style="text-align: center; margin: 30px 0;">
+                <h3>🎖️ Download Your Certificate</h3>
+                <p>Showcase your achievement with an official completion certificate!</p>
+                <a href="{{certificateUrl}}" class="cta-button">Download Certificate</a>
+            </div>
+            {{/if}}
+            
+            <h3>🚀 What's Next?</h3>
+            <ul>
+                <li><strong>Continue Learning:</strong> Explore advanced courses in {{league}}</li>
+                <li><strong>Share Your Success:</strong> Update your LinkedIn profile with your new skills</li>
+                <li><strong>Join the Community:</strong> Connect with other course graduates</li>
+                <li><strong>Apply Your Knowledge:</strong> Start working on real projects</li>
+            </ul>
+            
+            {{#if nextCourseRecommendation}}
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>📚 Recommended Next Course:</h3>
+                <p><strong>{{nextCourseRecommendation.name}}</strong></p>
+                <p>{{nextCourseRecommendation.description}}</p>
+                <a href="{{nextCourseRecommendation.url}}" class="cta-button" style="background-color: #007bff;">Explore Course</a>
+            </div>
+            {{/if}}
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{dashboardUrl}}" class="cta-button">View Your Dashboard</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Share Your Achievement!</strong></p>
+            <p>🐦 <a href="https://twitter.com/intent/tweet?text=Just completed {{courseName}} on @OpenLearn! 🎓 #LearningJourney #OpenLearn">Share on Twitter</a></p>
+            <p>💼 <a href="https://linkedin.com/sharing/share-offsite/?url={{courseUrl}}">Share on LinkedIn</a></p>
+            
+            <p style="margin-top: 20px;">
+                Keep up the excellent work!<br>
+                <strong>The OpenLearn Team</strong>
+            </p>
+            
+            <p style="margin-top: 20px; font-size: 0.8em; color: #999;">
+                This email was sent to {{userEmail}} because you completed a course on OpenLearn.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

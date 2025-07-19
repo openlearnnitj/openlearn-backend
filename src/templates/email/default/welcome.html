@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to OpenLearn</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .welcome-title {
+            color: #007bff;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .highlight {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            margin: 20px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            color: #007bff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎓 OpenLearn</div>
+            <p>Your Journey to Excellence Begins Here</p>
+        </div>
+        
+        <h1 class="welcome-title">Welcome, {{userName}}! 🎉</h1>
+        
+        <div class="content">
+            <p>We're thrilled to welcome you to the <strong>OpenLearn Platform</strong> – your gateway to transformative learning and professional growth!</p>
+            
+            <div class="highlight">
+                <strong>Your Account Status:</strong> {{accountStatus}}<br>
+                <strong>Role:</strong> {{userRole}}<br>
+                <strong>Email:</strong> {{userEmail}}
+            </div>
+            
+            <p>As a <strong>{{userRole}}</strong>, you now have access to:</p>
+            <ul>
+                <li>📚 Comprehensive course materials and resources</li>
+                <li>🎯 Progress tracking and achievement system</li>
+                <li>🏆 Specialized learning paths and certifications</li>
+                <li>🤝 Community interaction and collaboration tools</li>
+                <li>📊 Personal analytics and performance insights</li>
+            </ul>
+            
+            {{#if needsApproval}}
+            <div class="highlight">
+                <strong>⏳ Account Approval Required</strong><br>
+                Your account is currently pending approval. You'll receive another email once an administrator approves your account and you can start exploring the platform.
+            </div>
+            {{else}}
+            <p>You're all set to start your learning journey! Click the button below to explore your dashboard:</p>
+            <div style="text-align: center;">
+                <a href="{{dashboardUrl}}" class="cta-button">Go to Dashboard</a>
+            </div>
+            {{/if}}
+            
+            <h3>What's Next?</h3>
+            <ol>
+                <li><strong>Complete Your Profile:</strong> Add your social links and professional information</li>
+                <li><strong>Join a Cohort:</strong> Find your specialized learning track</li>
+                <li><strong>Start Learning:</strong> Begin with your first course or module</li>
+                <li><strong>Connect:</strong> Engage with fellow learners and mentors</li>
+            </ol>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Need Help?</strong></p>
+            <p>📧 Email us at <a href="mailto:support@openlearn.org.in">support@openlearn.org.in</a></p>
+            <p>🌐 Visit our website: <a href="https://openlearn.org.in">openlearn.org.in</a></p>
+            
+            <div class="social-links">
+                <a href="https://twitter.com/openlearn">Twitter</a> |
+                <a href="https://linkedin.com/company/openlearn">LinkedIn</a> |
+                <a href="https://github.com/openlearn">GitHub</a>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 0.8em; color: #999;">
+                This email was sent to {{userEmail}}. If you didn't create an account with us, please ignore this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
