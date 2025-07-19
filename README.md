@@ -44,6 +44,7 @@
 
 ### Developer Resources
 - **[API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Complete API reference
+- **[PUBLIC_COHORTS_API.md](./docs/PUBLIC_COHORTS_API.md)** - Public cohorts structure endpoint
 - **[FRONTEND_INTEGRATION.md](./docs/FRONTEND_INTEGRATION.md)** - Frontend developer guide
 - **[USER_INTERFACE_API_DOCUMENTATION.md](./docs/USER_INTERFACE_API_DOCUMENTATION.md)** - UI integration guide
 - **[OPENLEARN_BACKEND_COMPLETE.md](./docs/OPENLEARN_BACKEND_COMPLETE.md)** - Complete backend overview

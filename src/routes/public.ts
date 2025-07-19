@@ -39,6 +39,55 @@ const router = Router();
  */
 router.get('/cohorts-structure', async (req, res) => {
   try {
+    // Debug: Let's first check what we have in the database step by step
+    const debugMode = req.query.debug === 'true';
+    
+    if (debugMode) {
+      // Step 1: Check cohorts
+      const cohorts = await prisma.cohort.findMany({
+        where: { isActive: true }
+      });
+      
+      // Step 2: Check specializations
+      const specializations = await prisma.specialization.findMany({
+        include: { cohort: true }
+      });
+      
+      // Step 3: Check specialization-league relationships
+      const specLeagues = await prisma.specializationLeague.findMany({
+        include: {
+          specialization: true,
+          league: true
+        }
+      });
+      
+      // Step 4: Check leagues
+      const leagues = await prisma.league.findMany();
+      
+      // Step 5: Check weeks
+      const weeks = await prisma.week.findMany({
+        include: { league: true }
+      });
+      
+      return res.json({
+        success: true,
+        debug: {
+          cohorts: cohorts.length,
+          specializations: specializations.length,
+          specializationLeagues: specLeagues.length,
+          leagues: leagues.length,
+          weeks: weeks.length,
+          data: {
+            cohorts,
+            specializations,
+            specializationLeagues: specLeagues,
+            leagues,
+            weeks
+          }
+        }
+      });
+    }
+
     // Single optimized query with nested includes
     const cohorts = await prisma.cohort.findMany({
       where: {

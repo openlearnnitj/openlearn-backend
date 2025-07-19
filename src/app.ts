@@ -27,6 +27,7 @@ import leaderboardRoutes from './routes/leaderboard';
 import emailRoutes from './routes/emailRoutes';
 import statusRoutes from './routes/status';
 import publicRoutes from './routes/public';
+import debugRoutes from './routes/debug';
 
 const app = express();
 
@@ -567,6 +568,9 @@ app.get('/status-page', (req, res) => {
 
 // Public API routes (no authentication required)
 app.use('/api/public', publicRoutes);
+
+// Debug routes (should be secured or removed in production)
+app.use('/api/debug', debugRoutes);
 
 // API routes with specific rate limiting
 app.use('/api/auth', authRateLimit, authRoutes); // Strict rate limiting for authentication
