@@ -43,6 +43,9 @@ export class SMTPService {
         user: this.smtpConfig.user,
         pass: this.smtpConfig.password,
       },
+      tls: {
+        rejectUnauthorized: false, // Add this for GoDaddy SMTP compatibility
+      },
       pool: true, // Use connection pooling
       maxConnections: 5, // Limit concurrent connections
       maxMessages: 100, // Limit messages per connection
