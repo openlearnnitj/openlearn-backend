@@ -39,8 +39,8 @@ export class EmailService {
         };
       }
 
-      // For immediate sending (small batches < 10 recipients)
-      if (request.recipients.length <= 10) {
+      // For immediate sending (small batches < 5 recipients)
+      if (request.recipients.length <= 5) {
         return await this.sendImmediateEmail(request, userId);
       }
 

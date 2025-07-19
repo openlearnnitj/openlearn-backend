@@ -8,6 +8,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
@@ -15,6 +16,8 @@ services:
       - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./logs:/app/logs # Bind mount for application logs
@@ -47,6 +50,20 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - openlearn-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   openlearn-network:
