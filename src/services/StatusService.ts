@@ -526,10 +526,27 @@ export class StatusService {
   private async checkRedisHealth(): Promise<boolean> {
     try {
       const Redis = require('ioredis');
-      const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+      
+      // Parse Redis URL for proper connection
+      const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+      
+      // Create Redis connection with proper configuration
+      const redis = new Redis(redisUrl, {
+        retryDelayOnFailover: 100,
+        maxRetriesPerRequest: 1, // Reduce retries for faster failure detection
+        connectTimeout: 5000, // 5 second timeout
+        lazyConnect: true
+      });
+      
+      // Test connection
+      await redis.connect();
       
       // Test basic Redis operations
-      await redis.ping();
+      const pingResult = await redis.ping();
+      if (pingResult !== 'PONG') {
+        throw new Error('Redis ping failed');
+      }
+      
       await redis.set('health_check', 'test', 'EX', 60);
       const result = await redis.get('health_check');
       await redis.del('health_check');
@@ -539,6 +556,12 @@ export class StatusService {
       return result === 'test';
     } catch (error) {
       logger.error('Redis health check failed', { error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      // In development, Redis might not be available - this is acceptable
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn('Redis not available in development mode - this is acceptable');
+      }
+      
       return false;
     }
   }

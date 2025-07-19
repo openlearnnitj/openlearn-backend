@@ -49,6 +49,7 @@ model User {
   specializations UserSpecialization[]
   auditLogs       AuditLog[]
   assignmentSubmissions AssignmentSubmission[]
+  passwordResetOTPs PasswordResetOTP[]
   
   // Email service relations
   createdEmailTemplates EmailTemplate[] @relation("EmailTemplateCreator")
@@ -62,6 +63,29 @@ model User {
   approvedUsers User[] @relation("UserApproval")
   
   @@map("users")
+}
+
+// Password Reset OTP Model
+model PasswordResetOTP {
+  id        String   @id @default(cuid())
+  otp       String   // 6-digit OTP
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // OTP expiration and usage tracking
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0) // Track failed attempts
+  
+  // Security tracking
+  ipAddress String?
+  userAgent String?
+  
+  createdAt DateTime @default(now())
+  
+  // Ensure we don't have duplicate active OTPs per user
+  @@index([userId, expiresAt])
+  @@map("password_reset_otps")
 }
 
 // Course Structure

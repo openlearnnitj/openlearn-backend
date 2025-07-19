@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/authService';
+import { PasswordResetOTPService } from '../services/PasswordResetOTPService';
 import { SignupRequest, LoginRequest, ApiResponse } from '../types';
 import { prisma } from '../config/database';
 import { ValidationUtils } from '../utils/validation';
@@ -291,11 +292,14 @@ export class AuthController {
       // Hash new password
       const hashedNewPassword = await PasswordUtils.hashPassword(newPassword);
 
-      // Update password
+      // Update password and revoke any active password reset tokens
       await prisma.user.update({
         where: { id: currentUser.userId },
         data: { password: hashedNewPassword },
       });
+
+      // Revoke any active password reset OTPs
+      await PasswordResetOTPService.revokeActiveOTPs(currentUser.userId);
 
       // Create audit log
       await prisma.auditLog.create({
