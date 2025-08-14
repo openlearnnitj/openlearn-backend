@@ -4,6 +4,7 @@ import { AuthUser, TokenPayload, SignupRequest, LoginRequest, AuthResponse } fro
 import { PasswordUtils } from '../utils/password';
 import { JWTUtils } from '../utils/jwt';
 import { ValidationUtils } from '../utils/validation';
+import { generateOLID } from '../utils/olidGenerator';
 
 export class AuthService {
   /**
@@ -44,14 +45,46 @@ export class AuthService {
       // Hash password
       const hashedPassword = await PasswordUtils.hashPassword(signupData.password);
 
-      // Create user
+      // Determine target cohort (from request or default active cohort)
+      const targetCohortId = signupData.cohortId || await AuthService.getDefaultActiveCohort();
+      let targetCohort = null;
+      if (targetCohortId) {
+        targetCohort = await prisma.cohort.findUnique({
+          where: { id: targetCohortId },
+        });
+      }
+
+      // Determine user status based on cohort auto-approval setting
+      const userStatus = targetCohort?.autoApprove ? UserStatus.ACTIVE : UserStatus.PENDING;
+
+      // Generate OLID for V2 users (when institute is provided)
+      let olid = null;
+      let migratedToV2 = null;
+      if (signupData.institute) {
+        olid = await generateOLID();
+        migratedToV2 = true;
+      }
+
+      // Create user with V2 fields
       const newUser = await prisma.user.create({
         data: {
           email: signupData.email.toLowerCase(),
           password: hashedPassword,
           name: ValidationUtils.sanitizeString(signupData.name),
           role: UserRole.PIONEER, // Default role
-          status: UserStatus.PENDING, // Requires approval
+          status: userStatus,
+          // V2 fields (only if provided)
+          institute: signupData.institute ? ValidationUtils.sanitizeString(signupData.institute) : null,
+          department: signupData.department ? ValidationUtils.sanitizeString(signupData.department) : null,
+          graduationYear: signupData.graduationYear || null,
+          phoneNumber: signupData.phoneNumber ? ValidationUtils.sanitizeString(signupData.phoneNumber) : null,
+          studentId: signupData.studentId ? ValidationUtils.sanitizeString(signupData.studentId) : null,
+          discordUsername: signupData.discordUsername ? ValidationUtils.sanitizeString(signupData.discordUsername) : null,
+          portfolioUrl: signupData.portfolioUrl ? ValidationUtils.sanitizeString(signupData.portfolioUrl) : null,
+          currentCohortId: targetCohortId,
+          olid,
+          migratedToV2,
+          emailVerified: false, // Will be verified via email (future feature)
         },
       });
 
@@ -72,6 +105,16 @@ export class AuthService {
         name: newUser.name,
         role: newUser.role,
         status: newUser.status,
+        institute: newUser.institute,
+        department: newUser.department,
+        graduationYear: newUser.graduationYear,
+        phoneNumber: newUser.phoneNumber,
+        studentId: newUser.studentId,
+        discordUsername: newUser.discordUsername,
+        portfolioUrl: newUser.portfolioUrl,
+        olid: newUser.olid,
+        migratedToV2: newUser.migratedToV2,
+        emailVerified: newUser.emailVerified,
       };
 
       return {
@@ -227,5 +270,48 @@ export class AuthService {
         error: 'Internal server error during token refresh',
       };
     }
+  }
+
+  /**
+   * Get default active cohort for new signups
+   */
+  private static async getDefaultActiveCohort(): Promise<string | null> {
+    try {
+      const defaultCohort = await prisma.cohort.findFirst({
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      return defaultCohort?.id || null;
+    } catch (error) {
+      console.error('Error getting default cohort:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Generate unique OpenLearn ID (OLID)
+   */
+  private static async generateOLID(): Promise<string> {
+    const prefix = 'OL';
+    const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of year
+    
+    // Get count of existing users to generate sequence number
+    const userCount = await prisma.user.count();
+    const sequence = (userCount + 1).toString().padStart(4, '0');
+    
+    const olid = `${prefix}${year}${sequence}`;
+    
+    // Check if OLID already exists (very unlikely but safety check)
+    const existingUser = await prisma.user.findUnique({
+      where: { olid },
+    });
+    
+    if (existingUser) {
+      // Generate with random suffix if conflict
+      const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+      return `${prefix}${year}${sequence}${randomSuffix}`;
+    }
+    
+    return olid;
   }
 }

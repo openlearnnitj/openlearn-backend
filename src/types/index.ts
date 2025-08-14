@@ -13,6 +13,17 @@ export interface AuthUser {
   name: string;
   role: UserRole;
   status: UserStatus;
+  // V2 Enhancement Fields (optional for backward compatibility)
+  institute?: string | null;
+  department?: string | null;
+  graduationYear?: number | null;
+  phoneNumber?: string | null;
+  studentId?: string | null;
+  discordUsername?: string | null;
+  portfolioUrl?: string | null;
+  olid?: string | null;
+  migratedToV2?: boolean | null;
+  emailVerified?: boolean;
 }
 
 // API Response Types
@@ -28,6 +39,15 @@ export interface SignupRequest {
   email: string;
   password: string;
   name: string;
+  // V2 Enhancement Fields (optional for backward compatibility)
+  institute?: string;
+  department?: string;
+  graduationYear?: number;
+  phoneNumber?: string;
+  studentId?: string;
+  discordUsername?: string;
+  portfolioUrl?: string;
+  cohortId?: string; // Allow specifying cohort during signup
 }
 
 export interface LoginRequest {

@@ -28,6 +28,7 @@ import emailRoutes from './routes/emailRoutes';
 import statusRoutes from './routes/status';
 import publicRoutes from './routes/public';
 import debugRoutes from './routes/debug';
+import migrationRoutes from './routes/migration';
 
 const app = express();
 
@@ -605,6 +606,9 @@ app.use('/api/public', publicRoutes);
 
 // Authentication routes (public endpoints for login, signup, password reset)
 app.use('/api/auth', authRateLimit, authRoutes); // Public auth endpoints
+
+// Migration routes (authenticated users only)
+app.use('/api/migration', migrationRoutes);
 
 // Debug routes (should be secured or removed in production)
 app.use('/api/debug', debugRoutes);

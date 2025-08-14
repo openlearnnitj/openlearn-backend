@@ -32,7 +32,25 @@ model User {
   role      UserRole   @default(PIONEER)
   status    UserStatus @default(PENDING)
   
-  // Social profiles
+  // V2 Enhancement Fields (Production Safe - All Nullable)
+  institute         String?   // University/College name
+  department        String?   // Department/Field of study
+  graduationYear    Int?      // Expected graduation year
+  phoneNumber       String?   // Contact number
+  studentId         String?   // College student ID
+  olid              String?   @unique // OpenLearn ID (auto-generated)
+  migratedToV2      Boolean?  // null = old user, true = migrated, false = migration failed
+  emailVerified     Boolean   @default(false)
+  
+  // Direct cohort association for easier filtering
+  currentCohortId   String?
+  currentCohort     Cohort?   @relation("UserCurrentCohort", fields: [currentCohortId], references: [id])
+  
+  // Enhanced social profiles
+  discordUsername   String?
+  portfolioUrl      String?
+  
+  // Social profiles (existing)
   twitterHandle   String?
   linkedinUrl     String?
   githubUsername  String?
@@ -42,14 +60,16 @@ model User {
   updatedAt DateTime @updatedAt
   
   // Relations
-  enrollments     Enrollment[]
-  sectionProgress SectionProgress[]
-  resourceProgress ResourceProgress[]
-  badges          UserBadge[]
-  specializations UserSpecialization[]
-  auditLogs       AuditLog[]
+  pathfinderScopes    PathfinderScope[] @relation("PathfinderScopeUser")
+  assignedScopes      PathfinderScope[] @relation("PathfinderScopeAssigner")
+  enrollments         Enrollment[]
+  sectionProgress     SectionProgress[]
+  resourceProgress    ResourceProgress[]
+  badges              UserBadge[]
+  specializations     UserSpecialization[]
+  auditLogs           AuditLog[]
   assignmentSubmissions AssignmentSubmission[]
-  passwordResetOTPs PasswordResetOTP[]
+  passwordResetOTPs   PasswordResetOTP[]
   
   // Email service relations
   createdEmailTemplates EmailTemplate[] @relation("EmailTemplateCreator")
@@ -95,12 +115,18 @@ model Cohort {
   description String?
   isActive    Boolean @default(true)
   
+  // V2 Enhancement Fields
+  autoApprove       Boolean @default(false)  // Dynamic auto-approval per cohort
+  maxEnrollments    Int?    // Optional enrollment limit
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   // Relations
-  enrollments     Enrollment[]
-  specializations Specialization[]
+  enrollments      Enrollment[]
+  specializations  Specialization[]
+  currentUsers     User[] @relation("UserCurrentCohort") // Opposite relation for User.currentCohort
+  pathfinderScopes PathfinderScope[] @relation("PathfinderScopeCohort")
   
   @@map("cohorts")
 }
@@ -119,6 +145,7 @@ model Specialization {
   // Relations
   leagues             SpecializationLeague[]
   userSpecializations UserSpecialization[]
+  pathfinderScopes    PathfinderScope[] @relation("PathfinderScopeSpecialization")
   
   @@map("specializations")
 }
@@ -132,11 +159,12 @@ model League {
   updatedAt DateTime @updatedAt
   
   // Relations
-  weeks         Week[]
-  badges        Badge[]
-  enrollments   Enrollment[]
+  weeks           Week[]
+  badges          Badge[]
+  enrollments     Enrollment[]
   specializations SpecializationLeague[]
-  assignment    Assignment?
+  assignment      Assignment?
+  pathfinderScopes PathfinderScope[] @relation("PathfinderScopeLeague")
   
   @@map("leagues")
 }
@@ -433,6 +461,7 @@ enum AuditAction {
   ERROR_OCCURRED
   UNCAUGHT_EXCEPTION
   UNHANDLED_REJECTION
+  USER_MIGRATED_TO_V2
 }
 
 model AuditLog {
@@ -528,6 +557,36 @@ model IncidentUpdate {
   createdAt     DateTime @default(now())
   
   @@map("incident_updates")
+}
+
+// Pathfinder Scope Control (V2 Enhancement)
+model PathfinderScope {
+  id               String    @id @default(cuid())
+  
+  pathfinderId     String
+  pathfinder       User      @relation("PathfinderScopeUser", fields: [pathfinderId], references: [id], onDelete: Cascade)
+  
+  // Scope can be at multiple levels (at least one must be specified)
+  cohortId         String?
+  cohort           Cohort?   @relation("PathfinderScopeCohort", fields: [cohortId], references: [id], onDelete: Cascade)
+  
+  specializationId String?
+  specialization   Specialization? @relation("PathfinderScopeSpecialization", fields: [specializationId], references: [id], onDelete: Cascade)
+  
+  leagueId         String?
+  league           League?   @relation("PathfinderScopeLeague", fields: [leagueId], references: [id], onDelete: Cascade)
+  
+  // Permissions within scope
+  canManageUsers   Boolean   @default(true)
+  canViewAnalytics Boolean   @default(true)
+  canCreateContent Boolean   @default(false)
+  
+  assignedAt       DateTime  @default(now())
+  assignedById     String
+  assignedBy       User      @relation("PathfinderScopeAssigner", fields: [assignedById], references: [id])
+  
+  @@unique([pathfinderId, cohortId, specializationId, leagueId])
+  @@map("pathfinder_scopes")
 }
 
 // Email Service Models

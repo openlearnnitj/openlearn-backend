@@ -24,6 +24,10 @@
 - **[AUTH_API_DOCUMENTATION.md](./docs/AUTH_API_DOCUMENTATION.md)** - Complete authentication system
 - **[AUTH_SYSTEM_COMPLETE.md](./docs/AUTH_SYSTEM_COMPLETE.md)** - Authentication architecture overview
 
+### Platform Migration & Upgrades
+- **[V2_MIGRATION_IMPLEMENTATION.md](./docs/V2_MIGRATION_IMPLEMENTATION.md)** - V2 platform upgrade documentation
+- **[V2_MIGRATION_SUMMARY.md](./docs/V2_MIGRATION_SUMMARY.md)** - Technical summary of V2 changes
+
 ### Core Learning Features
 - **[ADMIN_COURSE_API_DOCUMENTATION.md](./docs/ADMIN_COURSE_API_DOCUMENTATION.md)** - Course management system
 - **[WEEK_MANAGEMENT_API_DOCUMENTATION.md](./docs/WEEK_MANAGEMENT_API_DOCUMENTATION.md)** - Weekly content structure
@@ -1086,6 +1090,26 @@ When reporting issues, please include:
 - Expected vs actual behavior
 - Environment details (Node.js version, OS, etc.)
 - Relevant logs or error messages
+
+## 📋 Changelog
+
+### V2.0.0 - Platform Upgrade (August 2025)
+- **Enhanced User Profiles**: Added institute, department, graduation year, and contact information
+- **OLID System**: Unique OpenLearn ID generation (format: OL025000200)
+- **Auto-Approval**: Configurable per-cohort approval system for scalable onboarding
+- **Pathfinder Scope Control**: Role-based access control with league/specialization scoping
+- **Migration System**: Seamless V2 migration for existing users with backward compatibility
+- **Production Safety**: Zero-downtime deployment supporting 120+ existing users
+- **New Endpoints**: 
+  - `GET /api/migration/status` - Check migration status
+  - `POST /api/migration/migrate-to-v2` - Migrate to V2
+- **Enhanced Signup**: V2 fields support in existing signup endpoint
+
+### V1.8.0 - Rate Limiting & Analytics (July 2025)
+- **Rate Limiting**: IP-based rate limiting with configurable limits per endpoint type
+- **Hierarchical Analytics**: New endpoint for complete platform hierarchy analytics
+- **Security Enhancements**: Trust proxy configuration and improved IP detection
+- **DevOps Architecture**: Updated deployment infrastructure documentation
 
 ---
 
