@@ -25,6 +25,7 @@
 - **[AUTH_SYSTEM_COMPLETE.md](./docs/AUTH_SYSTEM_COMPLETE.md)** - Authentication architecture overview
 
 ### Platform Migration & Upgrades
+- **[V2_MIGRATION_API_DOCUMENTATION.md](./docs/V2_MIGRATION_API_DOCUMENTATION.md)** - Complete V2 migration API reference with examples
 - **[V2_MIGRATION_IMPLEMENTATION.md](./docs/V2_MIGRATION_IMPLEMENTATION.md)** - V2 platform upgrade documentation
 - **[V2_MIGRATION_SUMMARY.md](./docs/V2_MIGRATION_SUMMARY.md)** - Technical summary of V2 changes
 
@@ -45,6 +46,11 @@
 ### Gamification & Social
 - **[BADGE_MANAGEMENT_API_DOCUMENTATION.md](./docs/BADGE_MANAGEMENT_API_DOCUMENTATION.md)** - Achievement system
 - **[SOCIAL_SHARING_API_DOCUMENTATION.md](./docs/SOCIAL_SHARING_API_DOCUMENTATION.md)** - Social features
+
+### Email Service & Communication
+- **[EMAIL_SERVICE_ARCHITECTURE.md](./docs/EMAIL_SERVICE_ARCHITECTURE.md)** - Complete email service architecture guide
+- **[EMAIL_SERVICE_FLOW.md](./docs/EMAIL_SERVICE_FLOW.md)** - Communication flow and Redis-Worker interaction
+- **[EMAIL_SERVICE_QUICK_REFERENCE.md](./docs/EMAIL_SERVICE_QUICK_REFERENCE.md)** - Developer quick reference
 
 ### Developer Resources
 - **[API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Complete API reference
@@ -76,6 +82,12 @@ OpenLearn is a sophisticated educational platform designed for **cohort-based le
 - Assignment submission system
 - Progress tracking at section and resource levels
 - Personal notes and revision marking
+
+**V2 Migration System (Active)**
+- Zero-downtime migration for 120+ production users
+- Enhanced user profiles with OLID (OpenLearn ID) system
+- Auto-approval and cohort assignment features
+- Backward-compatible API design
 
 **Gamification & Achievement System**
 - League-specific badge system
