@@ -37,19 +37,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-          run_install: false
-          
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Build TypeScript
-        run: pnpm build
+        run: npm run build
 
       - name: Setup test database
         env:
@@ -89,10 +83,10 @@ jobs:
           git pull origin main
 
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing dependencies..."
-          pnpm install --frozen-lockfile
+          npm ci
 
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building application..."
-          pnpm build
+          npm run build
 
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping containers..."
           docker-compose down || true
