@@ -25,6 +25,8 @@ import badgeRoutes from './routes/badges';
 import assignmentRoutes from './routes/assignments';
 import leaderboardRoutes from './routes/leaderboard';
 import emailRoutes from './routes/emailRoutes';
+import emailVerificationRoutes from './routes/emailVerificationRoutes';
+import pathfinderScopeRoutes from './routes/pathfinderScopeRoutes';
 import statusRoutes from './routes/status';
 import publicRoutes from './routes/public';
 import debugRoutes from './routes/debug';
@@ -607,6 +609,9 @@ app.use('/api/public', publicRoutes);
 // Authentication routes (public endpoints for login, signup, password reset)
 app.use('/api/auth', authRateLimit, authRoutes); // Public auth endpoints
 
+// Email verification routes (authenticated users)
+app.use('/api/auth/email-verification', authRateLimit, emailVerificationRoutes);
+
 // Migration routes (authenticated users only)
 app.use('/api/migration', migrationRoutes);
 
@@ -627,6 +632,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/assignments', assignmentRoutes);
+app.use('/api/pathfinder-scopes', pathfinderScopeRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api', resourceRoutes); // ✅ Moved to end - catches remaining /api/* routes
