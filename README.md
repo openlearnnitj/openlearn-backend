@@ -47,11 +47,6 @@
 - **[BADGE_MANAGEMENT_API_DOCUMENTATION.md](./docs/BADGE_MANAGEMENT_API_DOCUMENTATION.md)** - Achievement system
 - **[SOCIAL_SHARING_API_DOCUMENTATION.md](./docs/SOCIAL_SHARING_API_DOCUMENTATION.md)** - Social features
 
-### Email Service & Communication
-- **[EMAIL_SERVICE_ARCHITECTURE.md](./docs/EMAIL_SERVICE_ARCHITECTURE.md)** - Complete email service architecture guide
-- **[EMAIL_SERVICE_FLOW.md](./docs/EMAIL_SERVICE_FLOW.md)** - Communication flow and Redis-Worker interaction
-- **[EMAIL_SERVICE_QUICK_REFERENCE.md](./docs/EMAIL_SERVICE_QUICK_REFERENCE.md)** - Developer quick reference
-
 ### Developer Resources
 - **[API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Complete API reference
 - **[PUBLIC_COHORTS_API.md](./docs/PUBLIC_COHORTS_API.md)** - Public cohorts structure endpoint
@@ -397,7 +392,8 @@ erDiagram
 - **Validation**: express-validator with custom rules
 - **Security**: Helmet.js + custom middleware
 - **Caching**: Redis for session management and job queuing
-- **Email Service**: SMTP with background worker processing
+- **Email Service**: Amazon SES with background worker processing
+- **Cloud Services**: AWS SES, CloudWatch metrics integration
 - **Deployment**: Render.com with Docker containers
 
 ### Request Flow Architecture
@@ -815,16 +811,14 @@ JWT_REFRESH_EXPIRES_IN=7d
 # Redis (optional for development)
 REDIS_URL=redis://localhost:6379
 
-# Email Configuration
-SMTP_HOST=smtpout.secureserver.net
-SMTP_PORT=port
-SMTP_SECURE=true
-SMTP_USER=email
-SMTP_PASSWORD="secure-password"
+# Amazon SES Email Configuration
+SES_REGION=eu-north-1
+SES_ACCESS_KEY_ID=your-aws-access-key-id
+SES_SECRET_ACCESS_KEY=your-aws-secret-access-key
+SES_FROM_EMAIL="OpenLearn Platform" <info@openlearn.org.in>
+SES_FROM_NAME=OpenLearn Platform
 
 # Email Features
-SMTP_FROM_NAME="OpenLearn Platform"
-SMTP_FROM_EMAIL=email
 EMAIL_ENABLED=true
 
 # Security
@@ -1103,7 +1097,7 @@ When reporting issues, please include:
 - Environment details (Node.js version, OS, etc.)
 - Relevant logs or error messages
 
-## 📋 Changelog
+## Changelog
 
 ### V2.0.0 - Platform Upgrade (August 2025)
 - **Enhanced User Profiles**: Added institute, department, graduation year, and contact information
