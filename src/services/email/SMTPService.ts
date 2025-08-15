@@ -1,35 +1,57 @@
-import { Resend } from 'resend';
+import { SESClient, SendEmailCommand, GetSendQuotaCommand } from '@aws-sdk/client-ses';
 import { SMTPConfig } from '../../types';
 import config from '../../config/environment';
 
 /**
- * Resend Email Service for sending emails
- * Handles the actual email delivery using Resend API
+ * Amazon SES Email Service for sending emails
+ * Handles the actual email delivery using AWS SES API
  */
 export class SMTPService {
-  private resend: Resend;
+  private sesClient: SESClient;
   private emailConfig: {
-    apiKey: string;
+    region: string;
+    accessKeyId: string;
+    secretAccessKey: string;
     fromEmail: string;
     fromName: string;
   };
 
-  constructor(apiKey?: string) {
-    const resendApiKey = apiKey || process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY is required');
+  constructor(options?: {
+    region?: string;
+    accessKeyId?: string;
+    secretAccessKey?: string;
+  }) {
+    // Use provided options or environment variables
+    const region = options?.region || process.env.SES_REGION || 'us-east-1';
+    const accessKeyId = options?.accessKeyId || process.env.SES_ACCESS_KEY_ID;
+    const secretAccessKey = options?.secretAccessKey || process.env.SES_SECRET_ACCESS_KEY;
+
+    if (!accessKeyId || !secretAccessKey) {
+      throw new Error('SES_ACCESS_KEY_ID and SES_SECRET_ACCESS_KEY are required');
     }
 
-    this.resend = new Resend(resendApiKey);
+    // Initialize SES client
+    this.sesClient = new SESClient({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+
     this.emailConfig = {
-      apiKey: resendApiKey,
-      fromEmail: process.env.RESEND_FROM_EMAIL || '"OpenLearn Platform" <info@openlearn.org.in>',
-      fromName: process.env.SMTP_FROM_NAME || 'OpenLearn Platform',
+      region,
+      accessKeyId,
+      secretAccessKey,
+      fromEmail: process.env.SES_FROM_EMAIL || '"OpenLearn Platform" <noreply@openlearn.org.in>',
+      fromName: process.env.SES_FROM_NAME || 'OpenLearn Platform',
     };
+
+    console.log(`SES Email Service initialized for region: ${region}`);
   }
 
   /**
-   * Send a single email using Resend API
+   * Send a single email using Amazon SES API
    */
   async sendEmail(options: {
     to: string;
@@ -41,44 +63,69 @@ export class SMTPService {
     attachments?: any[];
   }): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const emailData: any = {
-        from: this.emailConfig.fromEmail,
-        to: [options.to],
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
+      // Build the destination list
+      const destination: any = {
+        ToAddresses: [options.to],
       };
 
       // Add CC if provided
       if (options.cc && options.cc.length > 0) {
-        emailData.cc = options.cc;
+        destination.CcAddresses = options.cc;
       }
 
       // Add BCC if provided
       if (options.bcc && options.bcc.length > 0) {
-        emailData.bcc = options.bcc;
+        destination.BccAddresses = options.bcc;
       }
 
-      // Add attachments if provided
-      if (options.attachments && options.attachments.length > 0) {
-        emailData.attachments = options.attachments;
-      }
+      // Create the email message
+      const message: any = {
+        Subject: {
+          Data: options.subject,
+          Charset: 'UTF-8',
+        },
+        Body: {},
+      };
 
-      const result = await this.resend.emails.send(emailData);
-      
-      if (result.error) {
-        console.error(`Failed to send email to ${options.to}:`, result.error);
-        return {
-          success: false,
-          error: result.error.message || 'Unknown error occurred while sending email',
+      // Add HTML content if provided
+      if (options.html) {
+        message.Body.Html = {
+          Data: options.html,
+          Charset: 'UTF-8',
         };
       }
 
-      console.log(`Email sent successfully to ${options.to}. Message ID: ${result.data?.id}`);
+      // Add text content if provided
+      if (options.text) {
+        message.Body.Text = {
+          Data: options.text,
+          Charset: 'UTF-8',
+        };
+      }
+
+      // If no content provided, add default text
+      if (!options.html && !options.text) {
+        message.Body.Text = {
+          Data: 'This is a message from OpenLearn Platform.',
+          Charset: 'UTF-8',
+        };
+      }
+
+      // Create the SES command
+      const command = new SendEmailCommand({
+        Source: this.emailConfig.fromEmail,
+        Destination: destination,
+        Message: message,
+      });
+
+      // Send the email
+      const result = await this.sesClient.send(command);
+      
+      console.log(`Email sent successfully to ${options.to}. Message ID: ${result.MessageId}`);
       
       return {
         success: true,
-        messageId: result.data?.id,
+        messageId: result.MessageId,
       };
     } catch (error: any) {
       console.error(`Failed to send email to ${options.to}:`, error);
@@ -91,53 +138,75 @@ export class SMTPService {
   }
 
   /**
-   * Test Resend API connection
+   * Test Amazon SES API connection
    */
   async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
-      // Send a test email to verify the API key works
-      const result = await this.resend.emails.send({
-        from: this.emailConfig.fromEmail,
-        to: ['test@resend.dev'], // Resend's test email that accepts all emails
-        subject: 'OpenLearn Email Service Test',
-        html: '<p>This is a test email to verify Resend API connection.</p>',
-      });
+      // Instead of sending a test email (which requires verified recipients),
+      // we'll use GetSendQuota to verify the SES connection and credentials
+      const command = new GetSendQuotaCommand({});
+      const result = await this.sesClient.send(command);
 
-      if (result.error) {
-        console.error('Resend API test failed:', result.error);
-        return {
-          success: false,
-          error: result.error.message || 'Resend API test failed',
-        };
-      }
-
-      console.log('Resend API connection test successful');
+      console.log('Amazon SES API connection test successful');
+      console.log(`Send Quota: ${result.Max24HourSend || 'N/A'} emails per 24 hours`);
+      console.log(`Sent in last 24h: ${result.SentLast24Hours || 0}`);
+      console.log(`Send Rate: ${result.MaxSendRate || 'N/A'} emails per second`);
+      
       return { success: true };
     } catch (error: any) {
-      console.error('Resend API connection test failed:', error);
+      console.error('Amazon SES API connection test failed:', error);
       
       return {
         success: false,
-        error: error.message || 'Resend API connection test failed',
+        error: error.message || 'Amazon SES API connection test failed',
       };
     }
   }
 
   /**
-   * Close the connection (no-op for Resend as it uses HTTP API)
+   * Close the connection (cleanup SES client)
    */
   async close(): Promise<void> {
-    // No need to close anything for Resend API
-    console.log('Resend service closed (no persistent connection)');
+    // SES client doesn't require explicit closing, but we can destroy it
+    console.log('Amazon SES service closed');
   }
 
   /**
    * Update email configuration
    */
-  updateConfig(newConfig: { apiKey?: string; fromEmail?: string; fromName?: string }): void {
-    if (newConfig.apiKey) {
-      this.resend = new Resend(newConfig.apiKey);
-      this.emailConfig.apiKey = newConfig.apiKey;
+  updateConfig(newConfig: { 
+    region?: string;
+    accessKeyId?: string; 
+    secretAccessKey?: string;
+    fromEmail?: string; 
+    fromName?: string;
+  }): void {
+    let needsClientReinit = false;
+
+    if (newConfig.region && newConfig.region !== this.emailConfig.region) {
+      this.emailConfig.region = newConfig.region;
+      needsClientReinit = true;
+    }
+
+    if (newConfig.accessKeyId && newConfig.accessKeyId !== this.emailConfig.accessKeyId) {
+      this.emailConfig.accessKeyId = newConfig.accessKeyId;
+      needsClientReinit = true;
+    }
+
+    if (newConfig.secretAccessKey && newConfig.secretAccessKey !== this.emailConfig.secretAccessKey) {
+      this.emailConfig.secretAccessKey = newConfig.secretAccessKey;
+      needsClientReinit = true;
+    }
+
+    // Reinitialize SES client if credentials or region changed
+    if (needsClientReinit) {
+      this.sesClient = new SESClient({
+        region: this.emailConfig.region,
+        credentials: {
+          accessKeyId: this.emailConfig.accessKeyId,
+          secretAccessKey: this.emailConfig.secretAccessKey,
+        },
+      });
     }
     
     if (newConfig.fromEmail) {
@@ -150,13 +219,19 @@ export class SMTPService {
   }
 
   /**
-   * Get current email configuration (without API key)
+   * Get current email configuration (without sensitive credentials)
    */
-  getConfig(): { fromEmail: string; fromName: string; provider: string } {
+  getConfig(): { 
+    fromEmail: string; 
+    fromName: string; 
+    provider: string;
+    region: string;
+  } {
     return {
       fromEmail: this.emailConfig.fromEmail,
       fromName: this.emailConfig.fromName,
-      provider: 'Resend',
+      provider: 'Amazon SES',
+      region: this.emailConfig.region,
     };
   }
 

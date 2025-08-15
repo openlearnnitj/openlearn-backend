@@ -34,6 +34,10 @@
     "db:test:prod": "node dist/scripts/testNeonLocal.js",
     "debug:email": "ts-node src/scripts/debugEmailProduction.ts",
     "debug:email:prod": "node dist/scripts/debugEmailProduction.js",
+    "test:ses": "ts-node src/scripts/testSESEmails.ts",
+    "test:ses:prod": "node dist/scripts/testSESEmails.js",
+    "check:ses": "ts-node src/scripts/checkSESVerification.ts",
+    "check:ses:prod": "node dist/scripts/checkSESVerification.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -41,6 +45,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.864.0",
+    "@aws-sdk/types": "^3.862.0",
     "@prisma/client": "^6.9.0",
     "@types/bull": "^3.15.9",
     "@types/handlebars": "^4.0.40",

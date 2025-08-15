@@ -2,7 +2,17 @@
 
 ## 🚀 Quick Start
 
-### 1. Start Services
+### 1. Configure Amazon SES
+```bash
+# Update .env file with SES credentials
+SES_REGION=us-east-1
+SES_ACCESS_KEY_ID=your-aws-access-key-id
+SES_SECRET_ACCESS_KEY=your-aws-secret-access-key
+SES_FROM_EMAIL="OpenLearn Platform" <noreply@openlearn.org.in>
+SES_FROM_NAME=OpenLearn Platform
+```
+
+### 2. Start Services
 ```bash
 # Start Redis and PostgreSQL
 docker compose up postgres redis -d
@@ -14,7 +24,16 @@ npm run worker:email
 npm run dev
 ```
 
-### 2. Send Test Email
+### 3. Test SES Integration
+```bash
+# Run comprehensive SES tests
+npm run test:ses
+
+# Production test
+npm run test:ses:prod
+```
+
+### 4. Send Test Email
 ```typescript
 import EmailService from './services/email/EmailService';
 
