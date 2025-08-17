@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/database';
-import { PasswordResetOTPEmailService } from '../services/email/PasswordResetOTPEmailService';
+import { EmailVerificationService } from '../services/email/EmailVerificationService';
 import { AuditAction, UserRole } from '@prisma/client';
 
 interface AuthenticatedRequest extends Request {
@@ -12,23 +12,21 @@ interface AuthenticatedRequest extends Request {
 }
 
 /**
- * Simple audit logging function (inline)
+ * Simple audit logging function
  */
 async function createAuditLog(data: {
   userId: string;
   action: AuditAction;
-  resourceType: string;
-  resourceId: string;
-  details: any;
+  description?: string;
+  metadata: any;
 }) {
   try {
     await prisma.auditLog.create({
       data: {
         userId: data.userId,
         action: data.action,
-        resourceType: data.resourceType,
-        resourceId: data.resourceId,
-        details: data.details
+        description: data.description,
+        metadata: data.metadata
       }
     });
   } catch (error) {
@@ -38,13 +36,13 @@ async function createAuditLog(data: {
 
 /**
  * Email Verification Controller
- * Handles email verification via OTP system
+ * Handles email verification via OTP system using proper email service architecture
  */
 export class EmailVerificationController {
-  private otpEmailService: PasswordResetOTPEmailService;
+  private emailVerificationService: EmailVerificationService;
 
   constructor() {
-    this.otpEmailService = new PasswordResetOTPEmailService();
+    this.emailVerificationService = new EmailVerificationService();
   }
 
   /**
@@ -82,24 +80,21 @@ export class EmailVerificationController {
       }
 
       // Check rate limiting - only allow one OTP per 60 seconds
-      const existingOTP = await prisma.passwordResetOTP.findFirst({
-        where: {
-          userId: user.id,
-          expiresAt: { gt: new Date() },
-          createdAt: { gt: new Date(Date.now() - 60000) } // 60 seconds ago
+      const pendingInfo = await this.emailVerificationService.hasPendingOTP(user.email);
+      
+      if (pendingInfo.hasPending && pendingInfo.createdAt) {
+        const timeSinceLastOTP = Date.now() - pendingInfo.createdAt.getTime();
+        if (timeSinceLastOTP < 60000) { // 60 seconds
+          res.status(429).json({ 
+            error: 'OTP recently sent. Please wait before requesting another.',
+            retryAfter: 60
+          });
+          return;
         }
-      });
-
-      if (existingOTP) {
-        res.status(429).json({ 
-          error: 'OTP recently sent. Please wait before requesting another.',
-          retryAfter: 60
-        });
-        return;
       }
 
-      // Generate and send OTP using the password reset service
-      const result = await this.otpEmailService.sendPasswordResetOTP(
+      // Generate and send OTP using the email verification service
+      const result = await this.emailVerificationService.sendVerificationOTP(
         user.email,
         user.name || 'User'
       );
@@ -108,12 +103,13 @@ export class EmailVerificationController {
         // Create audit log
         await createAuditLog({
           userId: user.id,
-          action: AuditAction.PASSWORD_RESET_REQUESTED,
-          resourceType: 'email_verification',
-          resourceId: user.email,
-          details: {
+          action: AuditAction.EMAIL_SENT,
+          description: 'Email verification OTP sent',
+          metadata: {
             email: user.email,
-            purpose: 'email_verification'
+            purpose: 'email_verification',
+            resourceType: 'email_verification',
+            resourceId: user.email
           }
         });
 
@@ -175,10 +171,10 @@ export class EmailVerificationController {
         return;
       }
 
-      // Verify OTP using the password reset service
-      const verificationResult = await this.otpEmailService.verifyPasswordResetOTP(user.email, otp);
+      // Verify OTP using the email verification service
+      const verificationResult = await this.emailVerificationService.verifyEmailOTP(user.email, otp);
 
-      if (verificationResult.valid) {
+      if (verificationResult.success) {
         // Mark email as verified
         await prisma.user.update({
           where: { id: user.id },
@@ -188,13 +184,14 @@ export class EmailVerificationController {
         // Create audit log
         await createAuditLog({
           userId: user.id,
-          action: AuditAction.USER_UPDATED,
-          resourceType: 'email_verification',
-          resourceId: user.email,
-          details: {
+          action: AuditAction.USER_STATUS_CHANGED,
+          description: 'Email verified successfully',
+          metadata: {
             email: user.email,
             verifiedAt: new Date().toISOString(),
-            action: 'email_verified'
+            action: 'email_verified',
+            resourceType: 'email_verification',
+            resourceId: user.email
           }
         });
 
@@ -207,13 +204,14 @@ export class EmailVerificationController {
         // Create audit log for failed attempt
         await createAuditLog({
           userId: user.id,
-          action: AuditAction.PASSWORD_RESET_FAILED,
-          resourceType: 'email_verification',
-          resourceId: user.email,
-          details: {
+          action: AuditAction.EMAIL_FAILED,
+          description: 'Email verification failed - invalid OTP',
+          metadata: {
             email: user.email,
             reason: verificationResult.error || 'Invalid OTP',
-            attemptedAt: new Date().toISOString()
+            attemptedAt: new Date().toISOString(),
+            resourceType: 'email_verification',
+            resourceId: user.email
           }
         });
 
@@ -258,23 +256,14 @@ export class EmailVerificationController {
       }
 
       // Check if there's a pending OTP
-      const pendingOTP = await prisma.passwordResetOTP.findFirst({
-        where: {
-          userId: userId,
-          expiresAt: { gt: new Date() }
-        },
-        select: {
-          expiresAt: true,
-          createdAt: true
-        }
-      });
+      const pendingInfo = await this.emailVerificationService.hasPendingOTP(user.email);
 
       res.status(200).json({
         email: user.email.replace(/(.{2})(.*)(@.*)/, '$1***$3'), // Mask email
         emailVerified: user.emailVerified,
-        pendingOTP: !!pendingOTP,
-        otpExpiresAt: pendingOTP?.expiresAt || null,
-        lastOTPSent: pendingOTP?.createdAt || null
+        pendingOTP: pendingInfo.hasPending,
+        otpExpiresAt: pendingInfo.expiresAt || null,
+        lastOTPSent: pendingInfo.createdAt || null
       });
 
     } catch (error: any) {
@@ -317,32 +306,22 @@ export class EmailVerificationController {
       }
 
       // Enhanced rate limiting - 3 minutes between resends
-      const recentOTP = await prisma.passwordResetOTP.findFirst({
-        where: {
-          userId: user.id,
-          createdAt: { gt: new Date(Date.now() - 180000) } // 3 minutes ago
+      const pendingInfo = await this.emailVerificationService.hasPendingOTP(user.email);
+      
+      if (pendingInfo.hasPending && pendingInfo.createdAt) {
+        const timeSinceLastOTP = Date.now() - pendingInfo.createdAt.getTime();
+        if (timeSinceLastOTP < 180000) { // 3 minutes
+          const remainingTime = Math.ceil((180000 - timeSinceLastOTP) / 1000);
+          res.status(429).json({ 
+            error: 'Please wait before requesting another OTP',
+            retryAfter: remainingTime
+          });
+          return;
         }
-      });
-
-      if (recentOTP) {
-        const remainingTime = Math.ceil((recentOTP.createdAt.getTime() + 180000 - Date.now()) / 1000);
-        res.status(429).json({ 
-          error: 'Please wait before requesting another OTP',
-          retryAfter: remainingTime
-        });
-        return;
       }
 
       // Check daily limit (max 5 OTPs per day)
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      
-      const todayOTPCount = await prisma.passwordResetOTP.count({
-        where: {
-          userId: user.id,
-          createdAt: { gte: todayStart }
-        }
-      });
+      const todayOTPCount = await this.emailVerificationService.getOTPCountToday(user.email);
 
       if (todayOTPCount >= 5) {
         res.status(429).json({ 
@@ -353,7 +332,7 @@ export class EmailVerificationController {
       }
 
       // Generate and send OTP
-      const result = await this.otpEmailService.sendPasswordResetOTP(
+      const result = await this.emailVerificationService.sendVerificationOTP(
         user.email,
         user.name || 'User'
       );
@@ -361,13 +340,14 @@ export class EmailVerificationController {
       if (result.success) {
         await createAuditLog({
           userId: user.id,
-          action: AuditAction.PASSWORD_RESET_REQUESTED,
-          resourceType: 'email_verification',
-          resourceId: user.email,
-          details: {
+          action: AuditAction.EMAIL_SENT,
+          description: 'Email verification OTP resent',
+          metadata: {
             email: user.email,
             purpose: 'email_verification_resend',
-            attempt: todayOTPCount + 1
+            attempt: todayOTPCount + 1,
+            resourceType: 'email_verification',
+            resourceId: user.email
           }
         });
 
@@ -427,27 +407,19 @@ export class EmailVerificationController {
       }
 
       // Check if there's a pending OTP
-      const pendingOTP = await prisma.passwordResetOTP.findFirst({
-        where: {
-          userId: userId,
-          expiresAt: { gt: new Date() }
-        },
-        select: {
-          expiresAt: true,
-          createdAt: true
-        }
-      });
+      const pendingInfo = await this.emailVerificationService.hasPendingOTP(user.email);
 
       // Create audit log for admin access
       await createAuditLog({
         userId: adminUserId,
-        action: AuditAction.USER_VIEWED,
-        resourceType: 'email_verification_status',
-        resourceId: userId,
-        details: {
+        action: AuditAction.USER_STATUS_CHANGED,
+        description: 'Admin viewed user email verification status',
+        metadata: {
           targetUserId: userId,
           targetUserEmail: user.email,
-          adminAction: 'view_verification_status'
+          adminAction: 'view_verification_status',
+          resourceType: 'email_verification_status',
+          resourceId: userId
         }
       });
 
@@ -456,9 +428,9 @@ export class EmailVerificationController {
         email: user.email,
         name: user.name,
         emailVerified: user.emailVerified,
-        pendingOTP: !!pendingOTP,
-        otpExpiresAt: pendingOTP?.expiresAt || null,
-        lastOTPSent: pendingOTP?.createdAt || null,
+        pendingOTP: pendingInfo.hasPending,
+        otpExpiresAt: pendingInfo.expiresAt || null,
+        lastOTPSent: pendingInfo.createdAt || null,
         userCreatedAt: user.createdAt,
         lastUpdated: user.updatedAt
       });
@@ -518,15 +490,16 @@ export class EmailVerificationController {
       // Create audit log for admin action
       await createAuditLog({
         userId: adminUserId,
-        action: AuditAction.USER_UPDATED,
-        resourceType: 'email_verification',
-        resourceId: user.email,
-        details: {
+        action: AuditAction.USER_STATUS_CHANGED,
+        description: 'Admin manually verified user email',
+        metadata: {
           targetUserId: userId,
           targetUserEmail: user.email,
           adminVerification: true,
           adminReason: reason || 'Manual admin verification',
-          verifiedAt: new Date().toISOString()
+          verifiedAt: new Date().toISOString(),
+          resourceType: 'email_verification',
+          resourceId: user.email
         }
       });
 

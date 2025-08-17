@@ -302,12 +302,12 @@ export class EmailController {
         return;
       }
 
-      const result = await this.emailService.testSMTPConnection();
+      const result = await this.emailService.testEmailProviderConnection();
 
       if (result.success) {
         res.status(200).json({
           success: true,
-          message: 'SMTP connection successful'
+          message: 'Email provider connection successful'
         });
       } else {
         res.status(400).json({
@@ -316,7 +316,7 @@ export class EmailController {
         });
       }
     } catch (error: any) {
-      console.error('Error in testSMTP controller:', error);
+      console.error('Error in testEmailProvider controller:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   }

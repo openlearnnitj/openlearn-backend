@@ -7,21 +7,22 @@ import {
   EmailJobResult,
   EmailTemplateData 
 } from '../../types';
-import SMTPService from './SMTPService';
+import { EmailProviderFactory } from './EmailProviderFactory';
+import { EmailProviderInterface } from './interfaces/EmailProviderInterface';
 import TemplateService from './TemplateService';
 import QueueService from './QueueService';
 
 /**
  * Main Email Service
- * Orchestrates email sending, template management, and queue operations
+ * Orchestrates email sending, template management, and queue operations using the factory pattern
  */
 export class EmailService {
-  private smtpService: SMTPService;
+  private emailProvider: EmailProviderInterface;
   private templateService: TemplateService;
   private queueService: QueueService;
 
   constructor() {
-    this.smtpService = new SMTPService();
+    this.emailProvider = EmailProviderFactory.createFromEnvironment();
     this.templateService = new TemplateService();
     this.queueService = new QueueService();
   }
@@ -123,7 +124,7 @@ export class EmailService {
       // Send to each recipient
       for (const recipient of request.recipients) {
         try {
-          const result = await this.smtpService.sendEmail({
+          const result = await this.emailProvider.sendEmail({
             to: recipient.email,
             subject,
             html: htmlContent,
@@ -471,10 +472,17 @@ export class EmailService {
   }
 
   /**
-   * Test SMTP connection
+   * Test email provider connection
    */
-  async testSMTPConnection(): Promise<{ success: boolean; error?: string }> {
-    return await this.smtpService.testConnection();
+  async testEmailProviderConnection(): Promise<{ success: boolean; error?: string }> {
+    try {
+      return await this.emailProvider.testConnection();
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to test email provider connection'
+      };
+    }
   }
 
   /**
@@ -540,7 +548,7 @@ export class EmailService {
    */
   async close(): Promise<void> {
     await Promise.all([
-      this.smtpService.close(),
+      this.emailProvider.close?.() || Promise.resolve(),
       this.queueService.close(),
     ]);
   }

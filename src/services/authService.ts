@@ -214,12 +214,33 @@ export class AuthService {
   }
 
   /**
-   * Get user by ID
+   * Get user by ID (with scopes, enrollments, specializations)
    */
-  static async getUserById(userId: string): Promise<User | null> {
+  static async getUserById(userId: string): Promise<any | null> {
     try {
       return await prisma.user.findUnique({
         where: { id: userId },
+        include: {
+          pathfinderScopes: {
+            include: {
+              cohort: { select: { id: true, name: true } },
+              specialization: { select: { id: true, name: true } },
+              league: { select: { id: true, name: true } },
+              assignedBy: { select: { id: true, name: true, email: true } }
+            }
+          },
+          enrollments: {
+            include: {
+              cohort: { select: { id: true, name: true } },
+              league: { select: { id: true, name: true } }
+            }
+          },
+          specializations: {
+            include: {
+              specialization: { select: { id: true, name: true } }
+            }
+          }
+        }
       });
     } catch (error) {
       console.error('Get user by ID error:', error);

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { LeagueController } from '../controllers/leagueController';
 import { AuthMiddleware } from '../middleware/auth';
+import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -31,36 +32,38 @@ router.get('/:leagueId', LeagueController.getLeagueById);
  */
 router.get('/:leagueId/stats', LeagueController.getLeagueStats);
 
-// Admin-only routes (Pathfinders and above)
-router.use(AuthMiddleware.requireRole(
-  UserRole.GRAND_PATHFINDER, 
-  UserRole.CHIEF_PATHFINDER, 
-  UserRole.PATHFINDER
-));
-
 /**
  * @route POST /leagues
  * @desc Create a new league
- * @access Pathfinder and above
+ * @access Pathfinder with canCreateContent permission
  * @body name - League name (required)
  * @body description - League description (optional)
  */
-router.post('/', LeagueController.createLeague);
+router.post('/', 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  LeagueController.createLeague
+);
 
 /**
  * @route PUT /leagues/:leagueId
  * @desc Update league information
- * @access Pathfinder and above
+ * @access Pathfinder with canCreateContent permission
  * @body name - Updated league name
  * @body description - Updated description
  */
-router.put('/:leagueId', LeagueController.updateLeague);
+router.put('/:leagueId', 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  LeagueController.updateLeague
+);
 
 /**
  * @route DELETE /leagues/:leagueId
  * @desc Delete a league (only if no enrollments/weeks/badges)
- * @access Pathfinder and above
+ * @access Pathfinder with canManageUsers permission (admin action)
  */
-router.delete('/:leagueId', LeagueController.deleteLeague);
+router.delete('/:leagueId', 
+  PathfinderScopeMiddleware.requirePermission('canManageUsers'), 
+  LeagueController.deleteLeague
+);
 
 export default router;

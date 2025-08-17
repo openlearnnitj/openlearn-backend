@@ -130,9 +130,18 @@ export class AuthController {
       // Remove password from response
       const { password, ...userProfile } = user;
 
+      // Explicitly add new fields
+      const profile = {
+        ...userProfile,
+        emailVerified: user.emailVerified,
+        pathfinderScopes: user.pathfinderScopes || [],
+        enrollments: user.enrollments || [],
+        specializations: user.specializations || [],
+      };
+
       res.status(200).json({
         success: true,
-        data: userProfile,
+        data: profile,
         message: 'Profile retrieved successfully',
       });
     } catch (error) {

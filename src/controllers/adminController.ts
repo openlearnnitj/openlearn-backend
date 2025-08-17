@@ -322,10 +322,25 @@ export class AdminController {
           name: true,
           role: true,
           status: true,
-          createdAt: true,
-          updatedAt: true,
         },
       });
+
+      // If promoted to PATHFINDER, assign default scope if none exists
+      if (role === UserRole.PATHFINDER) {
+        const existingScopes = await prisma.pathfinderScope.findMany({ where: { pathfinderId: userId } });
+        if (existingScopes.length === 0) {
+          // Assign a default scope (e.g., global, or require admin to specify)
+          await prisma.pathfinderScope.create({
+            data: {
+              pathfinderId: userId,
+              canManageUsers: true,
+              canViewAnalytics: true,
+              canCreateContent: false,
+              assignedById: currentUser.userId,
+            }
+          });
+        }
+      }
 
       // Create audit log
       await prisma.auditLog.create({
@@ -416,8 +431,6 @@ export class AdminController {
           name: true,
           role: true,
           status: true,
-          createdAt: true,
-          updatedAt: true,
         },
       });
 

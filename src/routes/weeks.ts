@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { WeekController } from '../controllers/weekController';
 import { SectionController } from '../controllers/sectionController';
 import { AuthMiddleware } from '../middleware/auth';
+import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -12,16 +13,22 @@ router.use(AuthMiddleware.authenticate);
 /**
  * @route   POST /api/weeks
  * @desc    Create a new week in a league
- * @access  Chief Pathfinder+
+ * @access  Pathfinder with canCreateContent permission
  */
-router.post('/', AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), WeekController.createWeek);
+router.post('/', 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  WeekController.createWeek
+);
 
 /**
  * @route   GET /api/weeks
  * @desc    Get all weeks (admin view with filtering)
- * @access  Pathfinder+
+ * @access  Pathfinder with canViewAnalytics permission
  */
-router.get('/', AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), WeekController.getAllWeeks);
+router.get('/', 
+  PathfinderScopeMiddleware.requirePermission('canViewAnalytics'), 
+  WeekController.getAllWeeks
+);
 
 /**
  * @route   GET /api/leagues/:leagueId/weeks
@@ -47,24 +54,30 @@ router.get('/:id/sections', SectionController.getSectionsByWeek);
 /**
  * @route   PUT /api/weeks/:id
  * @desc    Update a week
- * @access  Chief Pathfinder+
+ * @access  Pathfinder with canCreateContent permission
  */
-router.put('/:id', AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), WeekController.updateWeek);
+router.put('/:id', 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  WeekController.updateWeek
+);
 
 /**
  * @route   DELETE /api/weeks/:id
  * @desc    Delete a week
- * @access  Grand Pathfinder only
+ * @access  Pathfinder with canManageUsers permission (admin action)
  */
-router.delete('/:id', AuthMiddleware.requireRole(UserRole.GRAND_PATHFINDER), WeekController.deleteWeek);
+router.delete('/:id', 
+  PathfinderScopeMiddleware.requirePermission('canManageUsers'), 
+  WeekController.deleteWeek
+);
 
 /**
  * @route   PUT /api/weeks/:id/sections/reorder
  * @desc    Reorder sections within a week
- * @access  Chief Pathfinder+
+ * @access  Pathfinder with canCreateContent permission
  */
 router.put('/:id/sections/reorder', 
-  AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
   SectionController.reorderSections
 );
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AnalyticsController } from '../controllers/analyticsController';
 import { HierarchicalAnalyticsController } from '../controllers/hierarchicalAnalyticsController';
 import { AuthMiddleware } from '../middleware/auth';
+import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -12,20 +13,22 @@ router.use(AuthMiddleware.authenticate);
 /**
  * @route GET /api/analytics/platform
  * @desc Get platform overview statistics
- * @access Pathfinder+
+ * @access Pathfinder+ with canViewAnalytics permission
  */
 router.get('/platform', 
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER),
+  PathfinderScopeMiddleware.requirePermission('canViewAnalytics'),
   AnalyticsController.getPlatformStats
 );
 
 /**
  * @route GET /api/analytics/cohort/:cohortId
  * @desc Get cohort performance analytics
- * @access Pathfinder+
+ * @access Pathfinder+ with cohort access and canViewAnalytics permission
  */
 router.get('/cohort/:cohortId',
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER),
+  PathfinderScopeMiddleware.requireCohortAccess('cohortId'),
   AnalyticsController.getCohortAnalytics
 );
 

@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { SpecializationController } from '../controllers/specializationController';
 import { AuthMiddleware } from '../middleware/auth';
+import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -12,9 +13,12 @@ router.use(AuthMiddleware.authenticate);
 /**
  * @route   POST /api/specializations
  * @desc    Create a new specialization
- * @access  Chief Pathfinder+
+ * @access  Pathfinder with canCreateContent permission
  */
-router.post('/', AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), SpecializationController.createSpecialization);
+router.post('/', 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  SpecializationController.createSpecialization
+);
 
 /**
  * @route   GET /api/specializations
@@ -33,15 +37,21 @@ router.get('/:id', SpecializationController.getSpecializationById);
 /**
  * @route   PUT /api/specializations/:id
  * @desc    Update a specialization
- * @access  Chief Pathfinder+
+ * @access  Pathfinder with canCreateContent permission
  */
-router.put('/:id', AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), SpecializationController.updateSpecialization);
+router.put('/:id', 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  SpecializationController.updateSpecialization
+);
 
 /**
  * @route   DELETE /api/specializations/:id
  * @desc    Delete a specialization
- * @access  Grand Pathfinder only
+ * @access  Pathfinder with canManageUsers permission (high-level admin action)
  */
-router.delete('/:id', AuthMiddleware.requireRole(UserRole.GRAND_PATHFINDER), SpecializationController.deleteSpecialization);
+router.delete('/:id', 
+  PathfinderScopeMiddleware.requirePermission('canManageUsers'), 
+  SpecializationController.deleteSpecialization
+);
 
 export default router;

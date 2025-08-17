@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ResourceController } from '../controllers/resourceController';
 import { AuthMiddleware } from '../middleware/auth';
+import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -11,10 +12,10 @@ router.use(AuthMiddleware.authenticate);
 /**
  * @route POST /api/sections/:sectionId/resources
  * @desc Create a new resource in a section
- * @access Chief Pathfinder+
+ * @access Pathfinder with canCreateContent permission
  */
 router.post('/sections/:sectionId/resources', 
-  AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
   ResourceController.createResource
 );
 
@@ -28,10 +29,10 @@ router.get('/sections/:sectionId/resources', ResourceController.getResourcesBySe
 /**
  * @route GET /api/resources
  * @desc Get all resources (admin view with filtering)
- * @access Pathfinder+
+ * @access Pathfinder with canViewAnalytics permission
  */
 router.get('/resources', 
-  AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  PathfinderScopeMiddleware.requirePermission('canViewAnalytics'), 
   ResourceController.getAllResources
 );
 
@@ -45,30 +46,30 @@ router.get('/resources/:id', ResourceController.getResourceById);
 /**
  * @route PUT /api/resources/:id
  * @desc Update a resource
- * @access Chief Pathfinder+
+ * @access Pathfinder with canCreateContent permission
  */
 router.put('/resources/:id', 
-  AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
   ResourceController.updateResource
 );
 
 /**
  * @route DELETE /api/resources/:id
  * @desc Delete a resource
- * @access Chief Pathfinder+
+ * @access Pathfinder with canCreateContent permission
  */
 router.delete('/resources/:id', 
-  AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
   ResourceController.deleteResource
 );
 
 /**
  * @route PUT /api/sections/:sectionId/resources/reorder
  * @desc Reorder resources within a section
- * @access Chief Pathfinder+
+ * @access Pathfinder with canCreateContent permission
  */
 router.put('/sections/:sectionId/resources/reorder', 
-  AuthMiddleware.requireRole(UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
+  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
   ResourceController.reorderResources
 );
 

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - OpenLearn</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .content {
+            color: #333;
+            font-size: 16px;
+        }
+        .otp-box {
+            background-color: #f8f9fa;
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #007bff;
+            letter-spacing: 5px;
+            margin: 10px 0;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .highlight {
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">OpenLearn</div>
+            <h2>Email Verification Required</h2>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{userName}}</strong>,</p>
+            
+            <p>Thank you for joining OpenLearn! To complete your registration and secure your account, please verify your email address using the verification code below:</p>
+            
+            <div class="otp-box">
+                <p><strong>Your Verification Code:</strong></p>
+                <div class="otp-code">{{otp}}</div>
+                <p>Enter this code in the verification form</p>
+            </div>
+            
+            <p><strong>Steps to verify:</strong></p>
+            <ol>
+                <li>Go back to the OpenLearn verification page</li>
+                <li>Enter this 6-digit verification code: <span class="highlight">{{otp}}</span></li>
+                <li>Click "Verify Email" to complete the process</li>
+            </ol>
+            
+            <div class="warning">
+                <p><strong>⚠️ Important Security Information:</strong></p>
+                <ul>
+                    <li>This verification code will expire in <strong>{{expiryMinutes}} minutes</strong> for security reasons</li>
+                    <li>Never share this verification code with anyone</li>
+                    <li>OpenLearn staff will never ask for your verification code</li>
+                    <li>If you didn't request this verification, please ignore this email</li>
+                </ul>
+            </div>
+            
+            <p>If you're having trouble with verification, you can request a new code from the verification page.</p>
+            
+            <p>Welcome to the OpenLearn community! Once verified, you'll have access to all our learning resources and features.</p>
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent from OpenLearn Email Verification System</p>
+            <p>Code expires at: <strong>{{expiryTime}}</strong></p>
+            <p>If you didn't request this verification, please ignore this email.</p>
+        </div>
+    </div>
+</body>
+</html>
