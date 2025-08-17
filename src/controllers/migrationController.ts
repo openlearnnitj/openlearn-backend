@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { TokenPayload } from '../types';
 import { ValidationUtils } from '../utils/validation';
-import { generateOLID } from '../utils/olidGenerator';
+import { OLIDGenerator } from '../utils/olidGenerator';
 import { AuditAction } from '@prisma/client';
 
 export class MigrationController {
@@ -112,9 +112,9 @@ export class MigrationController {
       }
 
       // Generate OLID if not exists
-      let olid = existingUser.olid;
-      if (!olid) {
-        olid = await MigrationController.generateOLID();
+      let userOlid = existingUser.olid;
+      if (!userOlid) {
+        userOlid = await OLIDGenerator.generateOLID();
       }
 
       // Assign to default active cohort if not assigned
@@ -127,9 +127,6 @@ export class MigrationController {
         currentCohortId = defaultCohort?.id || null;
       }
 
-      // Generate OLID for the user
-      const newOlid = await generateOLID();
-
       // Update user with V2 data
       const updatedUser = await prisma.user.update({
         where: { id: currentUser.userId },
@@ -141,7 +138,7 @@ export class MigrationController {
           studentId: studentId ? ValidationUtils.sanitizeString(studentId) : null,
           discordUsername: discordUsername ? ValidationUtils.sanitizeString(discordUsername) : null,
           portfolioUrl: portfolioUrl ? ValidationUtils.sanitizeString(portfolioUrl) : null,
-          olid: newOlid,
+          olid: userOlid,
           migratedToV2: true,
           emailVerified: true, // Assume existing users are verified
           currentCohortId,
@@ -176,12 +173,12 @@ export class MigrationController {
         data: {
           userId: currentUser.userId,
           action: AuditAction.USER_MIGRATED_TO_V2,
-          description: `User migrated to V2 with OLID: ${olid}`,
+          description: `User migrated to V2 with OLID: ${userOlid}`,
           metadata: {
             institute,
             department,
             graduationYear,
-            olid,
+            olid: userOlid,
             migratedAt: new Date().toISOString(),
           },
         },
@@ -212,32 +209,5 @@ export class MigrationController {
         error: 'Internal server error during migration',
       });
     }
-  }
-
-  /**
-   * Generate unique OpenLearn ID (OLID)
-   */
-  private static async generateOLID(): Promise<string> {
-    const prefix = 'OL';
-    const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of year
-    
-    // Get count of existing users to generate sequence number
-    const userCount = await prisma.user.count();
-    const sequence = (userCount + 1).toString().padStart(4, '0');
-    
-    const olid = `${prefix}${year}${sequence}`;
-    
-    // Check if OLID already exists (very unlikely but safety check)
-    const existingUser = await prisma.user.findUnique({
-      where: { olid },
-    });
-    
-    if (existingUser) {
-      // Generate with random suffix if conflict
-      const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-      return `${prefix}${year}${sequence}${randomSuffix}`;
-    }
-    
-    return olid;
   }
 }

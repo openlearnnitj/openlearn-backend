@@ -6,6 +6,7 @@
 3. [Updated User Profile API](#updated-user-profile-api)
 4. [Updated Authorization Routes](#updated-authorization-routes)
 5. [Migration Examples](#migration-examples)
+6. [Migration API](#migration-api)
 
 ---
 
@@ -843,39 +844,167 @@ router.get('/cohorts/:cohortId',
 
 ---
 
-## 🔧 Environment Configuration
+## 🔄 Migration API
 
-### Email Provider Configuration
+### Base URL: `/api/migration`
 
-#### For Resend
-```env
-EMAIL_PROVIDER=resend
-RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
-EMAIL_FROM_ADDRESS=noreply@yourdomain.com
-EMAIL_FROM_NAME=OpenLearn Platform
+### 1. Check Migration Status
+**GET** `/api/migration/status`
+
+**Description**: Check if the current user needs migration to V2
+
+**Authentication**: Required (Bearer Token)
+
+**Request Headers**:
+```
+Authorization: Bearer <jwt-token>
 ```
 
-#### For Amazon SES
-```env
-EMAIL_PROVIDER=amazon_ses
-AWS_SES_REGION=us-east-1
-AWS_ACCESS_KEY_ID=AKIAXXXXXXXXXXXXXXXX
-AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-EMAIL_FROM_ADDRESS=noreply@yourdomain.com
-EMAIL_FROM_NAME=OpenLearn Platform
+**Response (Needs Migration - 200)**:
+```json
+{
+  "success": true,
+  "data": {
+    "needsMigration": true,
+    "isOldUser": true,
+    "migratedToV2": null,
+    "hasOLID": false,
+    "emailVerified": false,
+    "userSince": "2025-08-17T19:01:05.437Z"
+  },
+  "message": "User needs migration to V2"
+}
 ```
 
-### Redis Configuration (for Email Queues)
-```env
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
-EMAIL_QUEUE_NAME=openlearn-email-queue
-EMAIL_MAX_RETRIES=3
-EMAIL_RETRY_DELAY=5000
-EMAIL_WORKER_CONCURRENCY=5
+**Response (Already Migrated - 200)**:
+```json
+{
+  "success": true,
+  "data": {
+    "needsMigration": false,
+    "isOldUser": false,
+    "migratedToV2": true,
+    "hasOLID": true,
+    "emailVerified": true,
+    "userSince": "2025-08-17T19:01:05.437Z"
+  },
+  "message": "User is already on V2 or migrated"
+}
+```
+
+**cURL Example**:
+```bash
+curl -X GET "https://api.openlearn.org.in/api/migration/status" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 ---
 
-This comprehensive API documentation covers all the new V2 features, migration paths, and provides practical examples for both frontend and backend developers to successfully transition to OpenLearn Backend V2.
+### 2. Migrate to V2
+**POST** `/api/migration/migrate-to-v2`
+
+**Description**: Migrate user to V2 with enhanced profile data
+
+**Authentication**: Required (Bearer Token)
+
+**Request Headers**:
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "institute": "Indian Institute of Technology, Delhi",
+  "department": "Computer Science and Engineering",
+  "graduationYear": 2026,
+  "phoneNumber": "+91-9876543210",
+  "studentId": "2022CS10123",
+  "discordUsername": "john_doe#1234",
+  "portfolioUrl": "https://github.com/johndoe"
+}
+```
+
+**Required Fields**:
+- `institute` (string): Educational institution name
+
+**Optional Fields**:
+- `department` (string): Department/field of study
+- `graduationYear` (number): Expected graduation year
+- `phoneNumber` (string): Contact phone number
+- `studentId` (string): Student/roll number
+- `discordUsername` (string): Discord username for community access
+- `portfolioUrl` (string): Portfolio/GitHub URL
+
+**Response (Success - 200)**:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "cmeg1xixo0020lw01d0znhv0e",
+      "email": "ckesharwan@gmail.com",
+      "name": "Chahat Kesharwani",
+      "role": "PIONEER",
+      "status": "ACTIVE",
+      "institute": "Indian Institute of Technology, Delhi",
+      "department": "Computer Science and Engineering",
+      "graduationYear": 2026,
+      "phoneNumber": "+91-9876543210",
+      "studentId": "2022CS10123",
+      "discordUsername": "john_doe#1234",
+      "portfolioUrl": "https://github.com/johndoe",
+      "olid": "OL250001",
+      "migratedToV2": true,
+      "emailVerified": true,
+      "currentCohort": {
+        "id": "cohort123",
+        "name": "Fall 2025 Cohort"
+      }
+    },
+    "migrationCompleted": true
+  },
+  "message": "Successfully migrated to V2! Welcome to the enhanced OpenLearn platform."
+}
+```
+
+**Response (Already Migrated - 400)**:
+```json
+{
+  "success": false,
+  "error": "User is already migrated to V2"
+}
+```
+
+**Response (Missing Required Fields - 400)**:
+```json
+{
+  "success": false,
+  "error": "institute is required"
+}
+```
+
+**Response (OLID Conflict - 409)**:
+```json
+{
+  "success": false,
+  "error": "OLID generation conflict. Please try again."
+}
+```
+
+**cURL Example**:
+```bash
+curl -X POST "https://api.openlearn.org.in/api/migration/migrate-to-v2" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -d '{
+    "institute": "Indian Institute of Technology, Delhi",
+    "department": "Computer Science and Engineering",
+    "graduationYear": 2026,
+    "phoneNumber": "+91-9876543210",
+    "studentId": "2022CS10123",
+    "discordUsername": "john_doe#1234",
+    "portfolioUrl": "https://github.com/johndoe"
+  }'
+```
