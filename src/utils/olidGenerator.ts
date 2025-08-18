@@ -28,7 +28,7 @@ export class OLIDGenerator {
     const yearSuffix = currentYear.toString().slice(-3); // Last 3 digits (e.g., "025")
     
     // Get the next sequence number for this year
-    const sequenceNumber = await this.getNextSequenceNumber(currentYear);
+    const sequenceNumber = await OLIDGenerator.getNextSequenceNumber(currentYear);
     
     // Format: OL + year + 6-digit padded sequence
     const olid = `OL${yearSuffix}${sequenceNumber.toString().padStart(6, '0')}`;
@@ -40,7 +40,7 @@ export class OLIDGenerator {
    * Get the next sequence number for the given year
    * This ensures sequential numbering within each year
    */
-  private static async getNextSequenceNumber(year: number): Promise<number> {
+  static async getNextSequenceNumber(year: number): Promise<number> {
     const yearPrefix = `OL${year.toString().slice(-3)}`;
     
     try {

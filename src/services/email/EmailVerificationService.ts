@@ -1,7 +1,6 @@
 import { prisma } from '../../config/database';
 import { EmailTemplateService } from './EmailTemplateService';
 import { EmailService } from './EmailService';
-import { generateOLID } from '../../utils/olidGenerator';
 
 export interface EmailVerificationResult {
   success: boolean;
@@ -53,7 +52,7 @@ export class EmailVerificationService {
       // Create new OTP record
       await prisma.passwordResetOTP.create({
         data: {
-          id: await generateOLID(),
+          id: `otp_${Date.now()}_${Math.random().toString(36).substring(2)}`,
           userId: user.id,
           otp: otp, // In production, this should be hashed
           expiresAt

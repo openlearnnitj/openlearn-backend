@@ -4,7 +4,7 @@ import { AuthUser, TokenPayload, SignupRequest, LoginRequest, AuthResponse } fro
 import { PasswordUtils } from '../utils/password';
 import { JWTUtils } from '../utils/jwt';
 import { ValidationUtils } from '../utils/validation';
-import { generateOLID } from '../utils/olidGenerator';
+import { OLIDGenerator } from '../utils/olidGenerator';
 
 export class AuthService {
   /**
@@ -61,7 +61,7 @@ export class AuthService {
       let olid = null;
       let migratedToV2 = null;
       if (signupData.institute) {
-        olid = await generateOLID();
+        olid = await OLIDGenerator.generateOLID();
         migratedToV2 = true;
       }
 
@@ -307,32 +307,5 @@ export class AuthService {
       console.error('Error getting default cohort:', error);
       return null;
     }
-  }
-
-  /**
-   * Generate unique OpenLearn ID (OLID)
-   */
-  private static async generateOLID(): Promise<string> {
-    const prefix = 'OL';
-    const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of year
-    
-    // Get count of existing users to generate sequence number
-    const userCount = await prisma.user.count();
-    const sequence = (userCount + 1).toString().padStart(4, '0');
-    
-    const olid = `${prefix}${year}${sequence}`;
-    
-    // Check if OLID already exists (very unlikely but safety check)
-    const existingUser = await prisma.user.findUnique({
-      where: { olid },
-    });
-    
-    if (existingUser) {
-      // Generate with random suffix if conflict
-      const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-      return `${prefix}${year}${sequence}${randomSuffix}`;
-    }
-    
-    return olid;
   }
 }
