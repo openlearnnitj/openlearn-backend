@@ -120,6 +120,7 @@
   "exclude": [
     "node_modules",
     "dist",
+    "scripts/**/*",
     "prisma/**/*",
     "docker/**/*",
     "docs/**/*",
