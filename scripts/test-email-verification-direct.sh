@@ -7,31 +7,41 @@ echo "🚀 Testing Email Verification Flow (No Migration)"
 echo "================================================"
 
 TIMESTAMP=$(date +%s)
-EMAIL="vatsalkhanna5@gmail.com"
-PASSWORD="RishiTest123!"
+EMAIL="www.rishiahuja@gmail.com"
+PASSWORD="My*54007#"
 NAME="Rishi Direct Test"
 
 echo "📧 Email: $EMAIL"
 echo "👤 Name: $NAME"
 echo ""
 
-# Step 1: Create new user
-echo "1️⃣ Creating new user..."
-SIGNUP_RESPONSE=$(curl -s -X POST "http://localhost:3000/api/auth/signup" \
+# # Step 1: Create new user
+# echo "1️⃣ Creating new user..."
+# SIGNUP_RESPONSE=$(curl -s -X POST "http://localhost:3000/api/auth/signup" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "name": "'"$NAME"'",
+#     "email": "'"$EMAIL"'",
+#     "password": "'"$PASSWORD"'"
+#   }')
+
+# echo "Signup Response:"
+# echo "$SIGNUP_RESPONSE" | jq .
+# echo ""
+# Test with existing test pioneer
+echo "🔐 Login as existing test pioneer..."
+USER_LOGIN=$(curl -s -X POST "http://localhost:3000/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "'"$NAME"'",
-    "email": "'"$EMAIL"'",
-    "password": "'"$PASSWORD"'"
+    "email": "www.rishiahuja@gmail.com",
+    "password": "My*54007#"
   }')
 
-echo "Signup Response:"
-echo "$SIGNUP_RESPONSE" | jq .
+echo "Login Response: $USER_LOGIN"
 echo ""
-
 # Extract user token
-USER_TOKEN=$(echo $SIGNUP_RESPONSE | jq -r '.data.accessToken // empty')
-USER_ID=$(echo $SIGNUP_RESPONSE | jq -r '.data.user.id // empty')
+USER_TOKEN=$(echo $USER_LOGIN | jq -r '.data.accessToken // empty')
+USER_ID=$(echo $USER_LOGIN | jq -r '.data.user.id // empty')
 
 if [ -z "$USER_TOKEN" ]; then
     echo "❌ Failed to create user or get token"

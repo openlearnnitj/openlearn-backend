@@ -6,9 +6,10 @@
 echo "🚀 Testing Email Verification Flow for New User"
 echo "==============================================="
 
-EMAIL="rishi.test.verification@nitj.ac.in"
-PASSWORD="RishiTest123!"
-NAME="Rishi Test Verification"
+TIMESTAMP=$(date +%s)
+EMAIL="emailverify${TIMESTAMP}@nitj.ac.in"
+PASSWORD="EmailVerify123!"
+NAME="Email Verify Test ${TIMESTAMP}"
 
 echo "📧 Email: $EMAIL"
 echo "👤 Name: $NAME"

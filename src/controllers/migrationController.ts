@@ -140,7 +140,7 @@ export class MigrationController {
           portfolioUrl: portfolioUrl ? ValidationUtils.sanitizeString(portfolioUrl) : null,
           olid: userOlid,
           migratedToV2: true,
-          emailVerified: true, // Assume existing users are verified
+          // NOTE: emailVerified is intentionally NOT set here - users must verify email separately
           currentCohortId,
         },
         select: {
@@ -158,7 +158,7 @@ export class MigrationController {
           portfolioUrl: true,
           olid: true,
           migratedToV2: true,
-          emailVerified: true,
+          emailVerified: true, // Include current emailVerified status
           currentCohort: {
             select: {
               id: true,
