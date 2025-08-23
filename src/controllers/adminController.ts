@@ -325,22 +325,8 @@ export class AdminController {
         },
       });
 
-      // If promoted to PATHFINDER, assign default scope if none exists
-      if (role === UserRole.PATHFINDER) {
-        const existingScopes = await prisma.pathfinderScope.findMany({ where: { pathfinderId: userId } });
-        if (existingScopes.length === 0) {
-          // Assign a default scope (e.g., global, or require admin to specify)
-          await prisma.pathfinderScope.create({
-            data: {
-              pathfinderId: userId,
-              canManageUsers: true,
-              canViewAnalytics: true,
-              canCreateContent: false,
-              assignedById: currentUser.userId,
-            }
-          });
-        }
-      }
+      // Note: League assignments for PATHFINDER roles are now managed separately
+      // via /api/admin/assign-leagues endpoint by GRAND_PATHFINDER
 
       // Create audit log
       await prisma.auditLog.create({

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { AnalyticsController } from '../controllers/analyticsController';
 import { HierarchicalAnalyticsController } from '../controllers/hierarchicalAnalyticsController';
 import { AuthMiddleware } from '../middleware/auth';
-import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
+import { authorize } from '../middleware/enhancedAuthorization';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -17,7 +17,7 @@ router.use(AuthMiddleware.authenticate);
  */
 router.get('/platform', 
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER),
-  PathfinderScopeMiddleware.requirePermission('canViewAnalytics'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AnalyticsController.getPlatformStats
 );
 
@@ -28,7 +28,7 @@ router.get('/platform',
  */
 router.get('/cohort/:cohortId',
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER),
-  PathfinderScopeMiddleware.requireCohortAccess('cohortId'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AnalyticsController.getCohortAnalytics
 );
 

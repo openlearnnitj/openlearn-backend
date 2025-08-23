@@ -1,8 +1,9 @@
+import { authorize } from '../middleware/enhancedAuthorization';
 // filepath: /src/routes/specializations.ts
 import { Router } from 'express';
 import { SpecializationController } from '../controllers/specializationController';
 import { AuthMiddleware } from '../middleware/auth';
-import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
+
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -16,7 +17,7 @@ router.use(AuthMiddleware.authenticate);
  * @access  Pathfinder with canCreateContent permission
  */
 router.post('/', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   SpecializationController.createSpecialization
 );
 
@@ -40,7 +41,7 @@ router.get('/:id', SpecializationController.getSpecializationById);
  * @access  Pathfinder with canCreateContent permission
  */
 router.put('/:id', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   SpecializationController.updateSpecialization
 );
 
@@ -50,7 +51,7 @@ router.put('/:id',
  * @access  Pathfinder with canManageUsers permission (high-level admin action)
  */
 router.delete('/:id', 
-  PathfinderScopeMiddleware.requirePermission('canManageUsers'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   SpecializationController.deleteSpecialization
 );
 

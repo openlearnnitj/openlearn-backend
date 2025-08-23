@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AssignmentController } from '../controllers/assignmentController';
 import { AuthMiddleware } from '../middleware/auth';
-import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
+import { authorize } from '../middleware/enhancedAuthorization';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -16,7 +16,7 @@ router.use(AuthMiddleware.authenticate);
  */
 router.post('/', 
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AssignmentController.createAssignment
 );
 
@@ -27,7 +27,7 @@ router.post('/',
  */
 router.get('/', 
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
-  PathfinderScopeMiddleware.requirePermission('canViewAnalytics'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AssignmentController.getAllAssignments
 );
 
@@ -66,7 +66,7 @@ router.get('/my-submissions', AssignmentController.getUserSubmissions);
  */
 router.put('/:assignmentId', 
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AssignmentController.updateAssignment
 );
 
@@ -77,7 +77,7 @@ router.put('/:assignmentId',
  */
 router.delete('/:assignmentId', 
   AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AssignmentController.deleteAssignment
 );
 

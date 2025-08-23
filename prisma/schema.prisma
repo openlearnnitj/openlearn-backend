@@ -126,7 +126,6 @@ model Cohort {
   enrollments      Enrollment[]
   specializations  Specialization[]
   currentUsers     User[] @relation("UserCurrentCohort") // Opposite relation for User.currentCohort
-  pathfinderScopes PathfinderScope[] @relation("PathfinderScopeCohort")
   
   @@map("cohorts")
 }
@@ -145,7 +144,6 @@ model Specialization {
   // Relations
   leagues             SpecializationLeague[]
   userSpecializations UserSpecialization[]
-  pathfinderScopes    PathfinderScope[] @relation("PathfinderScopeSpecialization")
   
   @@map("specializations")
 }
@@ -571,17 +569,11 @@ model PathfinderScope {
   pathfinderId     String
   pathfinder       User      @relation("PathfinderScopeUser", fields: [pathfinderId], references: [id], onDelete: Cascade)
   
-  // Scope can be at multiple levels (at least one must be specified)
-  cohortId         String?
-  cohort           Cohort?   @relation("PathfinderScopeCohort", fields: [cohortId], references: [id], onDelete: Cascade)
+  // ONLY league-based scoping - simplified approach
+  leagueId         String
+  league           League    @relation("PathfinderScopeLeague", fields: [leagueId], references: [id], onDelete: Cascade)
   
-  specializationId String?
-  specialization   Specialization? @relation("PathfinderScopeSpecialization", fields: [specializationId], references: [id], onDelete: Cascade)
-  
-  leagueId         String?
-  league           League?   @relation("PathfinderScopeLeague", fields: [leagueId], references: [id], onDelete: Cascade)
-  
-  // Permissions within scope
+  // Simple permissions within the league
   canManageUsers   Boolean   @default(true)
   canViewAnalytics Boolean   @default(true)
   canCreateContent Boolean   @default(false)
@@ -590,7 +582,7 @@ model PathfinderScope {
   assignedById     String
   assignedBy       User      @relation("PathfinderScopeAssigner", fields: [assignedById], references: [id])
   
-  @@unique([pathfinderId, cohortId, specializationId, leagueId])
+  @@unique([pathfinderId, leagueId]) // One scope per pathfinder per league
   @@map("pathfinder_scopes")
 }
 

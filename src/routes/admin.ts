@@ -2,13 +2,14 @@ import { Router } from 'express';
 import { AdminController } from '../controllers/adminController';
 import { AssignmentController } from '../controllers/assignmentController';
 import { AuthMiddleware } from '../middleware/auth';
+import { authorize } from '../middleware/enhancedAuthorization';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
 
 // All admin routes require authentication and admin privileges
 router.use(AuthMiddleware.authenticate);
-router.use(AuthMiddleware.requireRole(UserRole.GRAND_PATHFINDER, UserRole.CHIEF_PATHFINDER));
+router.use(authorize([UserRole.GRAND_PATHFINDER, UserRole.CHIEF_PATHFINDER]));
 
 /**
  * @route GET /admin/users

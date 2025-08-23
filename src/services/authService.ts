@@ -223,8 +223,6 @@ export class AuthService {
         include: {
           pathfinderScopes: {
             include: {
-              cohort: { select: { id: true, name: true } },
-              specialization: { select: { id: true, name: true } },
               league: { select: { id: true, name: true } },
               assignedBy: { select: { id: true, name: true, email: true } }
             }

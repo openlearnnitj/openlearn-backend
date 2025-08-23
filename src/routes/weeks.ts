@@ -1,8 +1,9 @@
+import { authorize } from '../middleware/enhancedAuthorization';
 import { Router } from 'express';
 import { WeekController } from '../controllers/weekController';
 import { SectionController } from '../controllers/sectionController';
 import { AuthMiddleware } from '../middleware/auth';
-import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
+
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -16,7 +17,7 @@ router.use(AuthMiddleware.authenticate);
  * @access  Pathfinder with canCreateContent permission
  */
 router.post('/', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   WeekController.createWeek
 );
 
@@ -26,7 +27,7 @@ router.post('/',
  * @access  Pathfinder with canViewAnalytics permission
  */
 router.get('/', 
-  PathfinderScopeMiddleware.requirePermission('canViewAnalytics'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   WeekController.getAllWeeks
 );
 
@@ -57,7 +58,7 @@ router.get('/:id/sections', SectionController.getSectionsByWeek);
  * @access  Pathfinder with canCreateContent permission
  */
 router.put('/:id', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   WeekController.updateWeek
 );
 
@@ -67,7 +68,7 @@ router.put('/:id',
  * @access  Pathfinder with canManageUsers permission (admin action)
  */
 router.delete('/:id', 
-  PathfinderScopeMiddleware.requirePermission('canManageUsers'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   WeekController.deleteWeek
 );
 
@@ -77,7 +78,7 @@ router.delete('/:id',
  * @access  Pathfinder with canCreateContent permission
  */
 router.put('/:id/sections/reorder', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   SectionController.reorderSections
 );
 

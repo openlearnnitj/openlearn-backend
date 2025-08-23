@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { CohortController } from '../controllers/cohortController';
 import { AuthMiddleware } from '../middleware/auth';
-import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
+import { authorize } from '../middleware/enhancedAuthorization';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -36,36 +36,36 @@ router.use(AuthMiddleware.requireRole(
 /**
  * @route POST /cohorts
  * @desc Create a new cohort
- * @access Pathfinder and above with canCreateContent permission
+ * @access PATHFINDER and above
  * @body name - Cohort name (required)
  * @body description - Cohort description (optional)
  * @body isActive - Whether cohort is active (default: true)
  */
 router.post('/', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   CohortController.createCohort
 );
 
 /**
  * @route PUT /cohorts/:cohortId
  * @desc Update cohort information
- * @access Pathfinder and above with cohort access and canCreateContent permission
+ * @access PATHFINDER and above
  * @body name - Updated cohort name
  * @body description - Updated description
  * @body isActive - Updated active status
  */
 router.put('/:cohortId', 
-  PathfinderScopeMiddleware.requireCohortAccess('cohortId'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   CohortController.updateCohort
 );
 
 /**
  * @route DELETE /cohorts/:cohortId
  * @desc Delete a cohort (only if no enrollments/specializations)
- * @access Pathfinder and above with cohort access and canCreateContent permission
+ * @access PATHFINDER and above
  */
 router.delete('/:cohortId', 
-  PathfinderScopeMiddleware.requireCohortAccess('cohortId'),
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   CohortController.deleteCohort
 );
 

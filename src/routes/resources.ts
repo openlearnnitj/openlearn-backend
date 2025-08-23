@@ -1,7 +1,8 @@
+import { authorize } from '../middleware/enhancedAuthorization';
 import { Router } from 'express';
 import { ResourceController } from '../controllers/resourceController';
 import { AuthMiddleware } from '../middleware/auth';
-import { PathfinderScopeMiddleware } from '../middleware/pathfinderScope';
+
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -15,7 +16,7 @@ router.use(AuthMiddleware.authenticate);
  * @access Pathfinder with canCreateContent permission
  */
 router.post('/sections/:sectionId/resources', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.createResource
 );
 
@@ -32,7 +33,7 @@ router.get('/sections/:sectionId/resources', ResourceController.getResourcesBySe
  * @access Pathfinder with canViewAnalytics permission
  */
 router.get('/resources', 
-  PathfinderScopeMiddleware.requirePermission('canViewAnalytics'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.getAllResources
 );
 
@@ -49,7 +50,7 @@ router.get('/resources/:id', ResourceController.getResourceById);
  * @access Pathfinder with canCreateContent permission
  */
 router.put('/resources/:id', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.updateResource
 );
 
@@ -59,7 +60,7 @@ router.put('/resources/:id',
  * @access Pathfinder with canCreateContent permission
  */
 router.delete('/resources/:id', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.deleteResource
 );
 
@@ -69,7 +70,7 @@ router.delete('/resources/:id',
  * @access Pathfinder with canCreateContent permission
  */
 router.put('/sections/:sectionId/resources/reorder', 
-  PathfinderScopeMiddleware.requirePermission('canCreateContent'), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.reorderResources
 );
 

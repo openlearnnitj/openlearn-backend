@@ -26,7 +26,7 @@ import assignmentRoutes from './routes/assignments';
 import leaderboardRoutes from './routes/leaderboard';
 import emailRoutes from './routes/emailRoutes';
 import emailVerificationRoutes from './routes/emailVerificationRoutes';
-import pathfinderScopeRoutes from './routes/pathfinderScopeRoutes';
+import leagueAssignmentRoutes from './routes/leagueAssignmentRoutes';
 import statusRoutes from './routes/status';
 import publicRoutes from './routes/public';
 import debugRoutes from './routes/debug';
@@ -620,6 +620,7 @@ app.use('/api/debug', debugRoutes);
 
 // API routes with specific rate limiting
 app.use('/api/admin', strictRateLimit, adminRoutes); // Strict rate limiting for admin operations
+app.use('/api/admin', strictRateLimit, leagueAssignmentRoutes); // League assignment management (GRAND_PATHFINDER only)
 app.use('/api/cohorts', cohortRoutes);
 app.use('/api/leagues', leagueRoutes);
 app.use('/api/specializations', specializationRoutes);
@@ -632,7 +633,6 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/assignments', assignmentRoutes);
-app.use('/api/pathfinder-scopes', pathfinderScopeRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api', resourceRoutes); // ✅ Moved to end - catches remaining /api/* routes
