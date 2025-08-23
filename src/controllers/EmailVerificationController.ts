@@ -175,21 +175,25 @@ export class EmailVerificationController {
       const verificationResult = await this.emailVerificationService.verifyEmailOTP(user.email, otp);
 
       if (verificationResult.success) {
-        // Mark email as verified
+        // Mark email as verified and activate user account
         await prisma.user.update({
           where: { id: user.id },
-          data: { emailVerified: true }
+          data: { 
+            emailVerified: true,
+            status: 'ACTIVE' // Change status from PENDING to ACTIVE after email verification
+          }
         });
 
         // Create audit log
         await createAuditLog({
           userId: user.id,
           action: AuditAction.USER_STATUS_CHANGED,
-          description: 'Email verified successfully',
+          description: 'Email verified successfully and user account activated',
           metadata: {
             email: user.email,
             verifiedAt: new Date().toISOString(),
-            action: 'email_verified',
+            statusChanged: { from: 'PENDING', to: 'ACTIVE' },
+            action: 'email_verified_and_activated',
             resourceType: 'email_verification',
             resourceId: user.email
           }
@@ -197,8 +201,9 @@ export class EmailVerificationController {
 
         res.status(200).json({
           success: true,
-          message: 'Email verified successfully',
-          emailVerified: true
+          message: 'Email verified successfully and account activated',
+          emailVerified: true,
+          accountStatus: 'ACTIVE'
         });
       } else {
         // Create audit log for failed attempt
@@ -481,22 +486,26 @@ export class EmailVerificationController {
         return;
       }
 
-      // Update user's email verification status
+      // Update user's email verification status and activate account
       await prisma.user.update({
         where: { id: user.id },
-        data: { emailVerified: true }
+        data: { 
+          emailVerified: true,
+          status: 'ACTIVE' // Change status from PENDING to ACTIVE after admin verification
+        }
       });
 
       // Create audit log for admin action
       await createAuditLog({
         userId: adminUserId,
         action: AuditAction.USER_STATUS_CHANGED,
-        description: 'Admin manually verified user email',
+        description: 'Admin manually verified user email and activated account',
         metadata: {
           targetUserId: userId,
           targetUserEmail: user.email,
           adminVerification: true,
           adminReason: reason || 'Manual admin verification',
+          statusChanged: { from: 'PENDING', to: 'ACTIVE' },
           verifiedAt: new Date().toISOString(),
           resourceType: 'email_verification',
           resourceId: user.email
@@ -505,10 +514,11 @@ export class EmailVerificationController {
 
       res.status(200).json({
         success: true,
-        message: 'Email verified successfully by admin',
+        message: 'Email verified successfully by admin and account activated',
         userId: user.id,
         email: user.email,
-        emailVerified: true
+        emailVerified: true,
+        accountStatus: 'ACTIVE'
       });
 
     } catch (error: any) {
