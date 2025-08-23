@@ -71,27 +71,43 @@ const DEFAULT_COHORTS = [
 ];
 
 /**
- * Since PathfinderScope is a relationship-based model in the current schema,
- * we'll handle scope assignment differently - by creating scopes for specific
- * pathfinders and cohorts during the user assignment phase.
+ * Create a default league for the development environment
  */
-
-async function seedPathfinderScopes() {
-  console.log('🌱 Setting up PathfinderScopes...');
-  console.log('   PathfinderScopes will be created when assigning users to cohorts');
-  // The actual scope creation happens in assignPathfinderScopes()
-}
-
-async function assignPathfinderScopes() {
-  console.log('🌱 Assigning PathfinderScopes to Pathfinder users...');
+async function seedDefaultLeague() {
+  console.log('🌱 Setting up default league...');
   
-  const defaultCohort = await prisma.cohort.findFirst({
-    where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
+  const existingLeague = await prisma.league.findFirst({
+    where: { name: 'Development League' },
   });
 
-  if (!defaultCohort) {
-    console.log('❌ No active cohort found, skipping scope assignment...');
+  if (existingLeague) {
+    console.log('✅ Default league already exists');
+    return existingLeague;
+  }
+
+  const league = await prisma.league.create({
+    data: {
+      name: 'Development League',
+      description: 'Default league for development environment with access to all content',
+    },
+  });
+
+  console.log(`✅ Created default league: ${league.name} (${league.id})`);
+  return league;
+}
+
+/**
+ * Assign league access to pathfinder users
+ */
+async function assignLeagueAccess() {
+  console.log('🌱 Assigning league access to Pathfinder users...');
+  
+  const defaultLeague = await prisma.league.findFirst({
+    where: { name: 'Development League' },
+  });
+
+  if (!defaultLeague) {
+    console.log('❌ No default league found, skipping league assignment...');
     return;
   }
 
@@ -101,34 +117,33 @@ async function assignPathfinderScopes() {
     },
   });
 
+  const adminUser = await prisma.user.findFirst({
+    where: { email: 'admin@openlearn.org.in' },
+  });
+
+  if (!adminUser) {
+    console.log('❌ Admin user not found, skipping league assignment...');
+    return;
+  }
+
   for (const pathfinder of pathfinders) {
     // Check if scope already exists
     const existingScope = await prisma.pathfinderScope.findFirst({
       where: {
         pathfinderId: pathfinder.id,
-        cohortId: defaultCohort.id,
+        leagueId: defaultLeague.id,
       },
     });
 
     if (existingScope) {
-      console.log(`✅ PathfinderScope already exists for: ${pathfinder.email}`);
-      continue;
-    }
-
-    // Create admin scope for pathfinder
-    const adminUser = await prisma.user.findFirst({
-      where: { email: 'admin@openlearn.org.in' },
-    });
-
-    if (!adminUser) {
-      console.log('❌ Admin user not found, skipping scope creation...');
+      console.log(`✅ League access already exists for: ${pathfinder.email}`);
       continue;
     }
 
     const scope = await prisma.pathfinderScope.create({
       data: {
         pathfinderId: pathfinder.id,
-        cohortId: defaultCohort.id,
+        leagueId: defaultLeague.id,
         canManageUsers: true,
         canViewAnalytics: true,
         canCreateContent: true,
@@ -141,17 +156,17 @@ async function assignPathfinderScopes() {
       data: {
         userId: pathfinder.id,
         action: AuditAction.PATHFINDER_SCOPE_ASSIGNED,
-        description: `PathfinderScope assigned via seeding for cohort: ${defaultCohort.name}`,
+        description: `League access assigned via seeding for league: ${defaultLeague.name}`,
         metadata: {
           scopeId: scope.id,
-          cohortId: defaultCohort.id,
-          cohortName: defaultCohort.name,
+          leagueId: defaultLeague.id,
+          leagueName: defaultLeague.name,
           assignedAt: new Date().toISOString(),
         },
       },
     });
 
-    console.log(`✅ Assigned PathfinderScope to: ${pathfinder.email}`);
+    console.log(`✅ Assigned league access to: ${pathfinder.email}`);
   }
 }
 
@@ -270,16 +285,16 @@ async function main() {
 
     // Seed in order
     await seedCohorts();
-    await seedPathfinderScopes();
+    await seedDefaultLeague();
     await seedAdminUsers();
-    await assignPathfinderScopes();
+    await assignLeagueAccess();
     await assignUsersToDefaultCohort();
 
     console.log('\n✅ Seeding completed successfully!');
     console.log('\n📋 Summary:');
     console.log('   - Admin users created with default passwords');
-    console.log('   - Default cohorts and PathfinderScopes created');
-    console.log('   - All users assigned to appropriate scopes and cohorts');
+    console.log('   - Default cohorts and leagues created');
+    console.log('   - All users assigned to appropriate league access and cohorts');
     console.log('\n🔐 Default Login Credentials:');
     console.log('   Admin: admin@openlearn.org.in / admin123!');
     console.log('   Developer: developer@openlearn.org.in / dev123!');

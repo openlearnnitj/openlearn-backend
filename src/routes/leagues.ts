@@ -35,34 +35,34 @@ router.get('/:leagueId/stats', LeagueController.getLeagueStats);
 /**
  * @route POST /leagues
  * @desc Create a new league
- * @access PATHFINDER and above
+ * @access GRAND_PATHFINDER only (God mode)
  * @body name - League name (required)
  * @body description - League description (optional)
  */
 router.post('/', 
-  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
+  authorize([UserRole.GRAND_PATHFINDER]),
   LeagueController.createLeague
 );
 
 /**
  * @route PUT /leagues/:leagueId
  * @desc Update league information
- * @access PATHFINDER and above with league access
+ * @access GRAND_PATHFINDER only (God mode)
  * @body name - Updated league name
  * @body description - Updated description
  */
 router.put('/:leagueId', 
-  authorizeForLeague('leagueId'),
+  authorize([UserRole.GRAND_PATHFINDER]),
   LeagueController.updateLeague
 );
 
 /**
  * @route DELETE /leagues/:leagueId
  * @desc Delete a league (only if no enrollments/weeks/badges)
- * @access PATHFINDER and above with league access
+ * @access GRAND_PATHFINDER only (God mode)
  */
 router.delete('/:leagueId', 
-  authorizeForLeague('leagueId'),
+  authorize([UserRole.GRAND_PATHFINDER]),
   LeagueController.deleteLeague
 );
 
