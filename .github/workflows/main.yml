@@ -45,6 +45,19 @@ jobs:
       - name: Build TypeScript
         run: npm run build
 
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            package.json
+            package-lock.json
+            prisma/
+            docker-compose.yml
+            Dockerfile
+          retention-days: 1
+
       - name: Setup test database
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
@@ -60,8 +73,11 @@ jobs:
     environment: production
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: ./artifacts
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
@@ -82,11 +98,8 @@ jobs:
           git reset --hard origin/main
           git pull origin main
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing dependencies..."
-          npm ci
-
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building application..."
-          npm run build
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing production dependencies..."
+          npm ci --only=production
 
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping containers..."
           docker-compose down || true
@@ -120,9 +133,10 @@ jobs:
 
           chmod +x deploy-to-server.sh
 
-      - name: Copy deployment script to server
+      - name: Copy artifacts and deployment script to server
         run: |
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          scp -o StrictHostKeyChecking=no -r ./artifacts/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/openlearn-backend/
           scp -o StrictHostKeyChecking=no deploy-to-server.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
 
       - name: Execute deployment
@@ -144,12 +158,12 @@ jobs:
       - name: Deployment Success
         if: needs.deploy.result == 'success'
         run: |
-          echo "✅ Deployment to production completed!"
-          echo "🔗 App: https://${{ secrets.EC2_HOST }}:3000"
-          echo "🩺 Health Check: https://${{ secrets.EC2_HOST }}:3000/health"
+          echo "Deployment to production completed"
+          echo "App: https://${{ secrets.EC2_HOST }}:3000"
+          echo "Health Check: https://${{ secrets.EC2_HOST }}:3000/health"
 
       - name: Deployment Failure
         if: needs.deploy.result == 'failure'
         run: |
-          echo "❌ Deployment to production failed."
-          echo "Check logs for details."
+          echo "Deployment to production failed"
+          echo "Check logs for details"
