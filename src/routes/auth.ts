@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/authController';
 import { AuthMiddleware } from '../middleware/auth';
+import { PasswordResetController } from '../controllers/PasswordResetController';
 
 const router = Router();
 
@@ -52,5 +53,34 @@ router.put('/password', AuthMiddleware.authenticate, AuthController.changePasswo
  * @access Private
  */
 router.post('/logout', AuthMiddleware.authenticate, AuthController.logout);
+
+// Password Reset Routes
+/**
+ * @route POST /auth/password-reset/send-otp
+ * @desc Send password reset OTP to user's email
+ * @access Public
+ */
+router.post('/password-reset/send-otp', PasswordResetController.sendPasswordResetOTP);
+
+/**
+ * @route POST /auth/password-reset/verify-otp
+ * @desc Verify password reset OTP
+ * @access Public
+ */
+router.post('/password-reset/verify-otp', PasswordResetController.verifyPasswordResetOTP);
+
+/**
+ * @route POST /auth/password-reset/reset-password
+ * @desc Reset password using verified OTP
+ * @access Public
+ */
+router.post('/password-reset/reset-password', PasswordResetController.resetPassword);
+
+/**
+ * @route GET /auth/password-reset/status
+ * @desc Check if user has pending OTP
+ * @access Public
+ */
+router.get('/password-reset/status', PasswordResetController.getPasswordResetStatus);
 
 export default router;

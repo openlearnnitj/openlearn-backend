@@ -1,4 +1,4 @@
-import { authorize } from '../middleware/enhancedAuthorization';
+import { authorize, authorizeForLeague } from '../middleware/enhancedAuthorization';
 import { Router } from 'express';
 import { SectionController } from '../controllers/sectionController';
 import { AuthMiddleware } from '../middleware/auth';

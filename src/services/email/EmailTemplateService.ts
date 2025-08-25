@@ -51,6 +51,7 @@ export class EmailTemplateService {
   
   // Backend-controlled template types (stored as files)
   private static readonly SYSTEM_TEMPLATES = new Set([
+    'password-reset',
     'password-reset-otp',
     'password-reset-success',
     'email-verification',
@@ -427,15 +428,25 @@ export class EmailTemplateService {
    */
   private static getSystemTemplateVariables(templateName: string): Record<string, any> {
     const systemVariables: Record<string, Record<string, any>> = {
-      'password-reset-otp': {
+      'password-reset': {
         userName: { type: 'string', required: true },
         otp: { type: 'string', required: true },
         expiryTime: { type: 'string', required: true },
         expiryMinutes: { type: 'number', required: true },
+        supportEmail: { type: 'string', required: true }
+      },
+      'password-reset-otp': {
+        userName: { type: 'string', required: true },
+        userEmail: { type: 'string', required: true },
+        otp: { type: 'string', required: true },
+        expiryTime: { type: 'string', required: true },
+        expiryMinutes: { type: 'number', required: true },
+        requestTime: { type: 'string', required: true },
         ipAddress: { type: 'string', required: false }
       },
       'password-reset-success': {
         userName: { type: 'string', required: true },
+        userEmail: { type: 'string', required: true },
         resetTime: { type: 'string', required: true },
         loginUrl: { type: 'string', required: true },
         ipAddress: { type: 'string', required: false }

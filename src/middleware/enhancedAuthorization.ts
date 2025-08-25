@@ -85,13 +85,13 @@ export const authorizeForLeague = (leagueIdParam: string = 'leagueId') => {
       return;
     }
 
-    // GRAND_PATHFINDER and CHIEF_PATHFINDER have god mode
-    if (req.user.role === UserRole.GRAND_PATHFINDER || req.user.role === UserRole.CHIEF_PATHFINDER) {
+    // Only GRAND_PATHFINDER has god mode
+    if (req.user.role === UserRole.GRAND_PATHFINDER) {
       next();
       return;
     }
 
-    // For PATHFINDER and below, check league-specific access
+    // For CHIEF_PATHFINDER, PATHFINDER, and below, check league-specific access
     const leagueId = req.params[leagueIdParam] || req.body[leagueIdParam] || req.query[leagueIdParam];
     
     if (!leagueId) {

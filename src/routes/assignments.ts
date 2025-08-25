@@ -15,7 +15,6 @@ router.use(AuthMiddleware.authenticate);
  * @access Pathfinder+ with canCreateContent permission
  */
 router.post('/', 
-  AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
   authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AssignmentController.createAssignment
 );
@@ -26,7 +25,6 @@ router.post('/',
  * @access Pathfinder+ with canViewAnalytics permission
  */
 router.get('/', 
-  AuthMiddleware.requireRole(UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER), 
   authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   AssignmentController.getAllAssignments
 );

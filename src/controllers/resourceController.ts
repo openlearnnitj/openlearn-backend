@@ -13,7 +13,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { TokenPayload } from '../types';
 import { ValidationUtils } from '../utils/validation';
-import { AuditAction, ResourceType } from '@prisma/client';
+import { AuditAction, ResourceType, UserRole } from '@prisma/client';
 
 export class ResourceController {
   /**
@@ -97,6 +97,26 @@ export class ResourceController {
           error: 'Section not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: section.week.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: section.week.league.id,
+            leagueName: section.week.league.name
+          });
+          return;
+        }
       }
 
       // Check if resource with same order already exists in this section
@@ -467,6 +487,26 @@ export class ResourceController {
         return;
       }
 
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: existingResource.section.week.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: existingResource.section.week.league.id,
+            leagueName: existingResource.section.week.league.name
+          });
+          return;
+        }
+      }
+
       // Validate title if provided
       if (title && title.length > 200) {
         res.status(400).json({
@@ -624,6 +664,26 @@ export class ResourceController {
           error: 'Resource not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: resource.section.week.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: resource.section.week.league.id,
+            leagueName: resource.section.week.league.name
+          });
+          return;
+        }
       }
 
       // Delete the resource

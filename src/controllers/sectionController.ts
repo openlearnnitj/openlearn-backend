@@ -52,7 +52,7 @@ export class SectionController {
         return;
       }
 
-      // Check if week exists
+      // Check if week exists and get league info
       const week = await prisma.week.findUnique({
         where: { id: weekId },
         include: {
@@ -71,6 +71,26 @@ export class SectionController {
           error: 'Week not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: week.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: week.league.id,
+            leagueName: week.league.name
+          });
+          return;
+        }
       }
 
       // Check if section with same order already exists in this week
@@ -411,6 +431,26 @@ export class SectionController {
         return;
       }
 
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: existingSection.week.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: existingSection.week.league.id,
+            leagueName: existingSection.week.league.name
+          });
+          return;
+        }
+      }
+
       // Validate name if provided
       if (name && name.length > 100) {
         res.status(400).json({
@@ -544,6 +584,26 @@ export class SectionController {
           error: 'Section not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: section.week.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: section.week.league.id,
+            leagueName: section.week.league.name
+          });
+          return;
+        }
       }
 
       // Warn if section has progress records

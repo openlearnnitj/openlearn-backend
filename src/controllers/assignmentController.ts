@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { TokenPayload } from '../types';
 import { ValidationUtils } from '../utils/validation';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, UserRole } from '@prisma/client';
 
 export class AssignmentController {
   /**
@@ -34,6 +34,26 @@ export class AssignmentController {
           error: 'League not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: leagueId
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: leagueId,
+            leagueName: league.name
+          });
+          return;
+        }
       }
 
       // Check if assignment already exists for this league
@@ -388,6 +408,26 @@ export class AssignmentController {
         return;
       }
 
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: existingAssignment.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: existingAssignment.league.id,
+            leagueName: existingAssignment.league.name
+          });
+          return;
+        }
+      }
+
       // Build update data
       const updateData: any = {};
       if (title !== undefined) {
@@ -493,6 +533,26 @@ export class AssignmentController {
           error: 'Assignment not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: existingAssignment.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: existingAssignment.league.id,
+            leagueName: existingAssignment.league.name
+          });
+          return;
+        }
       }
 
       // Check if assignment has submissions

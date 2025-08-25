@@ -1,4 +1,4 @@
-import { authorize } from '../middleware/enhancedAuthorization';
+import { authorize, authorizeForLeague } from '../middleware/enhancedAuthorization';
 import { Router } from 'express';
 import { WeekController } from '../controllers/weekController';
 import { SectionController } from '../controllers/sectionController';
@@ -14,10 +14,10 @@ router.use(AuthMiddleware.authenticate);
 /**
  * @route   POST /api/weeks
  * @desc    Create a new week in a league
- * @access  Pathfinder with canCreateContent permission
+ * @access  Pathfinder with league-specific permissions
  */
 router.post('/', 
-  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
+  authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]),
   WeekController.createWeek
 );
 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../config/database';
 import { TokenPayload } from '../types';
 import { ValidationUtils } from '../utils/validation';
+import { UserRole } from '@prisma/client';
 
 export class WeekController {
   /**
@@ -42,6 +43,26 @@ export class WeekController {
           error: 'League not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: leagueId
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: leagueId,
+            leagueName: league.name
+          });
+          return;
+        }
       }
 
       // Check if week with same order already exists in this league
@@ -288,6 +309,26 @@ export class WeekController {
         return;
       }
 
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: existingWeek.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: existingWeek.league.id,
+            leagueName: existingWeek.league.name
+          });
+          return;
+        }
+      }
+
       // Validate order if provided
       if (order !== undefined) {
         if (!Number.isInteger(order) || order < 1) {
@@ -423,6 +464,26 @@ export class WeekController {
           error: 'Week not found',
         });
         return;
+      }
+
+      // Security: Check if user has access to this league (unless GRAND_PATHFINDER)
+      if (currentUser.role !== UserRole.GRAND_PATHFINDER) {
+        const scope = await prisma.pathfinderScope.findFirst({
+          where: {
+            pathfinderId: currentUser.userId,
+            leagueId: week.league.id
+          }
+        });
+
+        if (!scope) {
+          res.status(403).json({
+            success: false,
+            error: 'No access to this league',
+            leagueId: week.league.id,
+            leagueName: week.league.name
+          });
+          return;
+        }
       }
 
       // Check if week has sections

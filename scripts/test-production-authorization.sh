@@ -72,20 +72,20 @@ echo ""
 echo "🔍 Analysis:"
 echo "============"
 
-# Check if responses contain success or forbidden
-if [[ "$ASSIGNMENTS_RESPONSE" == *"success"* ]]; then
+# Check if responses contain success:true (meaning unauthorized access succeeded)
+if [[ "$ASSIGNMENTS_RESPONSE" == *'"success":true'* ]]; then
     echo "❌ CRITICAL: Chief Pathfinder can still access assignments (SECURITY ISSUE)"
 else
     echo "✅ GOOD: Chief Pathfinder properly blocked from assignments"
 fi
 
-if [[ "$LEAGUE_RESPONSE" == *"success"* ]]; then
+if [[ "$LEAGUE_RESPONSE" == *'"success":true'* ]]; then
     echo "❌ CRITICAL: Chief Pathfinder can still create leagues (SECURITY ISSUE)"
 else
     echo "✅ GOOD: Chief Pathfinder properly blocked from league creation"
 fi
 
-if [[ "$USER_RESPONSE" == *"success"* ]]; then
+if [[ "$USER_RESPONSE" == *'"success":true'* ]]; then
     echo "❌ CRITICAL: Chief Pathfinder can still promote users (SECURITY ISSUE)"
 else
     echo "✅ GOOD: Chief Pathfinder properly blocked from user promotion"
