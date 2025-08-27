@@ -143,7 +143,7 @@ graph TB
     style REDIS fill:#DC382D,stroke:#fff,color:#fff
     style EXPRESS fill:#000,stroke:#fff,color:#fff
     style NGINX fill:#009639,stroke:#fff,color:#fff
-```
+
     STATUS --> EXPRESS
     EXPRESS --> AUTH_MW
     AUTH_MW --> RBAC
@@ -580,66 +580,32 @@ graph TB
 ### CI/CD Pipeline
 
 ```mermaid
-graph LR
-    subgraph "Development"
-        DEV[Developer]
-        BRANCH[Feature Branch]
-        PR[Pull Request]
+graph TD
+    subgraph "Networking Layer"
+        DOMAIN[(Domain)]
+        LB[Load Balancer]
+        NGINX[Nginx Proxy]
+    end
+    
+    subgraph "Application Layer"
+        DOCKER[Docker Container]
+        NODE[Node.js + Express]
+        APP[OpenLearn Backend]
+        WORKER[Email Worker]
+    end
+    
+    subgraph "Data Layer"
+        PG[(PostgreSQL 15)]
+        REDIS[(Redis Cache & Queue)]
+    end
+    
+    subgraph "Monitoring Layer"
+        HEALTH[Health Checks]
+        LOGS[Application Logs]
+        METRICS[Performance Metrics]
+        STATUS[Status Page]
     end
 
-    subgraph "Quality Gates"
-        LINT[Code Linting]
-        TEST[Unit Tests]
-        SECURITY[Security Scan]
-        BUILD[Build Check]
-    end
-    
-    subgraph "Deployment"
-        STAGING[Staging Deploy]
-        E2E[E2E Tests]
-        PROD[Production Deploy]
-        HEALTH_CHECK[Health Verification]
-    end
-    
-    DEV --> BRANCH
-    BRANCH --> PR
-    PR --> LINT
-    LINT --> TEST
-    TEST --> SECURITY
-    SECURITY --> BUILD
-    BUILD --> STAGING
-    STAGING --> E2E
-    E2E --> PROD
-    PROD --> HEALTH_CHECK
-    
-    style PROD fill:#4CAF50,stroke:#fff,color:#fff
-    style SECURITY fill:#FF5722,stroke:#fff,color:#fff
-    style TEST fill:#2196F3,stroke:#fff,color:#fff
-```
-            LB[Load Balancer]
-            NGINX[Nginx Proxy]
-        end
-        
-        subgraph "Application Layer"
-            DOCKER[Docker Container]
-            NODE[Node.js + Express]
-            APP[OpenLearn Backend]
-            WORKER[Email Worker]
-        end
-        
-        subgraph "Data Layer"
-            PG[(PostgreSQL 15)]
-            REDIS[(Redis Cache & Queue)]
-        end
-        
-        subgraph "Monitoring Layer"
-            HEALTH[Health Checks]
-            LOGS[Application Logs]
-            METRICS[Performance Metrics]
-            STATUS[Status Page]
-        end
-    end
-    
     subgraph "Development Environment"
         LOCAL[Local Development]
         COMPOSE[Docker Compose]
