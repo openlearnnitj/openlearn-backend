@@ -2,99 +2,74 @@
 
 <div align="center">
 
-![OpenLearn Logo](https://avatars.githubusercontent.com/u/208047818?s=200&v=4)
+**A comprehensive TypeScript backend for cohort-based educational platforms**
 
-**A comprehensive TypeScript backend for cohort-based educational platforms**  
-*Featuring role-based learning paths, specializations, progress tracking, and gamification*
+*Modern educational platform featuring role-based learning paths, specializations, progress tracking, and gamification systems*
 
 [![Website](https://img.shields.io/badge/Website-openlearn.org.in-blue?style=for-the-badge&logo=web)](https://openlearn.org.in)
 [![API](https://img.shields.io/badge/API-api.openlearn.org.in-green?style=for-the-badge&logo=fastapi)](https://api.openlearn.org.in)
 [![Status](https://img.shields.io/badge/Status-Production-green?style=for-the-badge)](https://api.openlearn.org.in/status/public)
+
+### Technology Stack
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Express](https://img.shields.io/badge/Express-4.18+-black?style=for-the-badge&logo=express)](https://expressjs.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-5.0+-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+[![JWT](https://img.shields.io/badge/JWT-Authentication-000000?style=for-the-badge&logo=jsonwebtokens)](https://jwt.io/)
+[![AWS](https://img.shields.io/badge/AWS-SES-FF9900?style=for-the-badge&logo=amazonaws)](https://aws.amazon.com/ses/)
 
 </div>
 
 ## Documentation
 
-### Authentication & Security
-- **[AUTH_API_DOCUMENTATION.md](./docs/AUTH_API_DOCUMENTATION.md)** - Complete authentication system
-- **[AUTH_SYSTEM_COMPLETE.md](./docs/AUTH_SYSTEM_COMPLETE.md)** - Authentication architecture overview
+### Quick Access
+- **[CHANGELOG.md](./CHANGELOG.md)** - Version history and updates
+- **[API Documentation](./docs/api/)** - Complete API reference and guides
+- **[Architecture](./docs/architecture/)** - System design and technical architecture
+- **[Development](./docs/development/)** - Development guides and tutorials
+- **[Deployment](./docs/deployment/)** - Production deployment and CI/CD
+- **[Migration](./docs/migration/)** - Platform upgrades and data migration
 
-### Platform Migration & Upgrades
-- **[V2_MIGRATION_API_DOCUMENTATION.md](./docs/V2_MIGRATION_API_DOCUMENTATION.md)** - Complete V2 migration API reference with examples
-- **[V2_MIGRATION_IMPLEMENTATION.md](./docs/V2_MIGRATION_IMPLEMENTATION.md)** - V2 platform upgrade documentation
-- **[V2_MIGRATION_SUMMARY.md](./docs/V2_MIGRATION_SUMMARY.md)** - Technical summary of V2 changes
+### Core API References
+- **[Authentication API](./docs/api/AUTH_API_DOCUMENTATION.md)** - Complete authentication system
+- **[Course Management](./docs/api/ADMIN_COURSE_API_DOCUMENTATION.md)** - Course and cohort administration
+- **[Progress Tracking](./docs/api/PROGRESS_TRACKING_API_DOCUMENTATION.md)** - Learning progress and analytics
+- **[Assignment System](./docs/api/ASSIGNMENT_MANAGEMENT_API_DOCUMENTATION.md)** - Assignment submission and grading
 
-### Core Learning Features
-- **[ADMIN_COURSE_API_DOCUMENTATION.md](./docs/ADMIN_COURSE_API_DOCUMENTATION.md)** - Course management system
-- **[WEEK_MANAGEMENT_API_DOCUMENTATION.md](./docs/WEEK_MANAGEMENT_API_DOCUMENTATION.md)** - Weekly content structure
-- **[SECTION_MANAGEMENT_API_DOCUMENTATION.md](./docs/SECTION_MANAGEMENT_API_DOCUMENTATION.md)** - Section management
-- **[RESOURCE_MANAGEMENT_API_DOCUMENTATION.md](./docs/RESOURCE_MANAGEMENT_API_DOCUMENTATION.md)** - Learning resources
-- **[ASSIGNMENT_MANAGEMENT_API_DOCUMENTATION.md](./docs/ASSIGNMENT_MANAGEMENT_API_DOCUMENTATION.md)** - Assignment system
+### Architecture Overview
+- **[Complete Backend Guide](./docs/architecture/OPENLEARN_BACKEND_COMPLETE.md)** - Full system overview
+- **[Authentication System](./docs/architecture/AUTH_SYSTEM_COMPLETE.md)** - Security and authentication architecture
+- **[Email Service](./docs/architecture/EMAIL_SERVICE_ARCHITECTURE.md)** - Email system design and flow
 
-### Progress & Analytics
-- **[PROGRESS_TRACKING_API_DOCUMENTATION.md](./docs/PROGRESS_TRACKING_API_DOCUMENTATION.md)** - Learning progress tracking
-- **[RESOURCE_PROGRESS_API_DOCUMENTATION.md](./docs/RESOURCE_PROGRESS_API_DOCUMENTATION.md)** - Resource completion tracking
-- **[ANALYTICS_API_DOCUMENTATION.md](./docs/ANALYTICS_API_DOCUMENTATION.md)** - Platform analytics
-- **[HIERARCHICAL_ANALYTICS_API_DOCUMENTATION.md](./docs/HIERARCHICAL_ANALYTICS_API_DOCUMENTATION.md)** - Hierarchical analytics endpoint
-- **[LEADERBOARD_API_DOCUMENTATION.md](./docs/LEADERBOARD_API_DOCUMENTATION.md)** - Competitive features
+## Platform Features
 
-### Gamification & Social
-- **[BADGE_MANAGEMENT_API_DOCUMENTATION.md](./docs/BADGE_MANAGEMENT_API_DOCUMENTATION.md)** - Achievement system
-- **[SOCIAL_SHARING_API_DOCUMENTATION.md](./docs/SOCIAL_SHARING_API_DOCUMENTATION.md)** - Social features
+**Educational Structure**
+- Cohort-based learning with specialized tracks
+- Multi-league specializations (AI/ML, Finance, Creative, etc.)
+- Week-by-week structured curriculum delivery
+- Section-based content organization with progress tracking
 
-### Developer Resources
-- **[API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Complete API reference
-- **[PUBLIC_COHORTS_API.md](./docs/PUBLIC_COHORTS_API.md)** - Public cohorts structure endpoint
-- **[FRONTEND_INTEGRATION.md](./docs/FRONTEND_INTEGRATION.md)** - Frontend developer guide
-- **[USER_INTERFACE_API_DOCUMENTATION.md](./docs/USER_INTERFACE_API_DOCUMENTATION.md)** - UI integration guide
-- **[OPENLEARN_BACKEND_COMPLETE.md](./docs/OPENLEARN_BACKEND_COMPLETE.md)** - Complete backend overview
+**User Management**
+- Role-based access control (Pioneers, Pathfinders, Grand Pathfinders)
+- Hierarchical permission system with league-specific scoping
+- Social profiles and peer interaction features
+- Comprehensive user progress analytics
 
-## Platform Overview
-
-OpenLearn is a sophisticated educational platform designed for **cohort-based learning** with hierarchical role management, structured curriculum delivery, and comprehensive progress tracking. Built for institutions requiring advanced user management, content organization, and student engagement features.
-
-### Core Features
-
-**Cohort-Based Learning Structure**
-- Organized cohorts with specialized learning paths
-- Multi-league specializations (AI/ML, Finance, etc.)
-- Structured week-by-week curriculum delivery
-- Section-based content organization
-
-**Advanced Role Management**
-- **Pioneers**: Students/Learners with progress tracking
-- **Pathfinders**: Educators/Mentors with content management
-- **Hierarchical Roles**: Grand Pathfinder, Chief Pathfinders, Luminaries
-- Granular permission system with role-based access control
-
-**Comprehensive Content Management**
+**Content Management**
 - Multi-format resources (blogs, videos, articles, external links)
-- Assignment submission system
-- Progress tracking at section and resource levels
+- Assignment submission and evaluation system
 - Personal notes and revision marking
+- Badge and achievement system
 
-**V2 Migration System (Active)**
-- Zero-downtime migration for 120+ production users
-- Enhanced user profiles with OLID (OpenLearn ID) system
-- Auto-approval and cohort assignment features
-- Backward-compatible API design
-
-**Gamification & Achievement System**
-- League-specific badge system
-- Specialization completion certificates
-- Progress-based achievements
-- Social sharing capabilities
-
-**Analytics & Monitoring**
-- Detailed progress analytics
-- Leaderboard systems
-- Comprehensive audit logging
-- Real-time system status monitoring
+**Technical Features**
+- RESTful API design with comprehensive documentation
+- JWT-based authentication with refresh token rotation
+- Real-time health monitoring and status pages
+- Email service integration with background processing
+- Docker containerization for consistent deployment
 
 ## Technical Architecture
 
@@ -102,34 +77,73 @@ OpenLearn is a sophisticated educational platform designed for **cohort-based le
 
 ```mermaid
 graph TB
-    subgraph "Frontend Layer"
+    subgraph "Client Layer"
         WEB[Web Dashboard]
         MOBILE[Mobile App]
         STATUS[Status Page]
     end
     
     subgraph "API Gateway"
+        NGINX[Nginx Proxy]
         EXPRESS[Express.js Server]
         AUTH_MW[Auth Middleware]
         RBAC[RBAC Middleware]
+        RATE[Rate Limiting]
     end
     
-    subgraph "Core Services"
+    subgraph "Business Logic"
         USER_SVC[User Management]
         COHORT_SVC[Cohort Service]
         CONTENT_SVC[Content Management]
         PROGRESS_SVC[Progress Tracking]
         BADGE_SVC[Badge System]
-        STATUS_SVC[Status Monitoring]
+        EMAIL_SVC[Email Service]
     end
     
     subgraph "Data Layer"
         POSTGRES[(PostgreSQL)]
         REDIS[(Redis Cache)]
+        FILES[File Storage]
     end
     
-    WEB --> EXPRESS
-    MOBILE --> EXPRESS
+    subgraph "External Services"
+        AWS_SES[AWS SES]
+        MONITORING[Health Monitoring]
+    end
+    
+    WEB --> NGINX
+    MOBILE --> NGINX
+    STATUS --> NGINX
+    NGINX --> EXPRESS
+    EXPRESS --> AUTH_MW
+    AUTH_MW --> RBAC
+    RBAC --> RATE
+    
+    RATE --> USER_SVC
+    RATE --> COHORT_SVC
+    RATE --> CONTENT_SVC
+    RATE --> PROGRESS_SVC
+    RATE --> BADGE_SVC
+    RATE --> EMAIL_SVC
+    
+    USER_SVC --> POSTGRES
+    COHORT_SVC --> POSTGRES
+    CONTENT_SVC --> POSTGRES
+    PROGRESS_SVC --> POSTGRES
+    BADGE_SVC --> POSTGRES
+    EMAIL_SVC --> POSTGRES
+    
+    EMAIL_SVC --> REDIS
+    EMAIL_SVC --> AWS_SES
+    EXPRESS --> REDIS
+    EXPRESS --> MONITORING
+    CONTENT_SVC --> FILES
+    
+    style POSTGRES fill:#336791,stroke:#fff,color:#fff
+    style REDIS fill:#DC382D,stroke:#fff,color:#fff
+    style EXPRESS fill:#000,stroke:#fff,color:#fff
+    style NGINX fill:#009639,stroke:#fff,color:#fff
+```
     STATUS --> EXPRESS
     EXPRESS --> AUTH_MW
     AUTH_MW --> RBAC
@@ -146,6 +160,172 @@ graph TB
     PROGRESS_SVC --> POSTGRES
     BADGE_SVC --> POSTGRES
     STATUS_SVC --> POSTGRES
+```
+
+### Learning Flow Architecture
+
+```mermaid
+flowchart TD
+    subgraph "Student Journey"
+        START([Student Joins Cohort])
+        ONBOARD[Complete Profile]
+        LEAGUE[Choose Specialization League]
+        WEEK[Access Weekly Content]
+        SECTION[Study Sections]
+        RESOURCE[Complete Resources]
+        ASSIGNMENT[Submit Assignments]
+        BADGE[Earn Badges]
+        PROGRESS[Track Progress]
+    end
+    
+    subgraph "Educator Workflow"
+        CREATE[Create Content]
+        ORGANIZE[Organize Weeks]
+        REVIEW[Review Submissions]
+        GRADE[Grade Assignments]
+        MENTOR[Mentor Students]
+    end
+    
+    subgraph "System Intelligence"
+        ANALYTICS[Analytics Engine]
+        NOTIFICATIONS[Smart Notifications]
+        RECOMMENDATIONS[Content Recommendations]
+        LEADERBOARD[Dynamic Leaderboards]
+    end
+    
+    START --> ONBOARD
+    ONBOARD --> LEAGUE
+    LEAGUE --> WEEK
+    WEEK --> SECTION
+    SECTION --> RESOURCE
+    RESOURCE --> ASSIGNMENT
+    ASSIGNMENT --> BADGE
+    BADGE --> PROGRESS
+    PROGRESS --> WEEK
+    
+    CREATE --> ORGANIZE
+    ORGANIZE --> WEEK
+    ASSIGNMENT --> REVIEW
+    REVIEW --> GRADE
+    GRADE --> MENTOR
+    
+    PROGRESS --> ANALYTICS
+    ANALYTICS --> NOTIFICATIONS
+    ANALYTICS --> RECOMMENDATIONS
+    ANALYTICS --> LEADERBOARD
+    
+    style START fill:#4CAF50,stroke:#fff,color:#fff
+    style BADGE fill:#FF9800,stroke:#fff,color:#fff
+    style ANALYTICS fill:#2196F3,stroke:#fff,color:#fff
+    style CREATE fill:#9C27B0,stroke:#fff,color:#fff
+```
+
+### Database Architecture
+
+```mermaid
+erDiagram
+    User {
+        string id PK
+        string email UK
+        string olid UK "OpenLearn ID"
+        string name
+        UserRole role
+        UserStatus status
+        string institute
+        string department
+        int graduationYear
+        string phone
+        boolean emailVerified
+        datetime createdAt
+    }
+    
+    Cohort {
+        string id PK
+        string name
+        string description
+        boolean isActive
+        boolean autoApproval
+        datetime createdAt
+    }
+    
+    League {
+        string id PK
+        string name
+        string description
+        string iconUrl
+        datetime createdAt
+    }
+    
+    Week {
+        string id PK
+        string leagueId FK
+        string name
+        string description
+        int orderIndex
+        datetime createdAt
+    }
+    
+    Section {
+        string id PK
+        string weekId FK
+        string name
+        string description
+        int orderIndex
+        datetime createdAt
+    }
+    
+    SectionResource {
+        string id PK
+        string sectionId FK
+        string title
+        string url
+        ResourceType type
+        int orderIndex
+        datetime createdAt
+    }
+    
+    Assignment {
+        string id PK
+        string leagueId FK
+        string title
+        string description
+        datetime dueDate
+        datetime createdAt
+    }
+    
+    Badge {
+        string id PK
+        string leagueId FK
+        string name
+        string description
+        string iconUrl
+        string criteria
+        datetime createdAt
+    }
+    
+    User ||--o{ Enrollment : enrolls
+    User ||--o{ SectionProgress : tracks
+    User ||--o{ ResourceProgress : completes
+    User ||--o{ UserBadge : earns
+    User ||--o{ AssignmentSubmission : submits
+    User ||--o{ AuditLog : generates
+    
+    Cohort ||--o{ Enrollment : contains
+    Cohort ||--o{ Specialization : offers
+    
+    Specialization ||--o{ SpecializationLeague : connects
+    League ||--o{ SpecializationLeague : belongs
+    League ||--o{ Week : organizes
+    League ||--o{ Badge : offers
+    League ||--o{ Assignment : contains
+    
+    Week ||--o{ Section : includes
+    Section ||--o{ SectionResource : contains
+    Section ||--o{ SectionProgress : tracked_by
+    
+    SectionResource ||--o{ ResourceProgress : measured_by
+    Assignment ||--o{ AssignmentSubmission : receives
+    Badge ||--o{ UserBadge : awarded_as
 ```
 
 ### Educational Platform Flow
@@ -299,134 +479,143 @@ erDiagram
 ## Project Structure
 
 ```
-├── prisma/
-│   ├── migrations/          # Database migrations
-│   ├── schema.prisma       # Database schema
-│   └── seed.ts            # Database seeding
-├── public/
-│   ├── favicon.ico        # Website favicon
-│   ├── simple-status.html # Simple status page
-│   └── status-page.html   # Advanced status dashboard
-├── src/
-│   ├── app.ts             # Express application setup
-│   ├── server.ts          # Server entry point
-│   ├── config/            # Configuration management
-│   │   ├── database.ts    # Database configuration
-│   │   ├── environment.ts # Environment variables
-│   │   ├── index.ts       # Config exports
-│   │   └── logger.ts      # Logging configuration
-│   ├── controllers/       # Request handlers
-│   │   ├── adminController.ts
-│   │   ├── analyticsController.ts
-│   │   ├── assignmentController.ts
-│   │   ├── authController.ts
-│   │   ├── badgeController.ts
-│   │   ├── cohortController.ts
-│   │   ├── leaderboardController.ts
-│   │   ├── leagueController.ts
-│   │   ├── progressController.ts
-│   │   ├── resourceController.ts
-│   │   ├── resourceProgressController.ts
-│   │   ├── sectionController.ts
-│   │   ├── socialController.ts
-│   │   ├── specializationController.ts
-│   │   └── weekController.ts
-│   ├── middleware/        # Application middleware
-│   │   ├── asyncHandler.ts
-│   │   ├── authorization.ts
-│   │   ├── authorize.ts
-│   │   ├── auth.ts
-│   │   ├── error.ts
-│   │   ├── index.ts
-│   │   ├── logging.ts
-│   │   ├── security.ts
-│   │   └── validation.ts
-│   ├── routes/           # API route definitions
-│   │   ├── admin.ts
-│   │   ├── analytics.ts
-│   │   ├── assignments.ts
-│   │   ├── auth.ts
-│   │   ├── badges.ts
-│   │   ├── cohorts.ts
-│   │   ├── index.ts
-│   │   ├── leaderboard.ts
-│   │   ├── leagues.ts
-│   │   ├── progress.ts
-│   │   ├── resourceProgress.ts
-│   │   ├── resources.ts
-│   │   ├── sections.ts
-│   │   ├── social.ts
-│   │   ├── specializations.ts
-│   │   ├── status.ts
-│   │   └── weeks.ts
-│   ├── services/         # Business logic layer
-│   │   ├── authService.ts
-│   │   ├── HealthCheckScheduler.ts
-│   │   ├── leaderboardService.ts
-│   │   └── StatusService.ts
-│   ├── scripts/          # Utility scripts
-│   │   ├── seedAdmin.ts
-│   │   └── testNeonLocal.ts
-│   ├── types/            # TypeScript definitions
-│   │   └── index.ts
-│   └── utils/            # Helper functions
-│       ├── auth.ts
-│       ├── common.ts
-│       ├── jwt.ts
-│       ├── logger.ts
-│       ├── password.ts
-│       └── validation.ts
-├── README.md             # This file
-├── render-build.sh       # Build script for Render
-├── render.yaml          # Render deployment config
-└── tsconfig.json        # TypeScript configuration
+openlearn-backend/
+├── docs/                    # Documentation Hub
+│   ├── api/                # API documentation and references
+│   ├── architecture/       # System design and technical docs
+│   ├── deployment/         # Production deployment guides
+│   ├── development/        # Development guides and tutorials
+│   └── migration/          # Platform upgrades and migrations
+├── scripts/                # Utility Scripts
+│   ├── deployment/         # Production deployment scripts
+│   ├── development/        # Development and debugging tools
+│   ├── maintenance/        # Database and system maintenance
+│   └── testing/           # Automated testing scripts
+├── src/                    # Source Code
+│   ├── controllers/        # Request handlers
+│   ├── middleware/         # Express middleware
+│   ├── routes/            # API route definitions
+│   ├── services/          # Business logic
+│   ├── utils/             # Helper functions
+│   └── types/             # TypeScript definitions
+├── prisma/                 # Database schema and migrations
+├── public/                 # Static files and status pages
+├── CHANGELOG.md           # Version history
+└── README.md              # This file
 ```
 
-## Technology Stack
+## Deployment Architecture
 
-### Core Technologies
-- **Runtime**: Node.js 18+ with TypeScript 5.0+
-- **Framework**: Express.js 4.18+ with async/await patterns
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT with refresh token rotation
-- **Validation**: express-validator with custom rules
-- **Security**: Helmet.js + custom middleware
-- **Caching**: Redis for session management and job queuing
-- **Email Service**: Amazon SES with background worker processing
-- **Cloud Services**: AWS SES, CloudWatch metrics integration
-- **Deployment**: Render.com with Docker containers
-
-### Request Flow Architecture
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant API as Express API
-    participant M as Middleware
-    participant S as Service Layer
-    participant DB as PostgreSQL
-    participant R as Redis
-    
-    C->>API: HTTP Request
-    API->>M: Security Check
-    M->>M: Rate Limiting
-    M->>M: Authentication
-    M->>M: Input Validation
-    M->>S: Business Logic
-    S->>DB: Database Query
-    S->>R: Cache Check/Update
-    S->>API: Response Data
-    API->>C: JSON Response
-```
-
-## DevOps Architecture
-
-### Infrastructure Overview
+### Production Infrastructure
 
 ```mermaid
 graph TB
-    subgraph "Production Environment"
-        subgraph "Frontend Layer"
-            DOMAIN[api.openlearn.org.in]
+    subgraph "External Layer"
+        USER[Users]
+        DOMAIN[openlearn.org.in]
+        API_DOMAIN[api.openlearn.org.in]
+    end
+    
+    subgraph "Security Layer"
+        CF[CloudFlare]
+        SSL[SSL/TLS]
+        WAF[Web Application Firewall]
+    end
+    
+    subgraph "Server Infrastructure"
+        NGINX[Nginx Reverse Proxy]
+        LB[Load Balancer]
+        
+        subgraph "Docker Environment"
+            APP_CONTAINER[OpenLearn App]
+            DB_CONTAINER[PostgreSQL Container]
+            REDIS_CONTAINER[Redis Container]
+            EMAIL_WORKER[Email Worker]
+        end
+    end
+    
+    subgraph "Monitoring & Logging"
+        HEALTH[Health Checks]
+        LOGS[Application Logs]
+        METRICS[Performance Metrics]
+        STATUS_PAGE[Status Dashboard]
+    end
+    
+    subgraph "Cloud Services"
+        AWS_SES[Amazon SES]
+        STORAGE[File Storage]
+        BACKUP[Database Backups]
+    end
+    
+    USER --> DOMAIN
+    USER --> API_DOMAIN
+    DOMAIN --> CF
+    API_DOMAIN --> CF
+    CF --> SSL
+    SSL --> WAF
+    WAF --> NGINX
+    NGINX --> LB
+    LB --> APP_CONTAINER
+    
+    APP_CONTAINER --> DB_CONTAINER
+    APP_CONTAINER --> REDIS_CONTAINER
+    EMAIL_WORKER --> REDIS_CONTAINER
+    EMAIL_WORKER --> AWS_SES
+    
+    APP_CONTAINER --> HEALTH
+    APP_CONTAINER --> LOGS
+    APP_CONTAINER --> METRICS
+    HEALTH --> STATUS_PAGE
+    
+    DB_CONTAINER --> BACKUP
+    APP_CONTAINER --> STORAGE
+    
+    style APP_CONTAINER fill:#4CAF50,stroke:#fff,color:#fff
+    style DB_CONTAINER fill:#336791,stroke:#fff,color:#fff
+    style REDIS_CONTAINER fill:#DC382D,stroke:#fff,color:#fff
+    style NGINX fill:#009639,stroke:#fff,color:#fff
+    style CF fill:#F38020,stroke:#fff,color:#fff
+```
+
+### CI/CD Pipeline
+
+```mermaid
+graph LR
+    subgraph "Development"
+        DEV[Developer]
+        BRANCH[Feature Branch]
+        PR[Pull Request]
+    end
+
+    subgraph "Quality Gates"
+        LINT[Code Linting]
+        TEST[Unit Tests]
+        SECURITY[Security Scan]
+        BUILD[Build Check]
+    end
+    
+    subgraph "Deployment"
+        STAGING[Staging Deploy]
+        E2E[E2E Tests]
+        PROD[Production Deploy]
+        HEALTH_CHECK[Health Verification]
+    end
+    
+    DEV --> BRANCH
+    BRANCH --> PR
+    PR --> LINT
+    LINT --> TEST
+    TEST --> SECURITY
+    SECURITY --> BUILD
+    BUILD --> STAGING
+    STAGING --> E2E
+    E2E --> PROD
+    PROD --> HEALTH_CHECK
+    
+    style PROD fill:#4CAF50,stroke:#fff,color:#fff
+    style SECURITY fill:#FF5722,stroke:#fff,color:#fff
+    style TEST fill:#2196F3,stroke:#fff,color:#fff
+```
             LB[Load Balancer]
             NGINX[Nginx Proxy]
         end
@@ -721,7 +910,165 @@ System Administration |    ✗    |     ✗      |        ✗         |        �
 
 ## API Overview
 
-### Essential Endpoints
+## API Overview
+
+### Core Endpoints
+
+```bash
+# System Health & Status
+GET  /health                         # System health check
+GET  /api/status/public              # Public system status
+GET  /api/status/components          # Detailed component status
+
+# Authentication & User Management
+POST /api/auth/register              # User registration
+POST /api/auth/login                 # User authentication
+POST /api/auth/refresh               # Token refresh
+POST /api/auth/logout                # User logout
+POST /api/auth/password-reset        # Password reset request
+POST /api/auth/password-reset/verify # Verify OTP and reset password
+
+# Learning Content Management
+GET  /api/cohorts                    # List all cohorts
+GET  /api/leagues                    # List specialization leagues
+GET  /api/weeks                      # List weekly content
+GET  /api/sections                   # List section content
+GET  /api/resources                  # List learning resources
+
+# Progress Tracking & Analytics
+GET  /api/progress                   # User progress overview
+POST /api/progress/section           # Mark section as completed
+POST /api/progress/resource          # Mark resource as completed
+GET  /api/analytics/counts           # Platform analytics
+GET  /api/leaderboard               # Competition leaderboards
+
+# Assignment System
+GET  /api/assignments                # List assignments
+POST /api/assignments/submit         # Submit assignment solution
+GET  /api/assignments/:id/submissions # View submissions (educators)
+
+# Gamification Features
+GET  /api/badges                     # Available badges
+GET  /api/badges/user                # User's earned badges
+POST /api/social/share               # Share achievement
+```
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant Client as Client App
+    participant API as OpenLearn API
+    participant DB as Database
+    participant Email as Email Service
+    
+    Client->>API: POST /auth/register
+    API->>DB: Create User Record
+    API->>Email: Send Welcome Email
+    API->>Client: Registration Success
+    
+    Client->>API: POST /auth/login
+    API->>DB: Validate Credentials
+    API->>Client: JWT Access + Refresh Tokens
+    
+    Client->>API: GET /protected-endpoint
+    Note over Client,API: Authorization: Bearer {accessToken}
+    API->>API: Validate JWT
+    API->>Client: Protected Data
+    
+    Client->>API: POST /auth/refresh
+    API->>API: Validate Refresh Token
+    API->>Client: New Access Token
+```
+
+## Quick Start
+
+### Prerequisites
+
+- **Node.js** 18+ and npm
+- **PostgreSQL** 15+ database
+- **Redis** server (optional for development)
+- **Docker** (recommended for easy setup)
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/openlearn-backend.git
+cd openlearn-backend
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your database and service credentials
+
+# Start PostgreSQL and Redis with Docker
+docker compose up -d
+
+# Run database migrations
+npx prisma migrate dev
+
+# Seed the database (optional)
+npx prisma db seed
+
+# Start development server
+npm run dev
+
+# Server will be running at http://localhost:3000
+```
+
+### Environment Configuration
+
+```bash
+# Database
+DATABASE_URL="postgresql://postgres:password@localhost:5432/openlearn_dev"
+
+# JWT Security
+JWT_SECRET="your-super-secure-jwt-secret"
+JWT_REFRESH_SECRET="your-refresh-secret"
+JWT_EXPIRES_IN="15m"
+JWT_REFRESH_EXPIRES_IN="7d"
+
+# Email Service (AWS SES)
+SES_REGION="eu-north-1"
+SES_ACCESS_KEY_ID="your-aws-access-key"
+SES_SECRET_ACCESS_KEY="your-aws-secret-key"
+SES_FROM_EMAIL="info@openlearn.org.in"
+
+# Redis (optional)
+REDIS_URL="redis://localhost:6379"
+
+# CORS and Security
+CORS_ORIGIN="http://localhost:3000,http://localhost:5173"
+RATE_LIMIT_WINDOW_MS="15"
+RATE_LIMIT_MAX_REQUESTS="100"
+```
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev              # Start development server with hot reload
+npm run build            # Build for production
+npm run start            # Start production server
+
+# Database Operations
+npm run db:migrate       # Run database migrations
+npm run db:seed          # Seed database with sample data
+npm run db:reset         # Reset database completely
+npm run db:studio        # Open Prisma Studio
+
+# Testing & Quality
+npm run test             # Run test suites
+npm run lint             # Check code style
+npm run type-check       # TypeScript validation
+
+# Docker Operations
+npm run docker:dev       # Start development with Docker
+npm run docker:prod      # Production Docker build
+```
 ```bash
 # Health & Status
 GET  /health                    # System health check
@@ -850,280 +1197,102 @@ npx prisma db seed
 
 ### Deployment Commands
 ```bash
-# Build for production
-npm run build
+## Production Deployment
 
-# Start production server
+### Live Infrastructure
+
+- **Production Website**: [openlearn.org.in](https://openlearn.org.in)
+- **API Base URL**: [api.openlearn.org.in](https://api.openlearn.org.in)
+- **System Status**: [api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
+- **Health Check**: [api.openlearn.org.in/health](https://api.openlearn.org.in/health)
+
+### Deployment Commands
+
+```bash
+# Production build and deployment
+npm run build
 npm start
 
-# Production database migration
+# Database migration in production
 npx prisma migrate deploy
 
 # Docker deployment
-docker compose up -d
+docker compose -f docker-compose.production.yml up -d
 
-# Check deployment status
+# Health verification
 curl https://api.openlearn.org.in/health
 ```
-
-### Live Deployment
-- **Production Website**: [https://openlearn.org.in](https://openlearn.org.in)
-- **API Base URL**: `https://api.openlearn.org.in`
-- **System Status**: [https://api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
-- **Health Check**: [https://api.openlearn.org.in/health](https://api.openlearn.org.in/health)
-- **Infrastructure**: AWS EC2 with Docker containers
-
-## Database Schema
-
-### Core Models
-
-**User Management**
-- Users with role-based access control
-- User status management (pending, active, suspended)
-- Social profile integration
-- Self-referential approval workflow
-
-**Educational Structure**
-- Cohorts containing multiple specializations
-- Specializations combining multiple leagues
-- Leagues organized into weekly content
-- Weeks containing multiple sections
-- Sections with various resource types
-
-**Progress Tracking**
-- Section completion tracking
-- Resource-level progress monitoring
-- Personal notes and revision marking
-- Time tracking for resources
-
-**Gamification**
-- Badge system tied to leagues
-- User achievements and specializations
-- Leaderboard and competitive features
-
-**Assignment System**
-- League-specific assignments
-- Multiple submission formats (text, GitHub, live URLs)
-- Submission status tracking
-
-**Audit & Monitoring**
-- Comprehensive audit logging
-- System status monitoring
-- Incident management
-- Real-time health checks
-
-## API Architecture
-
-### RESTful Design Principles
-- Resource-based URLs
-- HTTP methods for operations (GET, POST, PUT, DELETE)
-- Consistent JSON response format
-- Proper HTTP status codes
-- Pagination for large datasets
-
-### Response Format
-```json
-{
-  "success": true,
-  "data": {
-    // Response data
-  },
-  "message": "Operation completed successfully",
-  "meta": {
-    "timestamp": "2024-01-01T00:00:00Z",
-    "version": "1.0.0"
-  }
-}
-```
-
-### Error Handling
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input data",
-    "details": [
-      {
-        "field": "email",
-        "message": "Valid email is required"
-      }
-    ]
-  },
-  "meta": {
-    "timestamp": "2024-01-01T00:00:00Z",
-    "requestId": "req_123456"
-  }
-}
-```
-
-
-
-## Redis & Email Integration
-
-### Redis Cache System
-
-OpenLearn integrates Redis for high-performance caching, session management, and background job queuing:
-
-**Configuration**
-```env
-# Redis connection
-REDIS_URL=redis://localhost:6379
-
-# Production Redis (SSL enabled)
-REDIS_URL=rediss://username:password@host:port
-```
-
-**Use Cases**
-- **Session Storage**: JWT token blacklisting and user session management
-- **Cache Layer**: Frequently accessed data (user profiles, course content)
-- **Queue Management**: Background job processing for email notifications
-- **Rate Limiting**: Distributed rate limiting across multiple instances
-
-**Health Monitoring**
-Redis connectivity is monitored through:
-- `/health/detailed` endpoint checks Redis connection
-- System status page displays Redis cache status
-- Automatic reconnection handling with exponential backoff
-
-### Email Service & Worker System
-
-OpenLearn implements a robust email system with background processing:
-
-**Architecture**
-```mermaid
-graph TB
-    subgraph "Email Flow"
-        API[API Request]
-        QUEUE[Redis Queue]
-        WORKER[Email Worker]
-        SMTP[SMTP Service]
-        USER[User Email]
-    end
-    
-    API --> QUEUE
-    QUEUE --> WORKER
-    WORKER --> SMTP
-    SMTP --> USER
-    
-    subgraph "Email Types"
-        WELCOME[Welcome Email]
-        VERIFY[Email Verification]
-        PROGRESS[Progress Updates]
-        BADGES[Badge Notifications]
-        ASSIGN[Assignment Reminders]
-    end
-```
-
-**Email Configuration (Production)**
-```env
-# SMTP Settings (GoDaddy - Working Configuration)
-SMTP_HOST=smtpout.secureserver.net
-SMTP_PORT=465
-SMTP_SECURE=true
-SMTP_USER=info@openlearn.org.in
-SMTP_PASSWORD="?g7wwcWJm%#H_T9"
-SMTP_FROM_NAME="OpenLearn Platform"
-SMTP_FROM_EMAIL=info@openlearn.org.in
-EMAIL_ENABLED=true
-```
-
-**Background Worker**
-- Processes email jobs asynchronously via Redis queue
-- Handles bulk notifications (cohort announcements, badge awards)
-- Implements retry logic with exponential backoff
-- Monitors email delivery status and failures
-
-**Email Templates**
-- Welcome emails for new users
-- Email verification for account security
-- Progress milestone notifications
-- Badge achievement celebrations
-- Assignment deadline reminders
-- Weekly digest emails
-
-**Health Monitoring**
-Email service health is tracked through:
-- SMTP connection testing in health checks
-- Queue status monitoring
-- Email delivery rate tracking
-- Failed email job alerting
 
 ## Contributing
 
 We welcome contributions to improve the OpenLearn platform. Here's how you can help:
 
 ### Development Workflow
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes following our coding standards
+4. **Test** your changes thoroughly
+5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+6. **Push** to the branch (`git push origin feature/amazing-feature`)
+7. **Open** a Pull Request
 
 ### Coding Standards
-- Follow TypeScript best practices
+
+- Follow TypeScript best practices and strict mode
 - Use meaningful variable and function names
-- Add comments for complex logic
-- Follow the existing code style
-- Update documentation when needed
+- Add JSDoc comments for complex functions
+- Follow the existing code style and patterns
+- Update documentation when making API changes
+- Ensure all tests pass before submitting
 
 ### Pull Request Guidelines
-- Provide a clear description of changes
+
+- Provide clear description of changes
 - Include relevant issue numbers
 - Update documentation if needed
-- Ensure all checks pass
+- Ensure CI/CD pipeline passes
 - Request review from maintainers
 
-## Support & Contact
+## Support & Resources
 
 ### Getting Help
-- **Documentation**: Comprehensive API docs in the `/docs` directory
-- **Issues**: Create an issue in this repository for bugs or feature requests
+
+- **Documentation**: Comprehensive guides in the `/docs` directory
+- **Issues**: Create an issue for bugs or feature requests
 - **Discussions**: Use GitHub Discussions for questions and community support
+- **API Reference**: Complete API documentation in `/docs/api/`
 
 ### Project Links
-- **Website**: [openlearn.org.in](https://openlearn.org.in)
-- **API Base URL**: [api.openlearn.org.in](https://api.openlearn.org.in)
-- **Status Page**: [api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
-- **API Documentation**: Available in the `/docs` directory
-- **GitHub Repository**: Current repository
+
+- **Repository**: Current GitHub repository
+- **Changelog**: [CHANGELOG.md](./CHANGELOG.md) - Version history and updates
+- **Architecture Docs**: [docs/architecture/](./docs/architecture/) - Technical architecture guides
+- **API Docs**: [docs/api/](./docs/api/) - Complete API reference
 
 ### Reporting Issues
+
 When reporting issues, please include:
-- Description of the problem
-- Steps to reproduce
+
+- Clear description of the problem
+- Steps to reproduce the issue
 - Expected vs actual behavior
 - Environment details (Node.js version, OS, etc.)
 - Relevant logs or error messages
-
-## Changelog
-
-### V2.0.0 - Platform Upgrade (August 2025)
-- **Enhanced User Profiles**: Added institute, department, graduation year, and contact information
-- **OLID System**: Unique OpenLearn ID generation (format: OL025000200)
-- **Auto-Approval**: Configurable per-cohort approval system for scalable onboarding
-- **Pathfinder Scope Control**: Role-based access control with league/specialization scoping
-- **Migration System**: Seamless V2 migration for existing users with backward compatibility
-- **Production Safety**: Zero-downtime deployment supporting 120+ existing users
-- **New Endpoints**: 
-  - `GET /api/migration/status` - Check migration status
-  - `POST /api/migration/migrate-to-v2` - Migrate to V2
-- **Enhanced Signup**: V2 fields support in existing signup endpoint
-
-### V1.8.0 - Rate Limiting & Analytics (July 2025)
-- **Rate Limiting**: IP-based rate limiting with configurable limits per endpoint type
-- **Hierarchical Analytics**: New endpoint for complete platform hierarchy analytics
-- **Security Enhancements**: Trust proxy configuration and improved IP detection
-- **DevOps Architecture**: Updated deployment infrastructure documentation
+- Screenshots if applicable
 
 ---
 
 <div align="center">
 
-**Built with dedication for the future of education**
+**Built with TypeScript, Express.js, Prisma, and PostgreSQL**
 
-*OpenLearn Platform • TypeScript Backend API*
+*Empowering education through technology*
 
-**Version 1.1.0** • **Production Ready** • **Open Source**
+**OpenLearn Platform** • **Production Ready** • **Open Source**
+
+![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red?style=for-the-badge)
+![TypeScript](https://img.shields.io/badge/Built%20with-TypeScript-blue?style=for-the-badge&logo=typescript)
+![Open Source](https://img.shields.io/badge/Open-Source-green?style=for-the-badge&logo=opensource)
+
 </div>

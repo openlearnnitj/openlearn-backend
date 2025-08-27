@@ -31,6 +31,7 @@ import statusRoutes from './routes/status';
 import publicRoutes from './routes/public';
 import debugRoutes from './routes/debug';
 import migrationRoutes from './routes/migration';
+import monitoringRouter from './routes/monitoring';
 
 const app = express();
 
@@ -636,6 +637,7 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api', resourceRoutes); // ✅ Moved to end - catches remaining /api/* routes
+app.use('/api/monitoring', monitoringRouter);
 
 // 404 handler
 app.use('*', (req, res) => {
