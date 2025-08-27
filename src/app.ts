@@ -122,7 +122,8 @@ const corsOptions = {
     'Accept', 
     'Origin', 
     'Cache-Control',
-    'X-Cron-Ping'],
+    'X-Cron-Ping',
+    'X-API-Secret'],
   optionsSuccessStatus: 200,
 };
 
@@ -636,8 +637,10 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
-app.use('/api', resourceRoutes); // ✅ Moved to end - catches remaining /api/* routes
+
 app.use('/api/monitoring', monitoringRouter);
+
+app.use('/api', resourceRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
