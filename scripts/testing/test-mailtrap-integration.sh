@@ -14,7 +14,7 @@ echo "🔑 Mailtrap API Token: $(grep MAILTRAP_API_TOKEN .env | cut -d'=' -f2 | 
 echo
 echo "📋 Test 1: Email Provider Factory"
 echo "--------------------------------"
-curl -s -X POST "http://localhost:3000/api/debug/test-email-provider" \
+curl -s -X POST "http://localhost:3001/api/debug/test-email-provider" \
   -H "Content-Type: application/json" \
   -d '{"provider": "mailtrap"}' | jq .
 
@@ -22,13 +22,13 @@ curl -s -X POST "http://localhost:3000/api/debug/test-email-provider" \
 echo
 echo "📋 Test 2: Mailtrap Connection Test" 
 echo "----------------------------------"
-curl -s -X GET "http://localhost:3000/api/debug/test-email-connection" | jq .
+curl -s -X GET "http://localhost:3001/api/debug/test-email-connection" | jq .
 
 # Test 3: Send test email
 echo
 echo "📋 Test 3: Send Test Email via Mailtrap"
 echo "---------------------------------------"
-curl -s -X POST "http://localhost:3000/api/debug/send-test-email" \
+curl -s -X POST "http://localhost:3001/api/debug/send-test-email" \
   -H "Content-Type: application/json" \
   -d '{
     "to": "test@openlearn.org.in",
@@ -41,8 +41,20 @@ curl -s -X POST "http://localhost:3000/api/debug/send-test-email" \
 echo
 echo "📋 Test 4: Health Check (Email Service)"
 echo "---------------------------------------"
-curl -s -H "X-API-Secret: $(grep MONITORING_API_SECRET .env | cut -d'=' -f2 | tr -d '"')" \
-  "http://localhost:3000/api/monitoring/health-status" | jq '.components[] | select(.name == "email_service")'
+
+# Get the API secret from .env properly
+API_SECRET=$(grep MONITORING_API_SECRET .env | cut -d'=' -f2 | tr -d '"' | tr -d "'")
+
+# Test the health endpoint
+HEALTH_RESPONSE=$(curl -s -H "X-API-Secret: $API_SECRET" "http://localhost:3001/api/monitoring/health-status")
+
+# Check if response is valid JSON and extract email service info
+if echo "$HEALTH_RESPONSE" | jq . > /dev/null 2>&1; then
+  echo "$HEALTH_RESPONSE" | jq '.components[] | select(.name == "email_service")'
+else
+  echo "Health check failed or returned invalid JSON:"
+  echo "$HEALTH_RESPONSE"
+fi
 
 echo
 echo "✅ Mailtrap integration testing complete!"

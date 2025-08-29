@@ -32,7 +32,7 @@ router.get('/sections/:sectionId/resources', ResourceController.getResourcesBySe
  * @desc Get all resources (admin view with filtering)
  * @access Pathfinder with canViewAnalytics permission
  */
-router.get('/resources', 
+router.get('/', 
   authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.getAllResources
 );
@@ -42,14 +42,14 @@ router.get('/resources',
  * @desc Get a specific resource by ID
  * @access All authenticated users
  */
-router.get('/resources/:id', ResourceController.getResourceById);
+router.get('/:id', ResourceController.getResourceById);
 
 /**
  * @route PUT /api/resources/:id
  * @desc Update a resource
  * @access Pathfinder with canCreateContent permission
  */
-router.put('/resources/:id', 
+router.put('/:id', 
   authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.updateResource
 );
@@ -59,7 +59,7 @@ router.put('/resources/:id',
  * @desc Delete a resource
  * @access Pathfinder with canCreateContent permission
  */
-router.delete('/resources/:id', 
+router.delete('/:id', 
   authorize([UserRole.PATHFINDER, UserRole.CHIEF_PATHFINDER, UserRole.GRAND_PATHFINDER]), 
   ResourceController.deleteResource
 );

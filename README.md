@@ -997,7 +997,18 @@ JWT_REFRESH_SECRET="your-refresh-secret"
 JWT_EXPIRES_IN="15m"
 JWT_REFRESH_EXPIRES_IN="7d"
 
-# Email Service (AWS SES)
+# Email Service Configuration
+EMAIL_PROVIDER="mailtrap"  # Options: resend, amazon_ses, mailtrap
+
+# Mailtrap (Recommended for development)
+MAILTRAP_API_TOKEN="your-mailtrap-api-token"
+MAILTRAP_FROM_EMAIL="info@openlearn.org.in"
+
+# Resend (Alternative provider)
+RESEND_API_KEY="your-resend-api-key"
+RESEND_FROM_EMAIL="info@openlearn.org.in"
+
+# Amazon SES (Production alternative)
 SES_REGION="eu-north-1"
 SES_ACCESS_KEY_ID="your-aws-access-key"
 SES_SECRET_ACCESS_KEY="your-aws-secret-key"

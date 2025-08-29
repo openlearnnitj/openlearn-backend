@@ -620,6 +620,9 @@ app.use('/api/migration', migrationRoutes);
 // Debug routes (should be secured or removed in production)
 app.use('/api/debug', debugRoutes);
 
+// Monitoring routes (no authentication required - uses custom secret header)
+app.use('/api/monitoring', monitoringRouter);
+
 // API routes with specific rate limiting
 app.use('/api/admin', strictRateLimit, adminRoutes); // Strict rate limiting for admin operations
 app.use('/api/admin', strictRateLimit, leagueAssignmentRoutes); // League assignment management (GRAND_PATHFINDER only)
@@ -638,10 +641,8 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
-// Monitoring routes (no authentication required - uses custom secret header)
-app.use('/api/monitoring', monitoringRouter);
-
-app.use('/api', resourceRoutes);
+// Resource routes (mounted at /api/resources for specificity - no longer catch-all)
+app.use('/api/resources', resourceRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
