@@ -32,10 +32,38 @@ export class AdminController {
             status: true,
             createdAt: true,
             updatedAt: true,
+            
+            // V2 Enhancement Fields
+            institute: true,
+            department: true,
+            graduationYear: true,
+            phoneNumber: true,
+            studentId: true,
+            olid: true,
+            migratedToV2: true,
+            emailVerified: true,
+            
+            // Current cohort association
+            currentCohortId: true,
+            currentCohort: {
+              select: {
+                id: true,
+                name: true,
+                isActive: true,
+              },
+            },
+            
+            // Enhanced social profiles
+            discordUsername: true,
+            portfolioUrl: true,
+            
+            // Existing social profiles
             twitterHandle: true,
             linkedinUrl: true,
             githubUsername: true,
             kaggleUsername: true,
+            
+            // Approval info
             approvedBy: {
               select: {
                 id: true,
@@ -641,10 +669,37 @@ export class AdminController {
           name: true,
           role: true,
           status: true,
+          
+          // V2 Enhancement Fields
+          institute: true,
+          department: true,
+          graduationYear: true,
+          phoneNumber: true,
+          studentId: true,
+          olid: true,
+          migratedToV2: true,
+          emailVerified: true,
+          
+          // Current cohort association
+          currentCohortId: true,
+          currentCohort: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+            },
+          },
+          
+          // Enhanced social profiles
+          discordUsername: true,
+          portfolioUrl: true,
+          
+          // Existing social profiles
           twitterHandle: true,
           linkedinUrl: true,
           githubUsername: true,
           kaggleUsername: true,
+          
           createdAt: true,
           updatedAt: true,
           approvedBy: {
@@ -731,6 +786,32 @@ export class AdminController {
             status: true,
             createdAt: true,
             updatedAt: true,
+            
+            // V2 Enhancement Fields
+            institute: true,
+            department: true,
+            graduationYear: true,
+            phoneNumber: true,
+            studentId: true,
+            olid: true,
+            migratedToV2: true,
+            emailVerified: true,
+            
+            // Current cohort association
+            currentCohortId: true,
+            currentCohort: {
+              select: {
+                id: true,
+                name: true,
+                isActive: true,
+              },
+            },
+            
+            // Enhanced social profiles
+            discordUsername: true,
+            portfolioUrl: true,
+            
+            // Existing social profiles
             twitterHandle: true,
             linkedinUrl: true,
             githubUsername: true,
