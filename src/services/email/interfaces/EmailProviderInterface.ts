@@ -71,6 +71,7 @@ export interface EmailProviderInterface {
 export enum EmailProvider {
   RESEND = 'resend',
   AMAZON_SES = 'amazon_ses',
+  MAILTRAP = 'mailtrap',
   SMTP = 'smtp' // For future SMTP support
 }
 

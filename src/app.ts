@@ -638,6 +638,7 @@ app.use('/api/assignments', assignmentRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 
+// Monitoring routes (no authentication required - uses custom secret header)
 app.use('/api/monitoring', monitoringRouter);
 
 app.use('/api', resourceRoutes);

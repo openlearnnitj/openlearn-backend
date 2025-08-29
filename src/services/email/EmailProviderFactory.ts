@@ -5,6 +5,7 @@ import {
 } from './interfaces/EmailProviderInterface';
 import ResendProvider from './providers/ResendProvider';
 import AmazonSESProvider from './providers/AmazonSESProvider';
+import MailtrapProvider from './providers/MailtrapProvider';
 
 /**
  * Email Provider Factory
@@ -24,6 +25,9 @@ export class EmailProviderFactory implements IEmailProviderFactory {
         
       case EmailProvider.AMAZON_SES:
         return new AmazonSESProvider();
+        
+      case EmailProvider.MAILTRAP:
+        return new MailtrapProvider();
         
       default:
         throw new Error(`Unsupported email provider: ${provider}`);
@@ -45,6 +49,9 @@ export class EmailProviderFactory implements IEmailProviderFactory {
       case 'amazon_ses':
       case 'ses':
         return new AmazonSESProvider();
+        
+      case 'mailtrap':
+        return new MailtrapProvider();
         
       default:
         console.warn(`Unknown email provider '${providerName}', falling back to Resend`);
@@ -76,6 +83,11 @@ export class EmailProviderFactory implements IEmailProviderFactory {
         if (!process.env.SES_SECRET_ACCESS_KEY) missing.push('SES_SECRET_ACCESS_KEY');
         if (!process.env.SES_FROM_EMAIL) missing.push('SES_FROM_EMAIL');
         if (!process.env.SES_REGION) missing.push('SES_REGION');
+        break;
+        
+      case EmailProvider.MAILTRAP:
+        if (!process.env.MAILTRAP_API_TOKEN) missing.push('MAILTRAP_API_TOKEN');
+        if (!process.env.MAILTRAP_FROM_EMAIL) missing.push('MAILTRAP_FROM_EMAIL');
         break;
     }
 
