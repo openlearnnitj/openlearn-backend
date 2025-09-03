@@ -59,11 +59,11 @@ log() {
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     
     case "$level" in
-        "INFO")  echo -e "${GREEN}[INFO]${NC} $message" ;;
-        "WARN")  echo -e "${YELLOW}[WARN]${NC} $message" ;;
-        "ERROR") echo -e "${RED}[ERROR]${NC} $message" ;;
-        "DEBUG") echo -e "${BLUE}[DEBUG]${NC} $message" ;;
-    esac
+        "INFO")  echo -e "${GREEN}[INFO]${NC} $message" >&2 ;;
+        "WARN")  echo -e "${YELLOW}[WARN]${NC} $message" >&2 ;;
+        "ERROR") echo -e "${RED}[ERROR]${NC} $message" >&2 ;;
+        "DEBUG") echo -e "${BLUE}[DEBUG]${NC} $message" >&2 ;;
+    esac
     
     echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
 }
