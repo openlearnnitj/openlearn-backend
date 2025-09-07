@@ -6,6 +6,15 @@ import { generalRateLimit } from '../middleware/rateLimiting';
 const router = Router();
 
 /**
+ * @route GET /project-submissions/health
+ * @desc Health check for project submission system
+ * @access Public
+ */
+router.get('/health', 
+  ProjectSubmissionController.healthCheck
+);
+
+/**
  * @route POST /project-submissions/submit
  * @desc Submit a project submission
  * @access Public (but validates team members are registered users)

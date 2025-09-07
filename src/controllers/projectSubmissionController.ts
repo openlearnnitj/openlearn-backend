@@ -30,64 +30,158 @@ export class ProjectSubmissionController {
     try {
       const submissionData: ProjectSubmissionData = req.body;
 
-      // Basic validation
-      if (!submissionData.teamNumber || !submissionData.teamName || 
-          !submissionData.teamLead || !submissionData.member2 ||
-          !submissionData.projectTitle || !submissionData.projectDescription ||
-          !submissionData.demoYoutubeLink || !submissionData.githubUrl) {
+      // Enhanced validation with type checking
+      if (!submissionData || typeof submissionData !== 'object') {
         res.status(400).json({
           success: false,
-          error: 'Missing required fields',
-          details: 'teamNumber, teamName, teamLead, member2, projectTitle, projectDescription, demoYoutubeLink, and githubUrl are required'
+          error: 'Invalid request body',
+          details: 'Request body must be a valid JSON object'
         });
         return;
       }
 
-      // Validate team lead structure
-      if (!submissionData.teamLead.name || !submissionData.teamLead.email) {
+      // Validate team number
+      if (!submissionData.teamNumber || 
+          typeof submissionData.teamNumber !== 'number' || 
+          submissionData.teamNumber <= 0 || 
+          !Number.isInteger(submissionData.teamNumber)) {
         res.status(400).json({
           success: false,
-          error: 'Team lead must have name and email'
+          error: 'Invalid team number',
+          details: 'Team number must be a positive integer'
         });
         return;
       }
 
-      // Validate member2 structure
-      if (!submissionData.member2.name || !submissionData.member2.email) {
+      // Validate required string fields
+      const requiredStringFields = ['teamName', 'projectTitle', 'projectDescription', 'demoYoutubeLink', 'githubUrl'];
+      for (const field of requiredStringFields) {
+        if (!submissionData[field as keyof ProjectSubmissionData] || 
+            typeof submissionData[field as keyof ProjectSubmissionData] !== 'string' ||
+            (submissionData[field as keyof ProjectSubmissionData] as string).trim().length === 0) {
+          res.status(400).json({
+            success: false,
+            error: `Invalid ${field}`,
+            details: `${field} is required and must be a non-empty string`
+          });
+          return;
+        }
+      }
+
+      // Validate team lead structure with enhanced checks
+      if (!submissionData.teamLead || 
+          typeof submissionData.teamLead !== 'object' ||
+          !submissionData.teamLead.name || 
+          !submissionData.teamLead.email ||
+          typeof submissionData.teamLead.name !== 'string' ||
+          typeof submissionData.teamLead.email !== 'string' ||
+          submissionData.teamLead.name.trim().length === 0 ||
+          submissionData.teamLead.email.trim().length === 0) {
         res.status(400).json({
           success: false,
-          error: 'Member 2 must have name and email'
+          error: 'Invalid team lead',
+          details: 'Team lead must have valid name and email strings'
+        });
+        return;
+      }
+
+      // Validate member2 structure with enhanced checks
+      if (!submissionData.member2 || 
+          typeof submissionData.member2 !== 'object' ||
+          !submissionData.member2.name || 
+          !submissionData.member2.email ||
+          typeof submissionData.member2.name !== 'string' ||
+          typeof submissionData.member2.email !== 'string' ||
+          submissionData.member2.name.trim().length === 0 ||
+          submissionData.member2.email.trim().length === 0) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid member 2',
+          details: 'Member 2 must have valid name and email strings'
+        });
+        return;
+      }
+
+      // Email validation regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      
+      // Validate team lead email
+      if (!emailRegex.test(submissionData.teamLead.email.trim())) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid team lead email',
+          details: 'Team lead email must be a valid email address'
+        });
+        return;
+      }
+
+      // Validate member2 email
+      if (!emailRegex.test(submissionData.member2.email.trim())) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid member 2 email',
+          details: 'Member 2 email must be a valid email address'
         });
         return;
       }
 
       // Collect all team member emails for validation
       const memberEmails: string[] = [
-        submissionData.teamLead.email.toLowerCase(),
-        submissionData.member2.email.toLowerCase()
+        submissionData.teamLead.email.trim().toLowerCase(),
+        submissionData.member2.email.trim().toLowerCase()
       ];
 
-      // Add optional members if provided
-      if (submissionData.member3?.email) {
-        if (!submissionData.member3.name) {
+      // Add optional members if provided with enhanced validation
+      if (submissionData.member3) {
+        if (!submissionData.member3.email || !submissionData.member3.name ||
+            typeof submissionData.member3.email !== 'string' ||
+            typeof submissionData.member3.name !== 'string' ||
+            submissionData.member3.email.trim().length === 0 ||
+            submissionData.member3.name.trim().length === 0) {
           res.status(400).json({
             success: false,
-            error: 'Member 3 email provided but name is missing'
+            error: 'Invalid member 3',
+            details: 'Member 3 must have valid name and email strings if provided'
           });
           return;
         }
-        memberEmails.push(submissionData.member3.email.toLowerCase());
+        
+        if (!emailRegex.test(submissionData.member3.email.trim())) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid member 3 email',
+            details: 'Member 3 email must be a valid email address'
+          });
+          return;
+        }
+        
+        memberEmails.push(submissionData.member3.email.trim().toLowerCase());
       }
 
-      if (submissionData.member4?.email) {
-        if (!submissionData.member4.name) {
+      if (submissionData.member4) {
+        if (!submissionData.member4.email || !submissionData.member4.name ||
+            typeof submissionData.member4.email !== 'string' ||
+            typeof submissionData.member4.name !== 'string' ||
+            submissionData.member4.email.trim().length === 0 ||
+            submissionData.member4.name.trim().length === 0) {
           res.status(400).json({
             success: false,
-            error: 'Member 4 email provided but name is missing'
+            error: 'Invalid member 4',
+            details: 'Member 4 must have valid name and email strings if provided'
           });
           return;
         }
-        memberEmails.push(submissionData.member4.email.toLowerCase());
+        
+        if (!emailRegex.test(submissionData.member4.email.trim())) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid member 4 email',
+            details: 'Member 4 email must be a valid email address'
+          });
+          return;
+        }
+        
+        memberEmails.push(submissionData.member4.email.trim().toLowerCase());
       }
 
       // Check for duplicate emails in the team
@@ -100,25 +194,53 @@ export class ProjectSubmissionController {
         return;
       }
 
-      // Check if all team members are registered and verified users
-      const users = await prisma.user.findMany({
-        where: {
-          email: {
-            in: memberEmails
-          }
-        },
-        select: {
-          email: true,
-          name: true,
-          emailVerified: true,
-          status: true
+      // Validate URLs
+      try {
+        new URL(submissionData.demoYoutubeLink.trim());
+        new URL(submissionData.githubUrl.trim());
+        if (submissionData.deployedUrl && submissionData.deployedUrl.trim()) {
+          new URL(submissionData.deployedUrl.trim());
         }
-      });
+      } catch (urlError) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid URL format',
+          details: 'All URLs must be valid URLs'
+        });
+        return;
+      }
+
+      // Check if all team members are registered and verified users
+      let users;
+      try {
+        users = await prisma.user.findMany({
+          where: {
+            email: {
+              in: memberEmails
+            }
+          },
+          select: {
+            email: true,
+            name: true,
+            emailVerified: true,
+            status: true
+          }
+        });
+      } catch (dbError) {
+        console.error('Database error finding users:', dbError);
+        res.status(500).json({
+          success: false,
+          error: 'Database error',
+          message: 'Unable to validate team members. Please try again.',
+          details: process.env.NODE_ENV === 'development' ? String(dbError) : undefined
+        });
+        return;
+      }
 
       // Create a map of found users for easy lookup
       const userMap = new Map(users.map(user => [user.email.toLowerCase(), user]));
 
-      // Check each team member
+      // Check each team member with robust validation
       const invalidMembers: string[] = [];
       const unverifiedMembers: string[] = [];
       const inactiveMembers: string[] = [];
@@ -129,10 +251,18 @@ export class ProjectSubmissionController {
         if (!user) {
           invalidMembers.push(email);
         } else {
-          if (!user.emailVerified) {
+          // Check email verification - be explicit about what we consider verified
+          // emailVerified can be true, false, or null
+          // We only reject if it's explicitly false
+          if (user.emailVerified === false) {
             unverifiedMembers.push(email);
           }
-          if (user.status !== 'ACTIVE') {
+          
+          // Check user status - handle various status values safely
+          // Accept ACTIVE, active, or null/undefined (assuming active)
+          if (user.status && 
+              typeof user.status === 'string' && 
+              user.status.toUpperCase() !== 'ACTIVE') {
             inactiveMembers.push(email);
           }
         }
@@ -176,11 +306,23 @@ export class ProjectSubmissionController {
       }
 
       // Check if team number already exists
-      const existingSubmission = await prisma.projectSubmission.findFirst({
-        where: {
-          teamNumber: submissionData.teamNumber
-        }
-      });
+      let existingSubmission;
+      try {
+        existingSubmission = await prisma.projectSubmission.findFirst({
+          where: {
+            teamNumber: submissionData.teamNumber
+          }
+        });
+      } catch (dbError) {
+        console.error('Database error checking existing submission:', dbError);
+        res.status(500).json({
+          success: false,
+          error: 'Database error',
+          message: 'Unable to validate team number. The project submissions table might not exist.',
+          details: process.env.NODE_ENV === 'development' ? dbError : undefined
+        });
+        return;
+      }
 
       if (existingSubmission) {
         res.status(400).json({
@@ -191,26 +333,64 @@ export class ProjectSubmissionController {
         return;
       }
 
-      // Create the submission
-      const submission = await prisma.projectSubmission.create({
-        data: {
+      // Create the submission with additional error handling and input sanitization
+      let submission;
+      try {
+        // Sanitize input data
+        const sanitizedData = {
           teamNumber: submissionData.teamNumber,
-          teamName: submissionData.teamName,
-          teamLeadName: submissionData.teamLead.name,
-          teamLeadEmail: submissionData.teamLead.email.toLowerCase(),
-          member2Name: submissionData.member2.name,
-          member2Email: submissionData.member2.email.toLowerCase(),
-          member3Name: submissionData.member3?.name || null,
-          member3Email: submissionData.member3?.email?.toLowerCase() || null,
-          member4Name: submissionData.member4?.name || null,
-          member4Email: submissionData.member4?.email?.toLowerCase() || null,
-          projectTitle: submissionData.projectTitle,
-          projectDescription: submissionData.projectDescription,
-          demoYoutubeLink: submissionData.demoYoutubeLink,
-          githubUrl: submissionData.githubUrl,
-          deployedUrl: submissionData.deployedUrl || null
+          teamName: submissionData.teamName.trim().substring(0, 100), // Limit to DB varchar length
+          teamLeadName: submissionData.teamLead.name.trim().substring(0, 100),
+          teamLeadEmail: submissionData.teamLead.email.trim().toLowerCase().substring(0, 150),
+          member2Name: submissionData.member2.name.trim().substring(0, 100),
+          member2Email: submissionData.member2.email.trim().toLowerCase().substring(0, 150),
+          member3Name: submissionData.member3?.name ? 
+            submissionData.member3.name.trim().substring(0, 100) : null,
+          member3Email: submissionData.member3?.email ? 
+            submissionData.member3.email.trim().toLowerCase().substring(0, 150) : null,
+          member4Name: submissionData.member4?.name ? 
+            submissionData.member4.name.trim().substring(0, 100) : null,
+          member4Email: submissionData.member4?.email ? 
+            submissionData.member4.email.trim().toLowerCase().substring(0, 150) : null,
+          projectTitle: submissionData.projectTitle.trim().substring(0, 200),
+          projectDescription: submissionData.projectDescription.trim(),
+          demoYoutubeLink: submissionData.demoYoutubeLink.trim(),
+          githubUrl: submissionData.githubUrl.trim(),
+          deployedUrl: submissionData.deployedUrl ? 
+            submissionData.deployedUrl.trim() : null
+        };
+
+        submission = await prisma.projectSubmission.create({
+          data: sanitizedData
+        });
+      } catch (createError) {
+        console.error('Database error creating submission:', createError);
+        
+        // Handle specific database errors
+        const errorMessage = String(createError);
+        
+        if (errorMessage.includes('unique constraint') || errorMessage.includes('duplicate')) {
+          res.status(400).json({
+            success: false,
+            error: 'Duplicate submission',
+            message: 'A submission with this team number already exists.'
+          });
+        } else if (errorMessage.includes('relation') || errorMessage.includes('table')) {
+          res.status(500).json({
+            success: false,
+            error: 'Database configuration error',
+            message: 'The project submissions table is not properly configured. Please contact support.'
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            error: 'Database error',
+            message: 'Unable to save project submission. Please try again.',
+            details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+          });
         }
-      });
+        return;
+      }
 
       res.status(201).json({
         success: true,
@@ -224,11 +404,22 @@ export class ProjectSubmissionController {
       });
 
     } catch (error) {
-      console.error('Project submission error:', error);
+      // Log the full error for debugging
+      console.error('Project submission error:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+        requestBody: req.body
+      });
+      
+      // Don't expose internal error details in production
       res.status(500).json({
         success: false,
         error: 'Internal server error',
-        message: 'Failed to submit project. Please try again.'
+        message: 'An unexpected error occurred while processing your submission. Please try again.',
+        timestamp: new Date().toISOString(),
+        details: process.env.NODE_ENV === 'development' ? 
+          (error instanceof Error ? error.message : String(error)) : undefined
       });
     }
   }
@@ -240,8 +431,8 @@ export class ProjectSubmissionController {
     try {
       const currentUser = req.user as TokenPayload;
 
-      // Check if user is GRAND_PATHFINDER
-      if (currentUser.role !== 'GRAND_PATHFINDER') {
+      // Enhanced role validation
+      if (!currentUser || !currentUser.role || currentUser.role !== 'GRAND_PATHFINDER') {
         res.status(403).json({
           success: false,
           error: 'Access denied',
@@ -250,41 +441,84 @@ export class ProjectSubmissionController {
         return;
       }
 
-      const { page = 1, limit = 20 } = req.query;
-      const skip = (Number(page) - 1) * Number(limit);
-      const take = Number(limit);
+      // Enhanced pagination validation
+      let page = 1;
+      let limit = 20;
+      
+      if (req.query.page) {
+        const parsedPage = parseInt(String(req.query.page), 10);
+        if (isNaN(parsedPage) || parsedPage < 1) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid page number',
+            message: 'Page must be a positive integer'
+          });
+          return;
+        }
+        page = parsedPage;
+      }
+      
+      if (req.query.limit) {
+        const parsedLimit = parseInt(String(req.query.limit), 10);
+        if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid limit',
+            message: 'Limit must be between 1 and 100'
+          });
+          return;
+        }
+        limit = parsedLimit;
+      }
 
-      const [submissions, total] = await Promise.all([
-        prisma.projectSubmission.findMany({
-          skip,
-          take,
-          orderBy: {
-            submittedAt: 'desc'
-          }
-        }),
-        prisma.projectSubmission.count()
-      ]);
+      const skip = (page - 1) * limit;
+
+      let submissions, total;
+      try {
+        [submissions, total] = await Promise.all([
+          prisma.projectSubmission.findMany({
+            skip,
+            take: limit,
+            orderBy: {
+              submittedAt: 'desc'
+            }
+          }),
+          prisma.projectSubmission.count()
+        ]);
+      } catch (dbError) {
+        console.error('Database error fetching submissions:', dbError);
+        res.status(500).json({
+          success: false,
+          error: 'Database error',
+          message: 'Unable to fetch submissions. The project submissions table might not exist.'
+        });
+        return;
+      }
 
       res.status(200).json({
         success: true,
         data: {
           submissions,
           pagination: {
-            page: Number(page),
-            limit: Number(limit),
+            page,
+            limit,
             total,
-            totalPages: Math.ceil(total / Number(limit))
+            totalPages: Math.ceil(total / limit)
           }
         },
         message: 'Project submissions retrieved successfully'
       });
 
     } catch (error) {
-      console.error('Get submissions error:', error);
+      console.error('Get submissions error:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
       res.status(500).json({
         success: false,
         error: 'Internal server error',
-        message: 'Failed to retrieve submissions'
+        message: 'An unexpected error occurred while fetching submissions'
       });
     }
   }
@@ -296,24 +530,36 @@ export class ProjectSubmissionController {
     try {
       const currentUser = req.user as TokenPayload;
 
-      if (currentUser.role !== 'GRAND_PATHFINDER') {
+      if (!currentUser || !currentUser.role || currentUser.role !== 'GRAND_PATHFINDER') {
         res.status(403).json({
           success: false,
-          error: 'Access denied'
+          error: 'Access denied',
+          message: 'Only Grand Pathfinders can view submission statistics'
         });
         return;
       }
 
-      const [totalSubmissions, todaySubmissions] = await Promise.all([
-        prisma.projectSubmission.count(),
-        prisma.projectSubmission.count({
-          where: {
-            submittedAt: {
-              gte: new Date(new Date().setHours(0, 0, 0, 0))
+      let totalSubmissions, todaySubmissions;
+      try {
+        [totalSubmissions, todaySubmissions] = await Promise.all([
+          prisma.projectSubmission.count(),
+          prisma.projectSubmission.count({
+            where: {
+              submittedAt: {
+                gte: new Date(new Date().setHours(0, 0, 0, 0))
+              }
             }
-          }
-        })
-      ]);
+          })
+        ]);
+      } catch (dbError) {
+        console.error('Database error fetching stats:', dbError);
+        res.status(500).json({
+          success: false,
+          error: 'Database error',
+          message: 'Unable to fetch statistics. The project submissions table might not exist.'
+        });
+        return;
+      }
 
       res.status(200).json({
         success: true,
@@ -325,10 +571,44 @@ export class ProjectSubmissionController {
       });
 
     } catch (error) {
-      console.error('Get submission stats error:', error);
+      console.error('Get submission stats error:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
+      });
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
+        message: 'An unexpected error occurred while fetching statistics'
+      });
+    }
+  }
+
+  /**
+   * Health check for project submission system
+   */
+  static async healthCheck(req: Request, res: Response): Promise<void> {
+    try {
+      // Test if project submissions table exists
+      const count = await prisma.projectSubmission.count();
+      
+      res.status(200).json({
+        success: true,
+        data: {
+          tableExists: true,
+          totalSubmissions: count,
+          timestamp: new Date().toISOString()
+        },
+        message: 'Project submission system is operational'
+      });
+
+    } catch (error) {
+      console.error('Project submission health check error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Project submission system not available',
+        message: 'The project submissions table does not exist or is not accessible',
+        details: process.env.NODE_ENV === 'development' ? error : undefined
       });
     }
   }
