@@ -820,5 +820,37 @@ model EmailAuditLog {
   @@map("email_audit_logs")
 }
 
+// Project Submission Model (Temporary for Hackathon)
+model ProjectSubmission {
+  submissionId      Int       @id @default(autoincrement()) @map("submission_id")
+  teamNumber        Int       @map("team_number")
+  teamName          String    @map("team_name") @db.VarChar(100)
+  
+  // Team Lead (mandatory)
+  teamLeadName      String    @map("team_lead_name") @db.VarChar(100)
+  teamLeadEmail     String    @map("team_lead_email") @db.VarChar(150)
+  
+  // Member 2 (mandatory)
+  member2Name       String    @map("member2_name") @db.VarChar(100)
+  member2Email      String    @map("member2_email") @db.VarChar(150)
+  
+  // Member 3 (optional)
+  member3Name       String?   @map("member3_name") @db.VarChar(100)
+  member3Email      String?   @map("member3_email") @db.VarChar(150)
+  
+  // Member 4 (optional)
+  member4Name       String?   @map("member4_name") @db.VarChar(100)
+  member4Email      String?   @map("member4_email") @db.VarChar(150)
+  
+  projectTitle      String    @map("project_title") @db.VarChar(200)
+  projectDescription String   @map("project_description") @db.Text
+  demoYoutubeLink   String    @map("demo_youtube_link") @db.Text
+  githubUrl         String    @map("github_url") @db.Text
+  deployedUrl       String?   @map("deployed_url") @db.Text
+  submittedAt       DateTime  @default(now()) @map("submitted_at")
+
+  @@map("project_submissions")
+}
+
 
 

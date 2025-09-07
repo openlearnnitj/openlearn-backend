@@ -32,6 +32,7 @@ import publicRoutes from './routes/public';
 import debugRoutes from './routes/debug';
 import migrationRoutes from './routes/migration';
 import monitoringRouter from './routes/monitoring';
+import projectSubmissionRoutes from './routes/projectSubmissions';
 
 const app = express();
 
@@ -599,7 +600,6 @@ app.get('/health/keepalive-stats', async (req, res) => {
   }
 });
 
-
 // Status Page Web Route - Serve simple HTML page
 app.get('/status-page', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/simple-status.html'));
@@ -620,7 +620,9 @@ app.use('/api/migration', migrationRoutes);
 // Debug routes (should be secured or removed in production)
 app.use('/api/debug', debugRoutes);
 
-// Monitoring routes (no authentication required - uses custom secret header)
+// Project Submission routes (temporary for hackathon)
+app.use('/api/project-submissions', projectSubmissionRoutes);
+
 app.use('/api/monitoring', monitoringRouter);
 
 // API routes with specific rate limiting
