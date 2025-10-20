@@ -174,50 +174,79 @@ jobs:
           # Update current symlink
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Updating current deployment..."
           rm -rf current
-          ln -sf "$RELEASE_DIR" current
+          ln -s "$RELEASE_DIR" current
 
-          # Copy .env file to current release
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Setting up environment..."
-          if [ -f "$DEPLOY_DIR/.env" ]; then
-            cp "$DEPLOY_DIR/.env" "$RELEASE_DIR/.env"
-            echo "Environment file copied successfully"
-            # Verify critical variables are set
-            if grep -q "POSTGRES_PASSWORD" "$RELEASE_DIR/.env"; then
-              echo "Environment variables verified"
-            else
-              echo "ERROR: .env file appears to be empty or invalid"
-              exit 1
-            fi
-          else
+          # Verify .env file exists in root directory
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Verifying environment file..."
+          if [ ! -f "$DEPLOY_DIR/.env" ]; then
             echo "ERROR: .env file not found at $DEPLOY_DIR/.env"
             echo "Please ensure .env file exists in $DEPLOY_DIR/"
+            exit 1
+          fi
+          
+          # Verify critical variables are set
+          if grep -q "JWT_SECRET" "$DEPLOY_DIR/.env"; then
+            echo "Environment variables verified in $DEPLOY_DIR/.env"
+          else
+            echo "ERROR: .env file appears to be empty or invalid"
             exit 1
           fi
 
           # Build Docker image with pre-built artifacts
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building Docker image..."
           cd current
-          docker-compose build app
+          docker-compose --env-file "$DEPLOY_DIR/.env" build app
 
-          # Start all services
+          # Start all services with explicit env file
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting all services..."
-          docker-compose up -d
+          docker-compose --env-file "$DEPLOY_DIR/.env" up -d
 
-          # Wait for services to be ready
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for services to be ready..."
+          # Wait for services to start
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for services to start..."
+          sleep 10
+
+          # Check if app container is running or crashing
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Checking container status..."
+          docker-compose --env-file "$DEPLOY_DIR/.env" ps
+          
+          # Show app logs for debugging
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] App container logs:"
+          docker-compose --env-file "$DEPLOY_DIR/.env" logs --tail=50 app || true
+
+          # Wait a bit more for app to stabilize
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for app to stabilize..."
           sleep 20
 
-          # Run database migrations inside the running app container
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running database migrations..."
-          if ! docker-compose exec -T app sh -c "cd /app && npx prisma migrate deploy"; then
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Migration failed, attempting rollback..."
-            docker-compose down
+          # Check if app container is still running
+          if ! docker-compose --env-file "$DEPLOY_DIR/.env" ps app | grep -q "Up"; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: App container is not running!"
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Container status:"
+            docker-compose --env-file "$DEPLOY_DIR/.env" ps
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Full logs:"
+            docker-compose --env-file "$DEPLOY_DIR/.env" logs app
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment failed, attempting rollback..."
+            docker-compose --env-file "$DEPLOY_DIR/.env" down
             cd "$DEPLOY_DIR"
             if [ -d "$BACKUP_DIR" ]; then
               rm -rf current
-              ln -sf "$BACKUP_DIR" current
+              ln -s "$BACKUP_DIR" current
               cd current
-              docker-compose up -d
+              docker-compose --env-file "$DEPLOY_DIR/.env" up -d
+            fi
+            exit 1
+          fi
+
+          # Run database migrations
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running database migrations..."
+          if ! docker-compose --env-file "$DEPLOY_DIR/.env" exec -T app npx prisma migrate deploy; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Migration failed, attempting rollback..."
+            docker-compose --env-file "$DEPLOY_DIR/.env" down
+            cd "$DEPLOY_DIR"
+            if [ -d "$BACKUP_DIR" ]; then
+              rm -rf current
+              ln -s "$BACKUP_DIR" current
+              cd current
+              docker-compose --env-file "$DEPLOY_DIR/.env" up -d
             fi
             exit 1
           fi
@@ -244,20 +273,20 @@ jobs:
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Attempting rollback to previous version..."
           
           cd "$DEPLOY_DIR"
-          docker-compose down
+          docker-compose --env-file "$DEPLOY_DIR/.env" down
           
           if [ -d "$BACKUP_DIR" ]; then
             rm -rf current
-            ln -sf "$BACKUP_DIR" current
+            ln -s "$BACKUP_DIR" current
             cd current
-            docker-compose up -d
+            docker-compose --env-file "$DEPLOY_DIR/.env" up -d
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Rollback completed"
           else
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] No backup available for rollback"
           fi
           
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment failed - check logs:"
-          docker-compose logs --tail=50 app
+          docker-compose --env-file "$DEPLOY_DIR/.env" logs --tail=50 app
           
           exit 1
           EOF
