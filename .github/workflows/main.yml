@@ -191,9 +191,13 @@ jobs:
           fi
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Environment file verified"
 
-          # Build Docker image with pre-built artifacts
+          # Clear Docker build cache to ensure fresh build
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Clearing Docker build cache..."
+          docker builder prune -f || true
+
+          # Build Docker image with pre-built artifacts (no cache to ensure .dockerignore is read)
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building Docker image..."
-          docker-compose --env-file "$DEPLOY_DIR/.env" build app
+          docker-compose --env-file "$DEPLOY_DIR/.env" build --no-cache app
 
           # Start all services with explicit env file
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting all services..."
