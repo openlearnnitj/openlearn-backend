@@ -4,8 +4,12 @@
 
 FROM node:18-alpine
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install build dependencies for native modules (bcrypt, etc.)
+RUN apk add --no-cache \
+    curl \
+    python3 \
+    make \
+    g++
 
 # Set the working directory
 WORKDIR /app
@@ -16,6 +20,9 @@ COPY node_modules/ ./node_modules/
 COPY prisma/ ./prisma/
 COPY package.json ./
 COPY package-lock.json ./
+
+# Rebuild native modules for Alpine Linux (bcrypt, etc.)
+RUN npm rebuild bcrypt --build-from-source
 
 # Fix permissions on node_modules binaries and generate Prisma Client
 RUN chmod -R +x node_modules/.bin/* 2>/dev/null || true && \
