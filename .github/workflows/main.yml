@@ -199,17 +199,17 @@ jobs:
           cd current
           docker-compose build app
 
-          # Start database services first
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting database services..."
-          docker-compose up -d postgres redis
+          # Start all services
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting all services..."
+          docker-compose up -d
 
-          # Wait for database to be ready
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for database to be ready..."
-          sleep 15
+          # Wait for services to be ready
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for services to be ready..."
+          sleep 20
 
-          # Run database migrations
+          # Run database migrations inside the running app container
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running database migrations..."
-          if ! docker-compose run --rm app node_modules/.bin/prisma migrate deploy; then
+          if ! docker-compose exec -T app sh -c "cd /app && npx prisma migrate deploy"; then
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Migration failed, attempting rollback..."
             docker-compose down
             cd "$DEPLOY_DIR"
@@ -221,14 +221,6 @@ jobs:
             fi
             exit 1
           fi
-
-          # Start application container
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting application container..."
-          docker-compose up -d app
-
-          # Wait for services to be ready
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for services to start..."
-          sleep 20
 
           # Perform health checks
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Performing health checks..."
