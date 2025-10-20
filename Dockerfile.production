@@ -17,6 +17,9 @@ COPY prisma/ ./prisma/
 COPY package.json ./
 COPY package-lock.json ./
 
+# Fix permissions on node_modules binaries
+RUN chmod -R +x node_modules/.bin/* 2>/dev/null || true
+
 # Expose the application port
 EXPOSE 3000
 
