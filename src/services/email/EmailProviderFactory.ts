@@ -38,9 +38,14 @@ export class EmailProviderFactory implements IEmailProviderFactory {
    * Create a provider based on environment configuration
    */
   static createFromEnvironment(): EmailProviderInterface {
-    const providerName = process.env.EMAIL_PROVIDER?.toLowerCase() || 'resend';
+    const rawProvider = process.env.EMAIL_PROVIDER;
+    const providerName = rawProvider?.toLowerCase() || 'resend';
     
-    console.log(`Creating email provider: ${providerName}`);
+    // Only log once during initialization to avoid spam
+    if (!EmailProviderFactory._initialized) {
+      console.log(`[EmailProviderFactory] EMAIL_PROVIDER env: "${rawProvider}" -> using: "${providerName}"`);
+      EmailProviderFactory._initialized = true;
+    }
     
     switch (providerName) {
       case 'resend':
@@ -54,10 +59,12 @@ export class EmailProviderFactory implements IEmailProviderFactory {
         return new MailtrapProvider();
         
       default:
-        console.warn(`Unknown email provider '${providerName}', falling back to Resend`);
+        console.warn(`[EmailProviderFactory] Unknown email provider '${providerName}', falling back to Resend`);
         return new ResendProvider();
     }
   }
+
+  private static _initialized = false;
 
   /**
    * Get available providers

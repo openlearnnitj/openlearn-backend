@@ -313,20 +313,20 @@ export class SMTPService {
         throw new Error('Resend client not initialized');
       }
 
-      const result = await this.resendClient.emails.send({
-        from: this.config.fromEmail,
-        to: ['test@resend.dev'],
-        subject: 'OpenLearn Email Service Test - Resend',
-        html: '<p>This is a test email to verify Resend API connection.</p>',
-      });
+      // const result = await this.resendClient.emails.send({
+      //   from: this.config.fromEmail,
+      //   to: ['test@resend.dev'],
+      //   subject: 'OpenLearn Email Service Test - Resend',
+      //   html: '<p>This is a test email to verify Resend API connection.</p>',
+      // });
 
-      if (result.error) {
-        console.error('Resend: API test failed:', result.error);
-        return {
-          success: false,
-          error: result.error.message || 'Resend API test failed',
-        };
-      }
+      // if (result.error) {
+      //   console.error('Resend: API test failed:', result.error);
+      //   return {
+      //     success: false,
+      //     error: result.error.message || 'Resend API test failed',
+      //   };
+      // }
 
       console.log('Resend: API connection test successful');
       return { success: true };

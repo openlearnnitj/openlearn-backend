@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.production
     ports:
       - "3000:3000"
     environment:
@@ -14,6 +16,15 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN}
       - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
       - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-resend}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
+      - MAILTRAP_API_TOKEN=${MAILTRAP_API_TOKEN}
+      - MAILTRAP_FROM_EMAIL=${MAILTRAP_FROM_EMAIL}
+      - SES_ACCESS_KEY_ID=${SES_ACCESS_KEY_ID}
+      - SES_SECRET_ACCESS_KEY=${SES_SECRET_ACCESS_KEY}
+      - SES_FROM_EMAIL=${SES_FROM_EMAIL}
+      - SES_REGION=${SES_REGION}
     depends_on:
       postgres:
         condition: service_healthy

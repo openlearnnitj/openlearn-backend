@@ -568,17 +568,47 @@ export class StatusService {
 
   /**
    * Check Email service health by testing Resend API connection
+   * 
+   * Note: This performs a minimal check to avoid consuming daily quota.
+   * It only verifies that the API key is configured, not that the API is accessible.
    */
   private async checkEmailServiceHealth(): Promise<boolean> {
     try {
-      // Test Resend API connection
-      const { Resend } = require('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
+      const emailProvider = process.env.EMAIL_PROVIDER?.toLowerCase() || 'resend';
       
-      // Test API key validity by attempting to get domains (this doesn't send an email)
-      const domains = await resend.domains.list();
+      // For Resend, just check if API key is configured to avoid quota consumption
+      if (emailProvider === 'resend') {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+          logger.error('Email service health check failed: RESEND_API_KEY not configured');
+          return false;
+        }
+        // API key is configured - assume healthy to avoid consuming daily quota
+        return true;
+      }
       
-      // If we get here without throwing, the API key is valid
+      // For SES, check if credentials are configured
+      if (emailProvider === 'ses' || emailProvider === 'amazon_ses') {
+        const accessKey = process.env.SES_ACCESS_KEY_ID;
+        const secretKey = process.env.SES_SECRET_ACCESS_KEY;
+        if (!accessKey || !secretKey) {
+          logger.error('Email service health check failed: SES credentials not configured');
+          return false;
+        }
+        return true;
+      }
+      
+      // For Mailtrap, check if API token is configured
+      if (emailProvider === 'mailtrap') {
+        const apiToken = process.env.MAILTRAP_API_TOKEN;
+        if (!apiToken) {
+          logger.error('Email service health check failed: MAILTRAP_API_TOKEN not configured');
+          return false;
+        }
+        return true;
+      }
+      
+      // Unknown provider - assume healthy if we got this far
       return true;
     } catch (error) {
       logger.error('Email service health check failed', { error: error instanceof Error ? error.message : 'Unknown error' });

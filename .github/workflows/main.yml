@@ -42,28 +42,40 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build TypeScript
-        run: npm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            dist/
-            package.json
-            package-lock.json
-            prisma/
-            docker-compose.yml
-            Dockerfile
-          retention-days: 1
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
       - name: Setup test database
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/openlearn_test
+        run: npx prisma migrate deploy
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Install production dependencies only
         run: |
+          npm ci --only=production --ignore-scripts
           npx prisma generate
-          npx prisma migrate deploy
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy-package
+          cp -r dist deploy-package/
+          cp -r node_modules deploy-package/
+          cp -r prisma deploy-package/
+          cp package.json deploy-package/
+          cp package-lock.json deploy-package/
+          cp docker-compose.yml deploy-package/
+          cp Dockerfile.production deploy-package/
+          cp -r src/templates deploy-package/templates 2>/dev/null || echo "No templates directory"
+
+      - name: Upload deployment package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deploy-package/
+          retention-days: 7
 
   deploy:
     name: Deploy to Production
@@ -73,16 +85,39 @@ jobs:
     environment: production
 
     steps:
-      - name: Download build artifacts
+      - name: Download deployment package
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts
-          path: ./artifacts
+          name: deployment-package
+          path: ./deploy-package
+
+      - name: Create deployment archive
+        run: |
+          cd deploy-package
+          tar -czf ../deployment.tar.gz .
+          cd ..
+          echo "Archive size: $(du -h deployment.tar.gz | cut -f1)"
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.EC2_PRIVATE_KEY }}
+
+      - name: Add EC2 to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create deployment directory on server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} '
+            mkdir -p /home/ubuntu/openlearn-backend/releases/${{ github.sha }}
+            mkdir -p /home/ubuntu/openlearn-backend/backups
+          '
+
+      - name: Copy deployment package to server
+        run: |
+          scp -o StrictHostKeyChecking=no deployment.tar.gz \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/openlearn-backend/releases/${{ github.sha }}/
 
       - name: Create deployment script
         run: |
@@ -90,63 +125,140 @@ jobs:
           #!/bin/bash
           set -e
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting deployment..."
+          DEPLOYMENT_SHA="${1:-unknown}"
+          DEPLOY_DIR="/home/ubuntu/openlearn-backend"
+          RELEASE_DIR="$DEPLOY_DIR/releases/$DEPLOYMENT_SHA"
+          BACKUP_DIR="$DEPLOY_DIR/backups/backup-$(date +%Y%m%d-%H%M%S)"
 
-          cd /home/ubuntu/openlearn-backend
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting deployment of commit $DEPLOYMENT_SHA"
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Pulling latest code..."
-          git reset --hard origin/main
-          git pull origin main
+          # Navigate to deployment directory
+          cd "$DEPLOY_DIR"
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Installing production dependencies..."
-          npm ci --only=production
+          # Backup current deployment
+          if [ -d "current" ]; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Backing up current deployment..."
+            mkdir -p "$BACKUP_DIR"
+            cp -r current/* "$BACKUP_DIR/" || echo "Backup warning: some files may not have been copied"
+            
+            # Keep only last 5 backups
+            cd "$DEPLOY_DIR/backups"
+            ls -t | tail -n +6 | xargs -r rm -rf
+            cd "$DEPLOY_DIR"
+          fi
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping containers..."
-          docker-compose down || true
+          # Extract new deployment
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Extracting deployment package..."
+          cd "$RELEASE_DIR"
+          tar -xzf deployment.tar.gz
+          rm deployment.tar.gz
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Cleaning up Docker..."
-          docker system prune -f || true
+          # Update current symlink
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Updating current deployment..."
+          cd "$DEPLOY_DIR"
+          rm -rf current
+          ln -sf "$RELEASE_DIR" current
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting containers..."
-          docker-compose up -d --build
+          # Build Docker image with pre-built artifacts
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building Docker image..."
+          cd current
+          docker-compose build app
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for services to start..."
+          # Start database services first
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting database services..."
+          docker-compose up -d postgres redis
+
+          # Wait for database to be ready
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for database to be ready..."
           sleep 15
 
+          # Run database migrations
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running database migrations..."
-          docker-compose exec -T app npx prisma migrate deploy || echo "Migration warning"
+          if ! docker-compose run --rm app npx prisma migrate deploy; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Migration failed, attempting rollback..."
+            docker-compose down
+            cd "$DEPLOY_DIR"
+            if [ -d "$BACKUP_DIR" ]; then
+              rm -rf current
+              ln -sf "$BACKUP_DIR" current
+              cd current
+              docker-compose up -d
+            fi
+            exit 1
+          fi
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Performing health check..."
-          for i in {1..3}; do
-            if curl -f -s http://localhost:3000/health > /dev/null; then
+          # Start application container
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting application container..."
+          docker-compose up -d app
+
+          # Wait for services to be ready
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for services to start..."
+          sleep 20
+
+          # Perform health checks
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Performing health checks..."
+          for i in {1..10}; do
+            if curl -f -s http://localhost:3000/health > /dev/null 2>&1; then
+              echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check passed!"
               echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment successful!"
+              
+              # Cleanup old releases (keep last 3)
+              cd "$DEPLOY_DIR/releases"
+              ls -t | tail -n +4 | xargs -r rm -rf
+              
               exit 0
             fi
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check attempt $i/3 failed..."
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check attempt $i/10 failed, retrying..."
             sleep 10
           done
 
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check failed after 3 attempts"
-          docker-compose logs app
+          # Health check failed - attempt rollback
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check failed after 10 attempts"
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Attempting rollback to previous version..."
+          
+          cd "$DEPLOY_DIR"
+          docker-compose down
+          
+          if [ -d "$BACKUP_DIR" ]; then
+            rm -rf current
+            ln -sf "$BACKUP_DIR" current
+            cd current
+            docker-compose up -d
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Rollback completed"
+          else
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] No backup available for rollback"
+          fi
+          
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment failed - check logs:"
+          docker-compose logs --tail=50 app
+          
           exit 1
           EOF
 
           chmod +x deploy-to-server.sh
 
-      - name: Copy artifacts and deployment script to server
+      - name: Copy deployment script to server
         run: |
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          scp -o StrictHostKeyChecking=no -r ./artifacts/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/openlearn-backend/
-          scp -o StrictHostKeyChecking=no deploy-to-server.sh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+          scp -o StrictHostKeyChecking=no deploy-to-server.sh \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/deploy-${{ github.sha }}.sh
 
       - name: Execute deployment
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bash /tmp/deploy-to-server.sh'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "bash /tmp/deploy-${{ github.sha }}.sh ${{ github.sha }}"
 
-      - name: Cleanup
+      - name: Cleanup deployment script
         if: always()
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'rm -f /tmp/deploy-to-server.sh' || true
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "rm -f /tmp/deploy-${{ github.sha }}.sh" || true
+
+      - name: Display deployment info
+        if: success()
+        run: |
+          echo "Deployment completed successfully"
+          echo "Commit: ${{ github.sha }}"
+          echo "Deployed to: /home/ubuntu/openlearn-backend/current"
 
   notify:
     name: Notify

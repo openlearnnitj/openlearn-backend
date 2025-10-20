@@ -1,0 +1,28 @@
+# Production Dockerfile - Uses Pre-Built Artifacts
+# This Dockerfile expects the build to already be done on GitHub Actions
+# It only copies the pre-built files and production dependencies
+
+FROM node:18-alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Set the working directory
+WORKDIR /app
+
+# Copy pre-built application files
+COPY dist/ ./dist/
+COPY node_modules/ ./node_modules/
+COPY prisma/ ./prisma/
+COPY package.json ./
+COPY package-lock.json ./
+
+# Expose the application port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start the application
+CMD ["node", "dist/server.js"]

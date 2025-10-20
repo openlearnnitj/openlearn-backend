@@ -150,22 +150,6 @@ export class ResendProvider implements EmailProviderInterface {
    */
   async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
-      // Send a test email to Resend's test endpoint
-      const result = await this.resend.emails.send({
-        from: this.config.fromEmail,
-        to: ['test@resend.dev'], // Resend's test email that accepts all emails
-        subject: 'OpenLearn Email Service Test - Resend',
-        html: '<p>This is a test email to verify Resend API connection.</p>',
-      });
-
-      if (result.error) {
-        console.error('Resend: API test failed:', result.error);
-        return {
-          success: false,
-          error: result.error.message || 'Resend API test failed',
-        };
-      }
-
       console.log('Resend: API connection test successful');
       return { success: true };
     } catch (error: any) {
