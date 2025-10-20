@@ -68,6 +68,7 @@ jobs:
           cp package-lock.json deploy-package/
           cp docker-compose.yml deploy-package/
           cp Dockerfile.production deploy-package/
+          cp .dockerignore deploy-package/
           cp -r src/templates deploy-package/templates 2>/dev/null || echo "No templates directory"
 
       - name: Upload deployment package
@@ -93,17 +94,20 @@ jobs:
 
       - name: Create deployment archive
         run: |
-          ls -la deploy-package/
+          echo "Deployment package contents:"
+          ls -lah deploy-package/
           cd deploy-package
-          # Verify node_modules exists
+          # Verify node_modules exists and has content
           if [ ! -d "node_modules" ]; then
             echo "ERROR: node_modules not found in deployment package!"
             exit 1
           fi
+          echo "node_modules size: $(du -sh node_modules | cut -f1)"
+          echo "node_modules file count: $(find node_modules -type f | wc -l)"
           tar -czf ../deployment.tar.gz .
           cd ..
-          echo "Archive contents:"
-          tar -tzf deployment.tar.gz | head -20
+          echo "Archive contents (first 30 lines):"
+          tar -tzf deployment.tar.gz | head -30
           echo "Archive size: $(du -h deployment.tar.gz | cut -f1)"
 
       - name: Setup SSH
