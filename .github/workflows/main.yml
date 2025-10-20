@@ -93,9 +93,17 @@ jobs:
 
       - name: Create deployment archive
         run: |
+          ls -la deploy-package/
           cd deploy-package
+          # Verify node_modules exists
+          if [ ! -d "node_modules" ]; then
+            echo "ERROR: node_modules not found in deployment package!"
+            exit 1
+          fi
           tar -czf ../deployment.tar.gz .
           cd ..
+          echo "Archive contents:"
+          tar -tzf deployment.tar.gz | head -20
           echo "Archive size: $(du -h deployment.tar.gz | cut -f1)"
 
       - name: Setup SSH
@@ -152,6 +160,25 @@ jobs:
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Extracting new deployment..."
           tar -xzf "/tmp/deployment-$DEPLOYMENT_SHA.tar.gz" -C "$DEPLOY_DIR"
           rm "/tmp/deployment-$DEPLOYMENT_SHA.tar.gz"
+
+          # Verify extracted files
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Verifying extracted files..."
+          if [ ! -d "$DEPLOY_DIR/dist" ]; then
+            echo "ERROR: dist directory not found after extraction!"
+            ls -la "$DEPLOY_DIR/"
+            exit 1
+          fi
+          if [ ! -d "$DEPLOY_DIR/node_modules" ]; then
+            echo "ERROR: node_modules directory not found after extraction!"
+            ls -la "$DEPLOY_DIR/"
+            exit 1
+          fi
+          if [ ! -f "$DEPLOY_DIR/Dockerfile.production" ]; then
+            echo "ERROR: Dockerfile.production not found after extraction!"
+            ls -la "$DEPLOY_DIR/"
+            exit 1
+          fi
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] All deployment files verified"
 
           # Verify critical environment variables
           if ! grep -q "JWT_SECRET" "$DEPLOY_DIR/.env"; then
