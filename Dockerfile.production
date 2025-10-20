@@ -17,6 +17,9 @@ COPY prisma/ ./prisma/
 COPY package.json ./
 COPY package-lock.json ./
 
+# Generate Prisma Client for the container's platform
+RUN npx prisma generate
+
 # Expose the application port
 EXPOSE 3000
 
