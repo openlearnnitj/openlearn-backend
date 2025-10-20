@@ -153,14 +153,23 @@ jobs:
           tar -xzf deployment.tar.gz
           rm deployment.tar.gz
 
-          # Stop all running containers first
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping old containers..."
+          # Stop all running containers thoroughly
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping all containers..."
           cd "$DEPLOY_DIR"
+          
+          # Stop containers from current symlink
           if [ -d "current" ]; then
             cd current
             docker-compose down || true
             cd "$DEPLOY_DIR"
           fi
+          
+          # Stop any containers that might be using the ports
+          docker stop $(docker ps -q --filter "expose=3000" --filter "expose=5432" --filter "expose=6379") 2>/dev/null || true
+          
+          # Additional cleanup: stop containers by name pattern
+          docker ps -a --format '{{.Names}}' | grep -E 'postgres|redis|openlearn|current' | xargs -r docker stop 2>/dev/null || true
+          docker ps -a --format '{{.Names}}' | grep -E 'postgres|redis|openlearn|current' | xargs -r docker rm 2>/dev/null || true
 
           # Update current symlink
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Updating current deployment..."
@@ -171,8 +180,18 @@ jobs:
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Setting up environment..."
           if [ -f "$DEPLOY_DIR/.env" ]; then
             cp "$DEPLOY_DIR/.env" "$RELEASE_DIR/.env"
+            echo "Environment file copied successfully"
+            # Verify critical variables are set
+            if grep -q "POSTGRES_PASSWORD" "$RELEASE_DIR/.env"; then
+              echo "Environment variables verified"
+            else
+              echo "ERROR: .env file appears to be empty or invalid"
+              exit 1
+            fi
           else
-            echo "WARNING: .env file not found at $DEPLOY_DIR/.env"
+            echo "ERROR: .env file not found at $DEPLOY_DIR/.env"
+            echo "Please ensure .env file exists in $DEPLOY_DIR/"
+            exit 1
           fi
 
           # Build Docker image with pre-built artifacts

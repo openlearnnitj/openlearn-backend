@@ -1,6 +1,6 @@
 # Copilot Instructions for TypeScript Backend Development (OpenLearn Project)
 
-dont use emojist
+dont use emojis
 **User Context:**
 
 The user is developing a complex platform called "OpenLearn" for their college, which includes:
