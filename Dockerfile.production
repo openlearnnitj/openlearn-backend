@@ -17,15 +17,16 @@ COPY prisma/ ./prisma/
 COPY package.json ./
 COPY package-lock.json ./
 
-# Fix permissions on node_modules binaries
-RUN chmod -R +x node_modules/.bin/* 2>/dev/null || true
+# Fix permissions on node_modules binaries and generate Prisma Client
+RUN chmod -R +x node_modules/.bin/* 2>/dev/null || true && \
+    node node_modules/prisma/build/index.js generate
 
 # Expose the application port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+# Health check - more lenient for micro instance
+HEALTHCHECK --interval=45s --timeout=15s --start-period=60s --retries=5 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Generate Prisma Client on container start, then start the application
-CMD sh -c "npx prisma generate && node dist/server.js"
+# Start the application
+CMD ["node", "dist/server.js"]
