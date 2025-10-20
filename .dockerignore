@@ -1,4 +1,6 @@
-node_modules
+# node_modules - COMMENTED OUT for production builds using pre-built artifacts
+# For production: we copy pre-built node_modules from GitHub Actions
+# node_modules
 npm-debug.log
 Dockerfile*
 .dockerignore
