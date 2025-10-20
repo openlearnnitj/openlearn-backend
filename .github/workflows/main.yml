@@ -209,7 +209,7 @@ jobs:
 
           # Run database migrations
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running database migrations..."
-          if ! docker-compose run --rm app npx prisma migrate deploy; then
+          if ! docker-compose run --rm app node_modules/.bin/prisma migrate deploy; then
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Migration failed, attempting rollback..."
             docker-compose down
             cd "$DEPLOY_DIR"
