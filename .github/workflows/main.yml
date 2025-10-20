@@ -153,11 +153,27 @@ jobs:
           tar -xzf deployment.tar.gz
           rm deployment.tar.gz
 
+          # Stop all running containers first
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping old containers..."
+          cd "$DEPLOY_DIR"
+          if [ -d "current" ]; then
+            cd current
+            docker-compose down || true
+            cd "$DEPLOY_DIR"
+          fi
+
           # Update current symlink
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Updating current deployment..."
-          cd "$DEPLOY_DIR"
           rm -rf current
           ln -sf "$RELEASE_DIR" current
+
+          # Copy .env file to current release
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Setting up environment..."
+          if [ -f "$DEPLOY_DIR/.env" ]; then
+            cp "$DEPLOY_DIR/.env" "$RELEASE_DIR/.env"
+          else
+            echo "WARNING: .env file not found at $DEPLOY_DIR/.env"
+          fi
 
           # Build Docker image with pre-built artifacts
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building Docker image..."
