@@ -107,17 +107,10 @@ jobs:
         run: |
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create deployment directory on server
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} '
-            mkdir -p /home/ubuntu/openlearn-backend/releases/${{ github.sha }}
-            mkdir -p /home/ubuntu/openlearn-backend/backups
-          '
-
       - name: Copy deployment package to server
         run: |
           scp -o StrictHostKeyChecking=no deployment.tar.gz \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/openlearn-backend/releases/${{ github.sha }}/
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/deployment-${{ github.sha }}.tar.gz
 
       - name: Create deployment script
         run: |
@@ -127,74 +120,48 @@ jobs:
 
           DEPLOYMENT_SHA="${1:-unknown}"
           DEPLOY_DIR="/home/ubuntu/openlearn-backend"
-          RELEASE_DIR="$DEPLOY_DIR/releases/$DEPLOYMENT_SHA"
-          BACKUP_DIR="$DEPLOY_DIR/backups/backup-$(date +%Y%m%d-%H%M%S)"
+          BACKUP_FILE="$DEPLOY_DIR/deployment-backup.tar.gz"
 
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Starting deployment of commit $DEPLOYMENT_SHA"
 
           # Navigate to deployment directory
           cd "$DEPLOY_DIR"
 
-          # Backup current deployment
-          if [ -d "current" ]; then
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Backing up current deployment..."
-            mkdir -p "$BACKUP_DIR"
-            cp -r current/* "$BACKUP_DIR/" || echo "Backup warning: some files may not have been copied"
-            
-            # Keep only last 5 backups
-            cd "$DEPLOY_DIR/backups"
-            ls -t | tail -n +6 | xargs -r rm -rf
-            cd "$DEPLOY_DIR"
-          fi
-
-          # Extract new deployment
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Extracting deployment package..."
-          cd "$RELEASE_DIR"
-          tar -xzf deployment.tar.gz
-          rm deployment.tar.gz
-
-          # Stop all running containers thoroughly
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping all containers..."
-          cd "$DEPLOY_DIR"
-          
-          # Stop containers from current symlink
-          if [ -d "current" ]; then
-            cd current
-            docker-compose down || true
-            cd "$DEPLOY_DIR"
-          fi
-          
-          # Stop any containers that might be using the ports
-          docker stop $(docker ps -q --filter "expose=3000" --filter "expose=5432" --filter "expose=6379") 2>/dev/null || true
-          
-          # Additional cleanup: stop containers by name pattern
-          docker ps -a --format '{{.Names}}' | grep -E 'postgres|redis|openlearn|current' | xargs -r docker stop 2>/dev/null || true
-          docker ps -a --format '{{.Names}}' | grep -E 'postgres|redis|openlearn|current' | xargs -r docker rm 2>/dev/null || true
-
-          # Update current symlink
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Updating current deployment..."
-          rm -rf current
-          ln -s "$RELEASE_DIR" current
-
-          # Verify .env file exists in root directory
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Verifying environment file..."
+          # Verify .env file exists
           if [ ! -f "$DEPLOY_DIR/.env" ]; then
             echo "ERROR: .env file not found at $DEPLOY_DIR/.env"
-            echo "Please ensure .env file exists in $DEPLOY_DIR/"
             exit 1
           fi
+
+          # Backup current deployment files (only the built artifacts)
+          if [ -d "dist" ] && [ -f "docker-compose.yml" ]; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Backing up current deployment..."
+            tar -czf "$BACKUP_FILE.new" dist/ node_modules/ package.json package-lock.json docker-compose.yml Dockerfile.production prisma/ templates/ 2>/dev/null || true
+            mv "$BACKUP_FILE.new" "$BACKUP_FILE" || true
+          fi
+
+          # Stop all running containers
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Stopping containers..."
+          docker-compose --env-file "$DEPLOY_DIR/.env" down 2>/dev/null || true
           
-          # Verify critical variables are set
-          if grep -q "JWT_SECRET" "$DEPLOY_DIR/.env"; then
-            echo "Environment variables verified in $DEPLOY_DIR/.env"
-          else
-            echo "ERROR: .env file appears to be empty or invalid"
+          # Stop any lingering containers
+          docker ps -a --format '{{.Names}}' | grep -E 'openlearn-backend' | xargs -r docker stop 2>/dev/null || true
+          docker ps -a --format '{{.Names}}' | grep -E 'openlearn-backend' | xargs -r docker rm 2>/dev/null || true
+
+          # Extract new deployment (overwrites existing files)
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Extracting new deployment..."
+          tar -xzf "/tmp/deployment-$DEPLOYMENT_SHA.tar.gz" -C "$DEPLOY_DIR"
+          rm "/tmp/deployment-$DEPLOYMENT_SHA.tar.gz"
+
+          # Verify critical environment variables
+          if ! grep -q "JWT_SECRET" "$DEPLOY_DIR/.env"; then
+            echo "ERROR: .env file appears to be invalid"
             exit 1
           fi
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Environment file verified"
 
           # Build Docker image with pre-built artifacts
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building Docker image..."
-          cd current
           docker-compose --env-file "$DEPLOY_DIR/.env" build app
 
           # Start all services with explicit env file
@@ -217,20 +184,19 @@ jobs:
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Waiting for app to stabilize..."
           sleep 20
 
-          # Check if app container is still running
+          # Check if app container is running
           if ! docker-compose --env-file "$DEPLOY_DIR/.env" ps app | grep -q "Up"; then
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: App container is not running!"
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Container status:"
             docker-compose --env-file "$DEPLOY_DIR/.env" ps
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Full logs:"
             docker-compose --env-file "$DEPLOY_DIR/.env" logs app
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment failed, attempting rollback..."
-            docker-compose --env-file "$DEPLOY_DIR/.env" down
-            cd "$DEPLOY_DIR"
-            if [ -d "$BACKUP_DIR" ]; then
-              rm -rf current
-              ln -s "$BACKUP_DIR" current
-              cd current
+            
+            # Attempt rollback if backup exists
+            if [ -f "$BACKUP_FILE" ]; then
+              echo "[$(date +'%Y-%m-%d %H:%M:%S')] Attempting rollback..."
+              docker-compose --env-file "$DEPLOY_DIR/.env" down
+              tar -xzf "$BACKUP_FILE" -C "$DEPLOY_DIR"
               docker-compose --env-file "$DEPLOY_DIR/.env" up -d
             fi
             exit 1
@@ -239,13 +205,13 @@ jobs:
           # Run database migrations
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running database migrations..."
           if ! docker-compose --env-file "$DEPLOY_DIR/.env" exec -T app npx prisma migrate deploy; then
-            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Migration failed, attempting rollback..."
-            docker-compose --env-file "$DEPLOY_DIR/.env" down
-            cd "$DEPLOY_DIR"
-            if [ -d "$BACKUP_DIR" ]; then
-              rm -rf current
-              ln -s "$BACKUP_DIR" current
-              cd current
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Migration failed!"
+            
+            # Attempt rollback if backup exists
+            if [ -f "$BACKUP_FILE" ]; then
+              echo "[$(date +'%Y-%m-%d %H:%M:%S')] Attempting rollback..."
+              docker-compose --env-file "$DEPLOY_DIR/.env" down
+              tar -xzf "$BACKUP_FILE" -C "$DEPLOY_DIR"
               docker-compose --env-file "$DEPLOY_DIR/.env" up -d
             fi
             exit 1
@@ -257,11 +223,7 @@ jobs:
             if curl -f -s http://localhost:3000/health > /dev/null 2>&1; then
               echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check passed!"
               echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployment successful!"
-              
-              # Cleanup old releases (keep last 3)
-              cd "$DEPLOY_DIR/releases"
-              ls -t | tail -n +4 | xargs -r rm -rf
-              
+              echo "[$(date +'%Y-%m-%d %H:%M:%S')] Deployed commit: $DEPLOYMENT_SHA"
               exit 0
             fi
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check attempt $i/10 failed, retrying..."
@@ -270,15 +232,12 @@ jobs:
 
           # Health check failed - attempt rollback
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Health check failed after 10 attempts"
-          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Attempting rollback to previous version..."
           
-          cd "$DEPLOY_DIR"
           docker-compose --env-file "$DEPLOY_DIR/.env" down
           
-          if [ -d "$BACKUP_DIR" ]; then
-            rm -rf current
-            ln -s "$BACKUP_DIR" current
-            cd current
+          if [ -f "$BACKUP_FILE" ]; then
+            echo "[$(date +'%Y-%m-%d %H:%M:%S')] Attempting rollback..."
+            tar -xzf "$BACKUP_FILE" -C "$DEPLOY_DIR"
             docker-compose --env-file "$DEPLOY_DIR/.env" up -d
             echo "[$(date +'%Y-%m-%d %H:%M:%S')] Rollback completed"
           else
@@ -314,7 +273,7 @@ jobs:
         run: |
           echo "Deployment completed successfully"
           echo "Commit: ${{ github.sha }}"
-          echo "Deployed to: /home/ubuntu/openlearn-backend/current"
+          echo "Deployed to: /home/ubuntu/openlearn-backend/"
 
   notify:
     name: Notify
