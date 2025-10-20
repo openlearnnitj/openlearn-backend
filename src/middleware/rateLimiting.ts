@@ -10,11 +10,13 @@
  * - Trusted proxy support for accurate IP detection behind nginx/load balancers
  * - Environment-based configuration with sensible defaults
  * - Proper error responses with retry information
+ * - Prometheus metrics integration for monitoring rate limit usage
  */
 
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
 import config from '../config/environment';
+import { rateLimitExceededTotal, rateLimitHitsTotal } from '../metrics/rateLimitMetrics';
 
 /**
  * Rate Limiting Configuration
@@ -44,23 +46,38 @@ const RATE_LIMIT_CONFIG = {
  * Standard Error Response Handler
  * 
  * Provides consistent error responses when rate limits are exceeded
+ * Also tracks metrics for rate limit violations
  */
-const rateLimitErrorHandler = (req: Request, res: Response) => {
-  const retryAfter = Math.round(RATE_LIMIT_CONFIG.windowMs / 1000); // Convert to seconds
-  
-  res.status(429).json({
-    success: false,
-    error: 'Too Many Requests',
-    message: 'Rate limit exceeded. Please try again later.',
-    retryAfter: retryAfter,
-    resetTime: new Date(Date.now() + RATE_LIMIT_CONFIG.windowMs).toISOString(),
-    details: {
-      windowMs: RATE_LIMIT_CONFIG.windowMs,
-      maxRequests: res.getHeader('X-RateLimit-Limit'),
-      remainingRequests: res.getHeader('X-RateLimit-Remaining'),
-      resetTime: res.getHeader('X-RateLimit-Reset')
-    }
-  });
+const createRateLimitErrorHandler = (endpointType: 'general' | 'auth' | 'strict') => {
+  return (req: Request, res: Response) => {
+    const retryAfter = Math.round(RATE_LIMIT_CONFIG.windowMs / 1000); // Convert to seconds
+    
+    // Track rate limit exceeded event (requests that were blocked)
+    rateLimitExceededTotal.inc({
+      endpoint_type: endpointType,
+      path: req.path
+    });
+    
+    // Track in general hits counter as blocked
+    rateLimitHitsTotal.inc({
+      endpoint_type: endpointType,
+      status: 'blocked'
+    });
+    
+    res.status(429).json({
+      success: false,
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded. Please try again later.',
+      retryAfter: retryAfter,
+      resetTime: new Date(Date.now() + RATE_LIMIT_CONFIG.windowMs).toISOString(),
+      details: {
+        windowMs: RATE_LIMIT_CONFIG.windowMs,
+        maxRequests: res.getHeader('X-RateLimit-Limit'),
+        remainingRequests: res.getHeader('X-RateLimit-Remaining'),
+        resetTime: res.getHeader('X-RateLimit-Reset')
+      }
+    });
+  };
 };
 
 /**
@@ -108,10 +125,10 @@ const getTrustedKeyGenerator = () => {
  * - 100 requests per 15 minutes per IP
  * - Standard headers for client-side rate limit handling
  */
-export const generalRateLimit = rateLimit({
+const generalRateLimitBase = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.windowMs,
   max: RATE_LIMIT_CONFIG.maxRequests,
-  message: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('general'),
   standardHeaders: true, // Return rate limit info in headers
   legacyHeaders: false, // Disable legacy X-RateLimit-* headers
   keyGenerator: getTrustedKeyGenerator(),
@@ -127,6 +144,18 @@ export const generalRateLimit = rateLimit({
   }
 });
 
+// Wrap with metrics tracking for allowed requests
+export const generalRateLimit = (req: Request, res: Response, next: any) => {
+  // Track all rate limit checks
+  rateLimitHitsTotal.inc({
+    endpoint_type: 'general',
+    status: 'allowed'
+  });
+  
+  // Call the actual rate limiter
+  generalRateLimitBase(req, res, next);
+};
+
 /**
  * Authentication Rate Limiter
  * 
@@ -134,15 +163,27 @@ export const generalRateLimit = rateLimit({
  * - 10 requests per 15 minutes per IP
  * - Protects against brute force attacks on login/signup
  */
-export const authRateLimit = rateLimit({
+const authRateLimitBase = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.windowMs,
   max: RATE_LIMIT_CONFIG.authMaxRequests,
-  message: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('auth'),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getTrustedKeyGenerator(),
   skip: (req: Request) => RATE_LIMIT_CONFIG.skipInDevelopment
 });
+
+// Wrap with metrics tracking for allowed requests
+export const authRateLimit = (req: Request, res: Response, next: any) => {
+  // Track all rate limit checks
+  rateLimitHitsTotal.inc({
+    endpoint_type: 'auth',
+    status: 'allowed'
+  });
+  
+  // Call the actual rate limiter
+  authRateLimitBase(req, res, next);
+};
 
 /**
  * Strict Rate Limiter
@@ -151,15 +192,27 @@ export const authRateLimit = rateLimit({
  * - 30 requests per 15 minutes per IP
  * - Used for admin operations, data modifications, etc.
  */
-export const strictRateLimit = rateLimit({
+const strictRateLimitBase = rateLimit({
   windowMs: RATE_LIMIT_CONFIG.windowMs,
   max: RATE_LIMIT_CONFIG.strictMaxRequests,
-  message: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('strict'),
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getTrustedKeyGenerator(),
   skip: (req: Request) => RATE_LIMIT_CONFIG.skipInDevelopment
 });
+
+// Wrap with metrics tracking for allowed requests
+export const strictRateLimit = (req: Request, res: Response, next: any) => {
+  // Track all rate limit checks
+  rateLimitHitsTotal.inc({
+    endpoint_type: 'strict',
+    status: 'allowed'
+  });
+  
+  // Call the actual rate limiter
+  strictRateLimitBase(req, res, next);
+};
 
 /**
  * Flexible Rate Limiter Factory
@@ -169,22 +222,36 @@ export const strictRateLimit = rateLimit({
  * @param maxRequests - Maximum requests per window
  * @param windowMs - Time window in milliseconds (optional, defaults to config)
  * @param skipInDev - Whether to skip in development (optional, defaults to config)
+ * @param endpointType - Type of endpoint for metrics tracking (defaults to 'general')
  * @returns Configured rate limiter middleware
  */
 export const createCustomRateLimit = (
   maxRequests: number,
   windowMs: number = RATE_LIMIT_CONFIG.windowMs,
-  skipInDev: boolean = RATE_LIMIT_CONFIG.skipInDevelopment
+  skipInDev: boolean = RATE_LIMIT_CONFIG.skipInDevelopment,
+  endpointType: 'general' | 'auth' | 'strict' = 'general'
 ) => {
-  return rateLimit({
+  const rateLimiter = rateLimit({
     windowMs,
     max: maxRequests,
-    message: rateLimitErrorHandler,
+    handler: createRateLimitErrorHandler(endpointType),
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: getTrustedKeyGenerator(),
     skip: (req: Request) => skipInDev
   });
+  
+  // Return wrapped middleware with metrics
+  return (req: Request, res: Response, next: any) => {
+    // Track all rate limit checks
+    rateLimitHitsTotal.inc({
+      endpoint_type: endpointType,
+      status: 'allowed'
+    });
+    
+    // Call the actual rate limiter
+    rateLimiter(req, res, next);
+  };
 };
 
 /**

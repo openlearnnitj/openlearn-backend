@@ -3,6 +3,7 @@ import { UserRole } from '@prisma/client';
 import { JWTUtils } from '../utils/jwt';
 import { AuthService } from '../services/authService';
 import { TokenPayload } from '../types';
+import { authTokenValidationsTotal, authJwtErrorsTotal } from '../metrics/authMetrics';
 
 // Extend Express Request to include user data
 declare global {
@@ -22,6 +23,7 @@ export class AuthMiddleware {
       const token = JWTUtils.extractTokenFromHeader(req.headers.authorization);
 
       if (!token) {
+        authTokenValidationsTotal.inc({ result: 'missing' });
         res.status(401).json({
           success: false,
           error: 'Access token is required',
@@ -31,6 +33,8 @@ export class AuthMiddleware {
 
       const tokenPayload = JWTUtils.verifyAccessToken(token);
       if (!tokenPayload) {
+        authTokenValidationsTotal.inc({ result: 'invalid' });
+        authJwtErrorsTotal.inc({ type: 'invalid_or_expired' });
         res.status(401).json({
           success: false,
           error: 'Invalid or expired token',
@@ -41,6 +45,7 @@ export class AuthMiddleware {
       // Verify user still exists and is not suspended
       const user = await AuthService.getUserById(tokenPayload.userId);
       if (!user) {
+        authTokenValidationsTotal.inc({ result: 'user_not_found' });
         res.status(401).json({
           success: false,
           error: 'User not found',
@@ -49,12 +54,16 @@ export class AuthMiddleware {
       }
 
       if (user.status === 'SUSPENDED') {
+        authTokenValidationsTotal.inc({ result: 'suspended' });
         res.status(403).json({
           success: false,
           error: 'Account is suspended',
         });
         return;
       }
+
+      // Valid token - record success
+      authTokenValidationsTotal.inc({ result: 'valid' });
 
       // Attach user to request
       req.user = tokenPayload;

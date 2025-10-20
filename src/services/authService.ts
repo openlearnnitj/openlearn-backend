@@ -5,6 +5,7 @@ import { PasswordUtils } from '../utils/password';
 import { JWTUtils } from '../utils/jwt';
 import { ValidationUtils } from '../utils/validation';
 import { OLIDGenerator } from '../utils/olidGenerator';
+import { authLoginAttemptsTotal, authRegistrationAttemptsTotal } from '../metrics/authMetrics';
 
 export class AuthService {
   /**
@@ -154,6 +155,7 @@ export class AuthService {
       });
 
       if (!user) {
+        authLoginAttemptsTotal.inc({ status: 'failure', reason: 'user_not_found' });
         return {
           success: false,
           error: 'Invalid email or password',
@@ -162,6 +164,7 @@ export class AuthService {
 
       // Check if user is suspended
       if (user.status === UserStatus.SUSPENDED) {
+        authLoginAttemptsTotal.inc({ status: 'failure', reason: 'suspended' });
         return {
           success: false,
           error: 'Account is suspended. Please contact support.',
@@ -171,6 +174,7 @@ export class AuthService {
       // Verify password
       const isPasswordValid = await PasswordUtils.verifyPassword(loginData.password, user.password);
       if (!isPasswordValid) {
+        authLoginAttemptsTotal.inc({ status: 'failure', reason: 'invalid_password' });
         return {
           success: false,
           error: 'Invalid email or password',
@@ -195,6 +199,9 @@ export class AuthService {
         role: user.role,
         status: user.status,
       };
+
+      // Record successful login
+      authLoginAttemptsTotal.inc({ status: 'success', reason: 'valid_credentials' });
 
       return {
         success: true,

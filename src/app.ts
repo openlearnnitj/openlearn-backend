@@ -33,6 +33,8 @@ import debugRoutes from './routes/debug';
 import migrationRoutes from './routes/migration';
 import monitoringRouter from './routes/monitoring';
 import projectSubmissionRoutes from './routes/projectSubmissions';
+import metricsRouter from './routes/metrics';
+import { metricsMiddleware } from './middleware/metricsMiddleware';
 
 const app = express();
 
@@ -130,6 +132,10 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Apply metrics collection middleware EARLY (before rate limiting)
+// This ensures we capture all requests including rate-limited ones
+app.use(metricsMiddleware);
+
 // Apply general rate limiting to all routes
 app.use(generalRateLimit);
 
@@ -139,6 +145,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static file serving for status page assets
 app.use('/public', express.static(path.join(__dirname, '../public')));
+
+// Metrics endpoint (root level, protected by X-API-Secret)
+app.use(metricsRouter);
 
 // Favicon route to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {
