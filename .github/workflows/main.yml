@@ -191,9 +191,18 @@ jobs:
           fi
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Environment file verified"
 
+          # Verify .dockerignore is correct (should NOT ignore node_modules for production)
+          echo "[$(date +'%Y-%m-%d %H:%M:%S')] Verifying .dockerignore..."
+          if grep -q "^node_modules" "$DEPLOY_DIR/.dockerignore"; then
+            echo "ERROR: .dockerignore still ignoring node_modules! Fixing..."
+            sed -i '/^node_modules/d' "$DEPLOY_DIR/.dockerignore"
+          fi
+          echo "Current .dockerignore contents:"
+          cat "$DEPLOY_DIR/.dockerignore"
+
           # Clear Docker build cache to ensure fresh build
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Clearing Docker build cache..."
-          docker builder prune -f || true
+          docker builder prune -af || true
 
           # Build Docker image with pre-built artifacts (no cache to ensure .dockerignore is read)
           echo "[$(date +'%Y-%m-%d %H:%M:%S')] Building Docker image..."
