@@ -69,6 +69,8 @@ jobs:
           cp docker-compose.yml deploy-package/
           cp Dockerfile.production deploy-package/
           cp .dockerignore deploy-package/
+          cp prometheus.yml deploy-package/
+          cp -r grafana deploy-package/
           cp -r src/templates deploy-package/templates 2>/dev/null || echo "No templates directory"
 
       - name: Upload deployment package
