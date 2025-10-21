@@ -91,7 +91,7 @@
 graph TB
     subgraph "Client Layer"
         WEB[Web Dashboard]
-        MOBILE[Mobile App]
+        OPS[Observability Dashboard]
         STATUS[Status Page]
     end
     
@@ -124,7 +124,7 @@ graph TB
     subgraph "Monitoring Stack"
         PROMETHEUS[Prometheus]
         GRAFANA[Grafana Dashboard]
-        METRICS[/metrics Endpoint]
+        METRICS[Metrics Endpoint]
     end
     
     subgraph "External Services"
@@ -134,7 +134,7 @@ graph TB
     end
     
     WEB --> NGINX
-    MOBILE --> NGINX
+    OPS --> NGINX
     STATUS --> NGINX
     
     NGINX --> SSL
@@ -174,65 +174,7 @@ graph TB
     style GRAFANA fill:#F46800,stroke:#fff,color:#fff
 ```
 
-### Learning Flow Architecture
-
-```mermaid
-flowchart TD
-    subgraph "Student Journey"
-        START([Student Joins Cohort])
-        ONBOARD[Complete Profile]
-        LEAGUE[Choose Specialization League]
-        WEEK[Access Weekly Content]
-        SECTION[Study Sections]
-        RESOURCE[Complete Resources]
-        ASSIGNMENT[Submit Assignments]
-        BADGE[Earn Badges]
-        PROGRESS[Track Progress]
-    end
-    
-    subgraph "Educator Workflow"
-        CREATE[Create Content]
-        ORGANIZE[Organize Weeks]
-        REVIEW[Review Submissions]
-        GRADE[Grade Assignments]
-        MENTOR[Mentor Students]
-    end
-    
-    subgraph "System Intelligence"
-        ANALYTICS[Analytics Engine]
-        NOTIFICATIONS[Smart Notifications]
-        RECOMMENDATIONS[Content Recommendations]
-        LEADERBOARD[Dynamic Leaderboards]
-    end
-    
-    START --> ONBOARD
-    ONBOARD --> LEAGUE
-    LEAGUE --> WEEK
-    WEEK --> SECTION
-    SECTION --> RESOURCE
-    RESOURCE --> ASSIGNMENT
-    ASSIGNMENT --> BADGE
-    BADGE --> PROGRESS
-    PROGRESS --> WEEK
-    
-    CREATE --> ORGANIZE
-    ORGANIZE --> WEEK
-    ASSIGNMENT --> REVIEW
-    REVIEW --> GRADE
-    GRADE --> MENTOR
-    
-    PROGRESS --> ANALYTICS
-    ANALYTICS --> NOTIFICATIONS
-    ANALYTICS --> RECOMMENDATIONS
-    ANALYTICS --> LEADERBOARD
-    
-    style START fill:#4CAF50,stroke:#fff,color:#fff
-    style BADGE fill:#FF9800,stroke:#fff,color:#fff
-    style ANALYTICS fill:#2196F3,stroke:#fff,color:#fff
-    style CREATE fill:#9C27B0,stroke:#fff,color:#fff
-```
-
-### Database Schema (Only Core Models)
+### Database Schema (Core Models)
 
 ```mermaid
 erDiagram
@@ -314,7 +256,7 @@ graph LR
     subgraph "Application"
         APP[Express.js API]
         METRICS_MW[Metrics Middleware]
-        METRICS_EP[/metrics Endpoint]
+        METRICS_EP[Metrics Endpoint]
     end
     
     subgraph "Metrics Collection"
@@ -578,7 +520,7 @@ View Metrics          |    ✗    |     ✗      |        ✓         |        �
 
 ## API Overview
 
-### Only Core Endpoints
+### Core Endpoints
 
 ```bash
 # System Health & Status
@@ -626,10 +568,10 @@ For complete API documentation, see [docs/api/](./docs/api/)
 
 ### Prerequisites
 
-- **Node.js** 18+ and npm
-- **PostgreSQL** 15+ database
-- **Redis** server (optional for local development)
-- **Docker** & Docker Compose (recommended)
+- **Node.js** 18.0.0+ and npm 9.0.0+
+- **PostgreSQL** 15.0+ database
+- **Redis** 7.0+ server (optional for local development)
+- **Docker** 24.0+ & Docker Compose 2.20+ (recommended)
 
 ### Local Development
 
@@ -666,7 +608,7 @@ npm run dev
 
 - **Frontend**: [openlearn.org.in](https://openlearn.org.in)
 - **API**: [api.openlearn.org.in](https://api.openlearn.org.in)
-- **Monitoring**: [ops.openlearn.org.in](https://ops.openlearn.org.in) - Grafana dashboards
+- **Monitoring**: [ops.openlearn.org.in](https://ops.openlearn.org.in) - (Restricted)
 - **Status**: [api.openlearn.org.in/status-page](https://api.openlearn.org.in/status-page)
 - **Health**: [api.openlearn.org.in/health](https://api.openlearn.org.in/health)
 
@@ -722,7 +664,9 @@ docker compose logs -f app
 
 ## Contributing
 
-We welcome contributions! Here's how:
+We welcome contributions! Please read our [Contributing Guidelines](./CONTRIBUTING.md) and [Code of Conduct](./CODE_OF_CONDUCT.md) before getting started.
+
+Here's how to contribute:
 
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
@@ -731,14 +675,6 @@ We welcome contributions! Here's how:
 5. **Commit** (`git commit -m 'Add amazing feature'`)
 6. **Push** (`git push origin feature/amazing-feature`)
 7. **Open** a Pull Request
-
-### Coding Standards
-
-- Follow TypeScript best practices and strict mode
-- Use meaningful names
-- Add JSDoc comments for complex functions
-- Update documentation for API changes
-- Ensure tests pass (CI/CD checks)
 
 ## Support & Resources
 
@@ -768,3 +704,7 @@ We welcome contributions! Here's how:
 **OpenLearn Platform** • **Production Ready** • **Open Source**
 
 </div>
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
