@@ -3,9 +3,31 @@ name: OpenLearn CI/CD Pipeline
 on:
   push:
     branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'                    # Skip for any markdown files
+      - 'docs/**'                  # Skip for documentation folder
+      - 'README.md'                # Skip for README changes
+      - 'CHANGELOG.md'             # Skip for changelog updates
+      - 'CONTRIBUTING.md'          # Skip for contributing guide
+      - 'LICENSE'                  # Skip for license file
+      - '.gitignore'               # Skip for gitignore changes
+      - '.vscode/**'               # Skip for VSCode settings
+      - '.idea/**'                 # Skip for IntelliJ settings
+      - 'scripts/testing/**'       # Skip for test scripts only
   pull_request:
     branches: [ main ]
     types: [opened, synchronize, reopened]
+    paths-ignore:
+      - '**.md'                    # Skip for any markdown files
+      - 'docs/**'                  # Skip for documentation folder
+      - 'README.md'                # Skip for README changes
+      - 'CHANGELOG.md'             # Skip for changelog updates
+      - 'CONTRIBUTING.md'          # Skip for contributing guide
+      - 'LICENSE'                  # Skip for license file
+      - '.gitignore'               # Skip for gitignore changes
+      - '.vscode/**'               # Skip for VSCode settings
+      - '.idea/**'                 # Skip for IntelliJ settings
+      - 'scripts/testing/**'       # Skip for test scripts only
 
 env:
   NODE_VERSION: '18'
