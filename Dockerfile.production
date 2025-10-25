@@ -21,6 +21,9 @@ COPY prisma/ ./prisma/
 COPY package.json ./
 COPY package-lock.json ./
 
+# Copy email templates (required for email service)
+COPY templates/ ./src/templates/
+
 # Fix permissions on node_modules binaries first
 RUN chmod -R +x node_modules/.bin/* 2>/dev/null || true
 

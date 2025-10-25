@@ -47,7 +47,16 @@ export interface CompiledTemplate {
 export class EmailTemplateService {
   
   private static templateCache = new Map<string, HandlebarsTemplateDelegate>();
-  private static readonly TEMPLATE_DIR = path.join(process.cwd(), 'src', 'templates', 'email');
+  
+  // Template directory resolution:
+  // - Development: /path/to/project/src/templates/email
+  // - Production (Docker): /app/src/templates/email (templates copied at build time)
+  private static readonly TEMPLATE_DIR = path.join(
+    process.cwd(), 
+    'src', 
+    'templates', 
+    'email'
+  );
   
   // Backend-controlled template types (stored as files)
   private static readonly SYSTEM_TEMPLATES = new Set([
@@ -377,8 +386,23 @@ export class EmailTemplateService {
         const templateContent = await fs.readFile(templatePath, 'utf-8');
         const compiled = handlebars.compile(templateContent);
         this.templateCache.set(cacheKey, compiled);
+        console.log(`✅ Loaded template: ${templateName} from ${templatePath}`);
       } catch (error) {
-        throw new Error(`System template file '${templateName}.html' not found`);
+        // Enhanced error with debugging info
+        console.error(`❌ Template not found: ${templateName}`);
+        console.error(`   Expected path: ${templatePath}`);
+        console.error(`   Working directory: ${process.cwd()}`);
+        console.error(`   Template directory: ${this.TEMPLATE_DIR}`);
+        
+        // Try to list available templates for debugging
+        try {
+          const files = await fs.readdir(this.TEMPLATE_DIR);
+          console.error(`   Available templates: ${files.join(', ')}`);
+        } catch (listError) {
+          console.error(`   Could not list template directory: ${listError}`);
+        }
+        
+        throw new Error(`System template file '${templateName}.html' not found at ${templatePath}`);
       }
     }
 
