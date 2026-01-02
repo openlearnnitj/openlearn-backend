@@ -58,8 +58,9 @@ router.put('/:leagueId',
 
 /**
  * @route DELETE /leagues/:leagueId
- * @desc Delete a league (only if no enrollments/weeks/badges)
+ * @desc Delete a league with CASCADE deletion of all related data
  * @access GRAND_PATHFINDER only (God mode)
+ * @warning IRREVERSIBLE - Deletes weeks, enrollments, badges, specializations, assignments, and pathfinder scopes
  */
 router.delete('/:leagueId', 
   authorize([UserRole.GRAND_PATHFINDER]),

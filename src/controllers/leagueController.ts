@@ -357,7 +357,14 @@ export class LeagueController {
   }
 
   /**
-   * Delete league
+   * Delete league with cascade deletion of all related data
+   * This is an irreversible operation that deletes:
+   * - All weeks (modules) in the league
+   * - All student enrollments
+   * - All badges
+   * - All specialization associations
+   * - All assignments
+   * - All pathfinder scopes
    */
   static async deleteLeague(req: Request, res: Response): Promise<void> {
     try {
@@ -387,41 +394,79 @@ export class LeagueController {
         return;
       }
 
-      // Check if league has dependent data
-      const hasData = existingLeague._count.weeks > 0 || 
-                     existingLeague._count.enrollments > 0 || 
-                     existingLeague._count.badges > 0 ||
-                     existingLeague._count.specializations > 0;
-
-      if (hasData) {
-        res.status(400).json({
-          success: false,
-          error: 'Cannot delete league with existing weeks, enrollments, badges, or specializations',
-        });
-        return;
-      }
-
-      // Delete the league
-      await prisma.league.delete({
-        where: { id: leagueId },
+      // Collect deletion statistics for audit log
+      // Count pathfinder scopes separately since it may not be in _count
+      const pathfinderScopesCount = await prisma.pathfinderScope.count({
+        where: { leagueId },
       });
 
-      // Create audit log
+      const deletionStats = {
+        weeks: existingLeague._count.weeks,
+        enrollments: existingLeague._count.enrollments,
+        badges: existingLeague._count.badges,
+        specializations: existingLeague._count.specializations,
+        pathfinderScopes: pathfinderScopesCount,
+      };
+
+      // Perform cascade deletion within a transaction
+      await prisma.$transaction(async (tx) => {
+        // Delete pathfinder scopes
+        await tx.pathfinderScope.deleteMany({
+          where: { leagueId },
+        });
+
+        // Delete assignments associated with this league
+        await tx.assignment.deleteMany({
+          where: { leagueId },
+        });
+
+        // Delete specialization-league associations
+        await tx.specializationLeague.deleteMany({
+          where: { leagueId },
+        });
+
+        // Delete badges (this will cascade to user_badges due to schema onDelete: Cascade)
+        await tx.badge.deleteMany({
+          where: { leagueId },
+        });
+
+        // Delete enrollments
+        await tx.enrollment.deleteMany({
+          where: { leagueId },
+        });
+
+        // Delete weeks (this will cascade to sections and section_resources due to schema onDelete: Cascade)
+        await tx.week.deleteMany({
+          where: { leagueId },
+        });
+
+        // Finally, delete the league itself
+        await tx.league.delete({
+          where: { id: leagueId },
+        });
+      }, {
+        timeout: 30000, // 30 second timeout for large deletions
+      });
+
+      // Create comprehensive audit log
       await prisma.auditLog.create({
         data: {
           userId: currentUser.userId,
-          action: 'LEAGUE_DELETED',
-          description: `Deleted league: ${existingLeague.name}`,
+          action: 'LEAGUE_CASCADE_DELETED',
+          description: `CASCADE DELETED league: ${existingLeague.name} with all related data`,
           metadata: {
             leagueId: leagueId,
             leagueName: existingLeague.name,
+            deletionStats,
+            warning: 'IRREVERSIBLE_CASCADE_DELETE',
           },
         },
       });
 
       res.status(200).json({
         success: true,
-        message: 'League deleted successfully',
+        message: 'League and all related data deleted successfully',
+        deletionStats,
       });
     } catch (error) {
       console.error('Delete league error:', error);
