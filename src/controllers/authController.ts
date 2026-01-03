@@ -186,7 +186,7 @@ export class AuthController {
         return;
       }
 
-      const { name, twitterHandle, linkedinUrl, githubUsername, kaggleUsername } = req.body;
+      const { name, twitterHandle, linkedinUrl, githubUsername, kaggleUsername, portfolioUrl, discordUsername } = req.body;
       const currentUser = req.user;
 
       // Validate name if provided
@@ -205,6 +205,8 @@ export class AuthController {
       if (linkedinUrl !== undefined) updateData.linkedinUrl = linkedinUrl ? ValidationUtils.sanitizeString(linkedinUrl) : null;
       if (githubUsername !== undefined) updateData.githubUsername = githubUsername ? ValidationUtils.sanitizeString(githubUsername) : null;
       if (kaggleUsername !== undefined) updateData.kaggleUsername = kaggleUsername ? ValidationUtils.sanitizeString(kaggleUsername) : null;
+      if (portfolioUrl !== undefined) updateData.portfolioUrl = portfolioUrl ? ValidationUtils.sanitizeString(portfolioUrl) : null;
+      if (discordUsername !== undefined) updateData.discordUsername = discordUsername ? ValidationUtils.sanitizeString(discordUsername) : null;
 
       // Update user profile
       const updatedUser = await prisma.user.update({
@@ -220,6 +222,8 @@ export class AuthController {
           linkedinUrl: true,
           githubUsername: true,
           kaggleUsername: true,
+          portfolioUrl: true,
+          discordUsername: true,
           createdAt: true,
           updatedAt: true,
         },
